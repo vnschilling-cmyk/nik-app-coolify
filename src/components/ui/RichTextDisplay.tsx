@@ -1,0 +1,110 @@
+import Link from "next/link";
+
+interface RichTextDisplayProps {
+    content: string;
+    className?: string;
+}
+
+export default function RichTextDisplay({ content, className = "" }: RichTextDisplayProps) {
+    if (!content) return null;
+
+    // Helper to process text
+    const processText = (text: string) => {
+        return text
+            // HTML Escape (basic)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            // Restore intended HTML tags (only <u> for now, maybe <br> later if needed)
+            .replace(/&lt;u&gt;/g, "<u>").replace(/&lt;\/u&gt;/g, "</u>")
+            // Bold
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            // Italic
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            // Links (basic)
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
+    };
+
+    // Split by newlines to handle paragraphs and lists
+    const lines = content.split('\n');
+    const elements: React.ReactNode[] = [];
+
+    let currentList: JSX.Element[] = [];
+    let listType: 'ul' | 'ol' | null = null;
+
+    lines.forEach((line, index) => {
+        const trimLine = line.trim();
+
+        // Unordered List
+        if (trimLine.startsWith('- ')) {
+            if (listType !== 'ul' && currentList.length > 0) {
+                // Flush previous list
+                elements.push(
+                    listType === 'ul'
+                        ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
+                        : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                );
+                currentList = [];
+            }
+            listType = 'ul';
+            currentList.push(
+                <li key={`item-${index}`} dangerouslySetInnerHTML={{ __html: processText(trimLine.substring(2)) }} />
+            );
+            return; // Continue to next line
+        }
+
+        // Ordered List
+        if (/^\d+\.\s/.test(trimLine)) {
+            if (listType !== 'ol' && currentList.length > 0) {
+                // Flush previous list
+                elements.push(
+                    listType === 'ul'
+                        ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
+                        : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                );
+                currentList = [];
+            }
+            listType = 'ol';
+            const content = trimLine.replace(/^\d+\.\s/, '');
+            currentList.push(
+                <li key={`item-${index}`} dangerouslySetInnerHTML={{ __html: processText(content) }} />
+            );
+            return;
+        }
+
+        // Not a list item: Flush any pending list
+        if (currentList.length > 0) {
+            elements.push(
+                listType === 'ul'
+                    ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
+                    : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+            );
+            currentList = [];
+            listType = null;
+        }
+
+        // Empty line -> simple spacer or ignore
+        if (!trimLine) {
+            // elements.push(<div key={`spacer-${index}`} className="h-2" />);
+            return;
+        }
+
+        // Standard Paragraph
+        elements.push(
+            <p key={`p-${index}`} className="mb-2 last:mb-0" dangerouslySetInnerHTML={{ __html: processText(line) }} />
+        );
+    });
+
+    // Flush any remaining list at the end
+    if (currentList.length > 0) {
+        elements.push(
+            listType === 'ul'
+                ? <ul key={`list-end`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
+                : <ol key={`list-end`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+        );
+    }
+
+    return (
+        <div className={`prose prose-sm prose-zinc dark:prose-invert max-w-none ${className}`}>
+            {elements}
+        </div>
+    );
+}

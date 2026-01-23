@@ -1,0 +1,752 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { pb } from "@/lib/pocketbase";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink } from "lucide-react";
+import RichTextEditor from "@/components/ui/RichTextEditor";
+
+interface BibleBook {
+    id: string;
+    name: string;
+    chapters: number;
+}
+
+interface Lesson {
+    id: string;
+    title: string;
+}
+
+interface Fact {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    type: string;
+    source: string;
+    verse_ref: string;
+    book_id: string;
+    chapter: number;
+    verse_start: number;
+    verse_end: number;
+    lesson_id: string;
+    file?: string;
+    url?: string;
+    collectionId?: string;
+}
+
+const CATEGORIES = [
+    { id: "text", label: "Text", icon: FileText },
+    { id: "image", label: "Grafik", icon: ImageIcon },
+    { id: "video", label: "Video", icon: Video },
+    { id: "link", label: "Link", icon: ExternalLink },
+    { id: "map", label: "Karte", icon: MapIcon },
+];
+
+export default function FactsTab() {
+    const [facts, setFacts] = useState<Fact[]>([]);
+    const [books, setBooks] = useState<BibleBook[]>([]);
+    const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+    const toggleGroup = (group: string) => {
+        const newSet = new Set(collapsedGroups);
+        if (newSet.has(group)) {
+            newSet.delete(group);
+        } else {
+            newSet.add(group);
+        }
+        setCollapsedGroups(newSet);
+    };
+
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        category: "text",
+        type: "text",
+        source: "",
+        url: "",
+        has_bible_ref: false,
+        book_id: "",
+        chapter: 1,
+        verse_start: 1,
+        verse_end: 1,
+        lesson_id: ""
+    });
+
+    // File upload state
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const [maxVerses, setMaxVerses] = useState(176);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const [factsRes, booksRes, lessonsRes] = await Promise.all([
+                pb.collection('facts').getFullList({ sort: 'category,title' }),
+                pb.collection('bible_books').getFullList({ sort: 'order' }),
+                pb.collection('lessons').getFullList({ sort: 'title' })
+            ]);
+
+            setFacts(factsRes.map(r => ({
+                id: r.id,
+                title: r.title || "",
+                description: r.description || "",
+                category: r.category || "text",
+                type: r.type || "text",
+                source: r.source || "",
+                verse_ref: r.verse_ref || "",
+                book_id: r.book_id || "",
+                chapter: r.chapter || 1,
+                verse_start: r.verse_start || 1,
+                verse_end: r.verse_end || 1,
+                lesson_id: r.lesson_id || "",
+                file: r.file || "",
+                url: r.url || "",
+                collectionId: r.collectionId
+            })));
+
+            setBooks(booksRes.map(r => ({
+                id: r.id,
+                name: r.name,
+                chapters: r.chapter_count || 50
+            })));
+
+            setLessons(lessonsRes.map(r => ({
+                id: r.id,
+                title: r.title || "(Ohne Titel)"
+            })));
+        } catch (e) {
+            console.error("Failed to load data:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getSelectedBook = () => books.find(b => b.id === formData.book_id);
+
+    // Fetch verse count when book or chapter changes
+    useEffect(() => {
+        if (formData.book_id && formData.chapter) {
+            updateMaxVerses();
+        }
+    }, [formData.book_id, formData.chapter]);
+
+    const updateMaxVerses = async () => {
+        try {
+            const record = await pb.collection('verses').getList(1, 1, {
+                filter: `book="${formData.book_id}" && chapter=${formData.chapter}`,
+                sort: '-verse',
+                fields: 'verse'
+            });
+            if (record.items.length > 0) {
+                setMaxVerses(record.items[0].verse);
+            } else {
+                setMaxVerses(50);
+            }
+        } catch (e) {
+            console.error("Error fetching verse count:", e);
+            setMaxVerses(176);
+        }
+    };
+
+    const generateVerseRef = () => {
+        if (!formData.has_bible_ref || !formData.book_id) return "";
+        const book = getSelectedBook();
+        if (!book) return "";
+        const verseRange = formData.verse_start === formData.verse_end
+            ? `${formData.verse_start}`
+            : `${formData.verse_start}-${formData.verse_end}`;
+        return `${book.name} ${formData.chapter}:${verseRange}`;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Use FormData for file upload
+        const data = new FormData();
+        data.append('title', formData.title);
+        data.append('description', formData.description);
+        data.append('category', formData.category);
+        data.append('type', formData.type);
+        // source removed
+        data.append('url', formData.url);
+        data.append('lesson_id', formData.lesson_id || "");
+
+        if (selectedFile) {
+            data.append('file', selectedFile);
+        }
+
+        if (formData.has_bible_ref && formData.book_id) {
+            data.append('verse_ref', generateVerseRef());
+            data.append('book_id', formData.book_id);
+            data.append('chapter', formData.chapter.toString());
+            data.append('verse_start', formData.verse_start.toString());
+            data.append('verse_end', formData.verse_end.toString());
+        } else {
+            data.append('verse_ref', "");
+            data.append('book_id', "");
+            data.append('chapter', "0");
+            data.append('verse_start', "0");
+            data.append('verse_end', "0");
+        }
+
+        try {
+            if (editingId) {
+                await pb.collection('facts').update(editingId, data);
+            } else {
+                await pb.collection('facts').create(data);
+            }
+            resetForm();
+            loadData();
+        } catch (e: any) {
+            console.error("Save error:", e);
+            let msg = e.message;
+            if (e.data?.data) {
+                // Formatting validation errors nicely
+                const details = Object.entries(e.data.data)
+                    .map(([key, err]: [string, any]) => `${key}: ${err.message}`)
+                    .join("\n");
+                if (details) msg += `\n\nDetails:\n${details}`;
+            }
+            alert("Fehler beim Speichern:\n" + msg);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            title: "",
+            description: "",
+            category: "text",
+            type: "text",
+            source: "",
+            url: "",
+            has_bible_ref: false,
+            book_id: "",
+            chapter: 1,
+            verse_start: 1,
+            verse_end: 1,
+            lesson_id: ""
+        });
+        setSelectedFile(null);
+        setShowForm(false);
+        setEditingId(null);
+    };
+
+    const handleEdit = (fact: Fact) => {
+        setFormData({
+            title: fact.title,
+            description: fact.description,
+            category: fact.category || "text",
+            type: fact.type || "text",
+            source: fact.source,
+            url: fact.url || "",
+            has_bible_ref: !!fact.book_id,
+            book_id: fact.book_id,
+            chapter: fact.chapter || 1,
+            verse_start: fact.verse_start || 1,
+            verse_end: fact.verse_end || 1,
+            lesson_id: fact.lesson_id || ""
+        });
+        setEditingId(fact.id);
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Info wirklich löschen?")) return;
+        try {
+            await pb.collection('facts').delete(id);
+            loadData();
+        } catch (e: any) {
+            alert("Fehler: " + e.message);
+        }
+    };
+
+    // CSV Import is kept simple for now - mainly for text facts
+    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        const lines = text.split('\n').filter(l => l.trim());
+        let imported = 0;
+        for (let i = 1; i < lines.length; i++) {
+            const [title, description, category, source] = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+            if (title) {
+                try {
+                    // Map old categories if necessary or default to 'text'
+                    const cat = CATEGORIES.some(c => c.id === category.toLowerCase()) ? category.toLowerCase() : "text"; // simplified mapping
+                    await pb.collection('facts').create({ title, description, category: cat, source });
+                    imported++;
+                } catch (e) {
+                    console.error(`Failed to import line ${i}:`, e);
+                }
+            }
+        }
+        alert(`${imported} Infos importiert!`);
+        loadData();
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const compressImage = async (file: File): Promise<File> => {
+        const MAX_SIZE = 1 * 1024 * 1024; // 1MB nominal limit
+        // We target slightly less to be safe (e.g. 900KB)
+        const SAFE_SIZE = 900 * 1024;
+
+        if (file.size <= MAX_SIZE) return file;
+
+        console.log(`Compressing image: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+
+                // Aggressive resize for 1MB limit: Max 1280px
+                const MAX_DIM = 1280;
+                if (width > height) {
+                    if (width > MAX_DIM) {
+                        height *= MAX_DIM / width;
+                        width = MAX_DIM;
+                    }
+                } else {
+                    if (height > MAX_DIM) {
+                        width *= MAX_DIM / height;
+                        height = MAX_DIM;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    reject(new Error("Canvas context not available"));
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Quality 0.6 should almost certainly yield < 500KB for 1280px
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const newFile = new File([blob], file.name, {
+                            type: "image/jpeg",
+                            lastModified: Date.now(),
+                        });
+                        console.log(`Compressed to: ${(newFile.size / 1024 / 1024).toFixed(2)} MB`);
+                        resolve(newFile);
+                    } else {
+                        reject(new Error("Compression failed"));
+                    }
+                }, "image/jpeg", 0.6);
+            };
+            img.onerror = (err) => reject(err);
+        });
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const processedFile = await compressImage(file);
+                setSelectedFile(processedFile);
+            } catch (err) {
+                console.error("Compression error:", err);
+                alert("Fehler beim Verarbeiten des Bildes. Bitte versuche ein kleineres Bild.");
+            }
+        } else {
+            setSelectedFile(null);
+        }
+    };
+
+    if (loading) {
+        return <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>;
+    }
+
+    const selectedBook = getSelectedBook();
+    const CategoryIcon = CATEGORIES.find(c => c.id === formData.category)?.icon || FileText;
+
+    return (
+        <div className="space-y-4">
+            {/* Actions */}
+            <div className="flex gap-2">
+                <button
+                    onClick={() => { resetForm(); setShowForm(true); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                    <Plus size={16} /> Neue Info
+                </button>
+                <label className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                    <Upload size={16} /> CSV Import
+                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVImport} />
+                </label>
+            </div>
+
+            {/* Form Modal */}
+            {showForm && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">{editingId ? "Info bearbeiten" : "Neue Info"}</h3>
+                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Title */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                />
+                            </div>
+
+                            {/* Type Selector */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Medien-Typ</label>
+                                <div className="grid grid-cols-5 gap-2 mt-1">
+                                    {CATEGORIES.map(cat => {
+                                        const Icon = cat.icon;
+                                        const isSelected = formData.type === cat.id;
+
+                                        // Color logic for buttons
+                                        let activeClass = "bg-zinc-100 text-zinc-900 border-zinc-300";
+                                        let inactiveClass = "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50";
+
+                                        if (cat.id === 'image') {
+                                            activeClass = "bg-purple-100 text-purple-700 border-purple-500 ring-1 ring-purple-500";
+                                            inactiveClass = "bg-white text-purple-600/70 border-zinc-200 hover:bg-purple-50 hover:text-purple-700";
+                                        } else if (cat.id === 'video') {
+                                            activeClass = "bg-red-100 text-red-700 border-red-500 ring-1 ring-red-500";
+                                            inactiveClass = "bg-white text-red-600/70 border-zinc-200 hover:bg-red-50 hover:text-red-700";
+                                        } else if (cat.id === 'map') {
+                                            activeClass = "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
+                                            inactiveClass = "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50 hover:text-emerald-700";
+                                        } else if (cat.id === 'link') {
+                                            activeClass = "bg-blue-100 text-blue-700 border-blue-500 ring-1 ring-blue-500";
+                                            inactiveClass = "bg-white text-blue-600/70 border-zinc-200 hover:bg-blue-50 hover:text-blue-700";
+                                        } else { // text / default
+                                            activeClass = "bg-amber-100 text-amber-900 border-amber-500 ring-1 ring-amber-500";
+                                            inactiveClass = "bg-white text-amber-700/70 border-zinc-200 hover:bg-amber-50 hover:text-amber-800";
+                                        }
+
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, type: cat.id })}
+                                                className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                title={cat.label}
+                                            >
+                                                <Icon size={20} />
+                                                <span className="text-[10px] font-medium mt-1">{cat.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Topics (Real Categories) */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                >
+                                    <option value="Allgemein">Allgemein</option>
+                                    <option value="Geschichte">Geschichte</option>
+                                    <option value="Geografie">Geografie</option>
+                                    <option value="Archäologie">Archäologie</option>
+                                    <option value="Kultur">Kultur</option>
+                                    <option value="Sprache">Sprache</option>
+                                    <option value="Wissenschaft">Wissenschaft</option>
+                                    <option value="Theologie">Theologie</option>
+                                </select>
+                            </div>
+
+                            {/* Dynamic Fields based on Type */}
+                            {formData.type === "image" && (
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">Bild hochladen</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileSelect}
+                                        className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/30 dark:file:text-purple-400"
+                                    />
+                                </div>
+                            )}
+
+                            {(formData.type === "video" || formData.type === "link" || formData.type === "map") && (
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">URL / Link</label>
+                                    <div className="relative mt-1">
+                                        <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
+                                        <input
+                                            type="url"
+                                            value={formData.url}
+                                            onChange={e => setFormData({ ...formData, url: e.target.value })}
+                                            className="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            placeholder="https://..."
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Description (Rich Text) */}
+                            <div>
+                                <RichTextEditor
+                                    label="Beschreibung / Inhalt"
+                                    value={formData.description}
+                                    onChange={(val: string) => setFormData({ ...formData, description: val })}
+                                    placeholder="Inhalt beschreiben..."
+                                />
+                            </div>
+
+                            {/* Bible Reference Toggle */}
+                            <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800/30">
+                                <input
+                                    type="checkbox"
+                                    id="hasBibleRef"
+                                    checked={formData.has_bible_ref}
+                                    onChange={e => setFormData({ ...formData, has_bible_ref: e.target.checked })}
+                                    className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor="hasBibleRef" className="flex items-center gap-2 text-sm font-medium">
+                                    <BookOpen size={16} className="text-indigo-500" />
+                                    Mit Bibelvers verknüpfen
+                                </label>
+                            </div>
+
+                            {/* Bible Reference Fields */}
+                            {formData.has_bible_ref && (
+                                <>
+                                    <div>
+                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Buch</label>
+                                        <select
+                                            value={formData.book_id}
+                                            onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
+                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                        >
+                                            <option value="">Buch wählen...</option>
+                                            {books.map(b => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {selectedBook && (
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div>
+                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                <select
+                                                    value={formData.chapter}
+                                                    onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
+                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                >
+                                                    {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
+                                                        <option key={num} value={num}>{num}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                <select
+                                                    value={formData.verse_start}
+                                                    onChange={e => {
+                                                        const newVal = parseInt(e.target.value) || 1;
+                                                        setFormData({
+                                                            ...formData,
+                                                            verse_start: newVal,
+                                                            verse_end: Math.max(newVal, formData.verse_end)
+                                                        });
+                                                    }}
+                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                >
+                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                        <option key={num} value={num}>{num}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                <select
+                                                    value={formData.verse_end}
+                                                    onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                >
+                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                        <option key={num} value={num}>{num}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {formData.book_id && (
+                                        <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg">
+                                            <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">Bibelstelle</p>
+                                            <p className="font-semibold text-indigo-800 dark:text-indigo-200">{generateVerseRef()}</p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Link to Lesson */}
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Link size={16} className="text-zinc-500" />
+                                    <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Mit Lektion verknüpfen</label>
+                                </div>
+                                <select
+                                    value={formData.lesson_id}
+                                    onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
+                                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                >
+                                    <option value="">Keine Verknüpfung</option>
+                                    {lessons.map(l => (
+                                        <option key={l.id} value={l.id}>{l.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={!formData.title.trim()}
+                                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Save size={16} /> Speichern
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* List */}
+            {facts.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500">
+                    <p className="text-4xl mb-2">💡</p>
+                    <p>Noch keine Infos vorhanden.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {(() => {
+                        // Grouping Logic
+                        const groups = new Map<string, Fact[]>();
+
+                        facts.forEach(fact => {
+                            let key = "Ohne Lektion";
+                            if (fact.lesson_id) {
+                                const lesson = lessons.find(l => l.id === fact.lesson_id);
+                                if (lesson) {
+                                    key = lesson.title;
+                                }
+                            }
+
+                            if (!groups.has(key)) {
+                                groups.set(key, []);
+                            }
+                            groups.get(key)?.push(fact);
+                        });
+
+                        // Convert to array and sort
+                        const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
+                            // "Ohne Lektion" always last
+                            if (a[0] === "Ohne Lektion") return 1;
+                            if (b[0] === "Ohne Lektion") return -1;
+                            return a[0].localeCompare(b[0]);
+                        });
+
+                        return sortedGroups.map(([groupTitle, groupFacts]) => {
+                            const isCollapsed = collapsedGroups.has(groupTitle);
+                            const isUnlinked = groupTitle === "Ohne Lektion";
+
+                            return (
+                                <section key={groupTitle} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                    <button
+                                        onClick={() => toggleGroup(groupTitle)}
+                                        className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                    >
+                                        <h3 className={`text-sm font-bold uppercase tracking-wider ${isUnlinked
+                                            ? "text-zinc-500 dark:text-zinc-500"
+                                            : "text-indigo-600 dark:text-indigo-400"
+                                            }`}>
+                                            {groupTitle} <span className="text-zinc-400 text-xs ml-2 font-normal">({groupFacts.length})</span>
+                                        </h3>
+                                        {isCollapsed ? <ChevronRight size={20} className="text-zinc-400" /> : <ChevronDown size={20} className="text-zinc-400" />}
+                                    </button>
+
+                                    {!isCollapsed && (
+                                        <div className="p-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800">
+                                            {groupFacts.map(fact => {
+                                                const linkedLessonName = lessons.find(l => l.id === fact.lesson_id)?.title;
+                                                // Find label from CATEGORIES based on type, or default to Text
+                                                const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
+                                                const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
+
+                                                // Color logic based on type (matching StudyPage)
+                                                const colorClass =
+                                                    fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                        fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                                                            fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
+                                                                fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+
+                                                return (
+                                                    <div key={fact.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-wrap gap-2 mb-1">
+                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
+                                                                    <TypeIcon size={10} />
+                                                                    {TypeLabel}
+                                                                </span>
+                                                                {fact.category && (
+                                                                    <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                        {fact.category}
+                                                                    </span>
+                                                                )}
+                                                                {fact.verse_ref && (
+                                                                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                                                        <BookOpen size={10} /> {fact.verse_ref}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
+                                                            {fact.description && (
+                                                                <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
+                                                                    {fact.description.replace(/<[^>]*>?/gm, ' ')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex gap-1 shrink-0">
+                                                            <button onClick={() => handleEdit(fact)} className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
+                                                                <Edit size={14} />
+                                                            </button>
+                                                            <button onClick={() => handleDelete(fact.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </section>
+                            );
+                        });
+                    })()}
+                </div>
+            )}
+        </div>
+    );
+}

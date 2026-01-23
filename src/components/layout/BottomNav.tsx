@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, MessageCircleQuestion, User } from "lucide-react";
+import { BookOpen, LayoutDashboard, GraduationCap, Settings } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
-    { label: "Bibel", href: "/bible", icon: BookOpen },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Fragen", href: "/questions", icon: MessageCircleQuestion },
-    { label: "Profil", href: "/profile", icon: User },
+    { label: "Bibel", href: "/bible", icon: BookOpen },
+    { label: "Studium", href: "/study", icon: GraduationCap },
+    { label: "Setup", href: "/setup", icon: Settings },
 ];
 
 export default function BottomNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 pb-[env(safe-area-inset-bottom)] z-50">
-            <div className="flex justify-around items-center h-16">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-200/50 dark:border-zinc-800/50 pb-[env(safe-area-inset-bottom)] z-50">
+            <div className="flex justify-around items-center h-16 max-w-md mx-auto">
                 {navItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
                     const Icon = item.icon;
@@ -27,12 +27,19 @@ export default function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={clsx(
-                                "flex flex-col items-center justify-center w-full h-full space-y-1 active:scale-95 transition-transform",
-                                isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-500 dark:text-zinc-400"
+                                "flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200",
+                                isActive
+                                    ? "text-indigo-600 dark:text-indigo-400 scale-105"
+                                    : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-95"
                             )}
                         >
-                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                            <span className="text-[10px] font-medium">{item.label}</span>
+                            <div className={clsx(
+                                "p-1.5 rounded-xl transition-all",
+                                isActive && "bg-indigo-100 dark:bg-indigo-900/40"
+                            )}>
+                                <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                            </div>
+                            <span className="text-[10px] font-semibold tracking-wide">{item.label}</span>
                         </Link>
                     );
                 })}
