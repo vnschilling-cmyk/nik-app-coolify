@@ -26,6 +26,8 @@ interface Lesson {
     verse_start: number;
     verse_end: number;
     has_bible_ref: boolean;
+    start_date: string;
+    active: boolean;
 }
 
 const CATEGORIES = ["Bibelarbeit", "Gruppenarbeit", "Exkurs", "Thema"];
@@ -44,7 +46,9 @@ export default function LessonsTab() {
         verse_start: 1,
         verse_end: 10,
         title: "",
-        content: ""
+        content: "",
+        start_date: "",
+        active: true
     });
     const [maxVerses, setMaxVerses] = useState(176);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,7 +124,9 @@ export default function LessonsTab() {
                 chapter_end: r.chapter_end || 1,
                 verse_start: r.verse_start || 1,
                 verse_end: r.verse_end || 10,
-                has_bible_ref: r.book_id ? true : false
+                has_bible_ref: r.book_id ? true : false,
+                start_date: r.start_date || "",
+                active: r.active ?? true
             })));
         } catch (e: any) {
             if (e.isAbort) return;
@@ -153,7 +159,9 @@ export default function LessonsTab() {
             title: formData.title,
             category: formData.category,
             content: formData.content,
-            order: lessons.length
+            order: lessons.length,
+            start_date: formData.start_date || null,
+            active: formData.active
         };
 
         if (formData.has_bible_ref && formData.book_id) {
@@ -194,7 +202,9 @@ export default function LessonsTab() {
             verse_start: 1,
             verse_end: 10,
             title: "",
-            content: ""
+            content: "",
+            start_date: "",
+            active: true
         });
         setShowForm(false);
         setEditingId(null);
@@ -210,7 +220,9 @@ export default function LessonsTab() {
             verse_start: lesson.verse_start || 1,
             verse_end: lesson.verse_end || 10,
             title: lesson.title,
-            content: lesson.content
+            content: lesson.content,
+            start_date: lesson.start_date ? new Date(lesson.start_date).toISOString().slice(0, 16) : "",
+            active: lesson.active
         });
         setEditingId(lesson.id);
         setShowForm(true);
@@ -411,6 +423,30 @@ export default function LessonsTab() {
                                 />
                             </div>
 
+                            {/* Scheduling */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Startdatum</label>
+                                    <input
+                                        type="datetime-local"
+                                        value={formData.start_date}
+                                        onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm"
+                                    />
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                    <label className="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.active}
+                                            onChange={e => setFormData({ ...formData, active: e.target.checked })}
+                                            className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Aktiv</span>
+                                    </label>
+                                </div>
+                            </div>
+
                             {/* Description */}
                             <div>
                                 <RichTextEditor
@@ -541,7 +577,15 @@ export default function LessonsTab() {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{lesson.title}</h4>
+                                                        <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">
+                                                            {!lesson.active && <span className="text-zinc-400 mr-2 text-xs font-normal">(Inaktiv)</span>}
+                                                            {lesson.title}
+                                                        </h4>
+                                                        {lesson.start_date && (
+                                                            <p className="text-[10px] text-indigo-500 font-medium mt-0.5">
+                                                                📅 {new Date(lesson.start_date).toLocaleDateString()} um {new Date(lesson.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        )}
                                                         {lesson.content && (
                                                             <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
                                                                 {lesson.content.replace(/<[^>]*>?/gm, ' ')}

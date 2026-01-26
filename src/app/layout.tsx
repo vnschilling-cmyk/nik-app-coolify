@@ -3,6 +3,7 @@ import { Montserrat, Outfit, Inter, Playfair_Display } from "next/font/google"; 
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
 import { DesignProvider } from "@/context/DesignContext";
+import AttendanceSync from "@/components/features/AttendanceSync";
 
 // Configure fonts
 const montserrat = Montserrat({
@@ -55,6 +56,7 @@ export default function RootLayout({
             {children}
           </main>
           <BottomNav />
+          <AttendanceSync />
         </DesignProvider>
       </body>
     </html>

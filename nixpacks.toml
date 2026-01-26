@@ -1,2 +1,2 @@
 [start]
-command = "echo '--- STARTING VIA NIXPACKS.TOML ---' && node .next/standalone/server.js"
+command = "node .next/standalone/server.js"

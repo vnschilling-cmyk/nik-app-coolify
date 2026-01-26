@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, GraduationCap, Settings } from "lucide-react";
+import { BookOpen, LayoutDashboard, GraduationCap, Settings, Users } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Bibel", href: "/bible", icon: BookOpen },
     { label: "Studium", href: "/study", icon: GraduationCap },
+    { label: "Gruppen", href: "/groups", icon: Users },
     { label: "Setup", href: "/setup", icon: Settings },
 ];
 

@@ -47,12 +47,22 @@ export class ChurchToolsClient {
     }
 
     async getGroupMembers(groupId: number): Promise<CTMember[]> {
-        const data = await this.request(`groups/${groupId}/members`);
+        const data = await this.request(`groups/${groupId}/members?limit=200`);
         return data.data.map((m: any) => ({
             id: m.personId,
-            firstName: m.firstName,
-            lastName: m.lastName,
-            email: m.email
+            firstName: m.person?.domainAttributes?.firstName || m.firstName,
+            lastName: m.person?.domainAttributes?.lastName || m.lastName,
+            email: m.person?.domainAttributes?.email || m.email || ""
         }));
+    }
+
+    async getMeetings(groupId: number): Promise<any[]> {
+        const data = await this.request(`groups/${groupId}/meetings`);
+        return data.data || [];
+    }
+
+    async getMeetingAttendance(groupId: number, meetingId: number): Promise<any[]> {
+        const data = await this.request(`groups/${groupId}/meetings/${meetingId}/members`);
+        return data.data || [];
     }
 }

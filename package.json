@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "echo '--- STARTING VIA PACKAGE.JSON ---' && node .next/standalone/server.js",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint"
   },
   "dependencies": {

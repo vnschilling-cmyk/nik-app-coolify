@@ -9,10 +9,9 @@ import UserTab from "@/components/setup/UserTab";
 import DesignTab from "@/components/setup/DesignTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
-import ChurchToolsTab from "@/components/setup/ChurchToolsTab";
-import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Link as LinkIcon } from "lucide-react";
+import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap } from "lucide-react";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "churchtools";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests";
 
 const tiles = [
     {
@@ -79,14 +78,6 @@ const tiles = [
         color: "fuchsia",
         gradient: "from-fuchsia-500 to-purple-600"
     },
-    {
-        id: "churchtools" as Tab,
-        label: "ChurchTools",
-        description: "Gruppen-Synchronisierung",
-        icon: LinkIcon,
-        color: "blue",
-        gradient: "from-blue-600 to-indigo-700"
-    },
 ];
 
 export default function SetupPage() {
@@ -102,7 +93,6 @@ export default function SetupPage() {
             case "design": return <DesignTab />;
             case "memory_verses": return <MemoryVersesTab />;
             case "learning_tests": return <LearningTestsTab />;
-            case "churchtools": return <ChurchToolsTab />;
             default: return null;
         }
     };
