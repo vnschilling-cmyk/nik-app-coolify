@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@google/genai": "^1.38.0",
+    "@google/generative-ai": "^0.24.1",
+    "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.562.0",
@@ -20,6 +23,7 @@
     "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -36,11 +36,9 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
         // Unordered List
         if (trimLine.startsWith('- ')) {
             if (listType !== 'ul' && currentList.length > 0) {
-                // Flush previous list
+                // Flush previous list (must be ol since we're switching to ul)
                 elements.push(
-                    listType === 'ul'
-                        ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
-                        : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                    <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
                 );
                 currentList = [];
             }
@@ -54,11 +52,9 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
         // Ordered List
         if (/^\d+\.\s/.test(trimLine)) {
             if (listType !== 'ol' && currentList.length > 0) {
-                // Flush previous list
+                // Flush previous list (must be ul since we're switching to ol)
                 elements.push(
-                    listType === 'ul'
-                        ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
-                        : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                    <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
                 );
                 currentList = [];
             }

@@ -1,9 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Montserrat, Outfit, Inter, Playfair_Display } from "next/font/google"; // Load all fonts
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
+import { DesignProvider } from "@/context/DesignContext";
 
-const inter = Inter({ subsets: ["latin"] });
+// Configure fonts
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+});
 
 export const metadata: Metadata = {
   title: "Nikodämus",
@@ -25,14 +46,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
       <body
-        className={`${inter.className} antialiased bg-white dark:bg-black text-black dark:text-white`}
+        className={`${montserrat.variable} ${outfit.variable} ${inter.variable} ${playfair.variable} antialiased bg-background text-foreground transition-colors duration-300`}
       >
-        <main className="min-h-[calc(100vh-4rem)] pb-[env(safe-area-inset-bottom)]">
-          {children}
-        </main>
-        <BottomNav />
+        <DesignProvider>
+          <main className="min-h-[calc(100vh-4rem)] pb-[env(safe-area-inset-bottom)]">
+            {children}
+          </main>
+          <BottomNav />
+        </DesignProvider>
       </body>
     </html>
   );

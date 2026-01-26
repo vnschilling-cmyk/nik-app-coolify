@@ -48,16 +48,16 @@ export default function LessonsTab() {
     });
     const [maxVerses, setMaxVerses] = useState(176);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     const toggleGroup = (group: string) => {
-        const newSet = new Set(collapsedGroups);
+        const newSet = new Set(expandedGroups);
         if (newSet.has(group)) {
             newSet.delete(group);
         } else {
             newSet.add(group);
         }
-        setCollapsedGroups(newSet);
+        setExpandedGroups(newSet);
     };
 
     // Fetch verse count when book or chapter changes
@@ -122,9 +122,11 @@ export default function LessonsTab() {
                 verse_end: r.verse_end || 10,
                 has_bible_ref: r.book_id ? true : false
             })));
-        } catch (e) {
+        } catch (e: any) {
+            if (e.isAbort) return;
             console.error("Failed to load lessons:", e);
-            alert("Fehler beim Laden der Lektionen: " + e.message);
+            const message = e instanceof Error ? e.message : "Unbekannter Fehler";
+            alert("Fehler beim Laden der Lektionen: " + message);
         } finally {
             setLoading(false);
         }
@@ -502,7 +504,7 @@ export default function LessonsTab() {
                         return sortedGroups.map(([groupTitle, groupLessons]) => {
                             const isBookGroup = !!groupLessons[0].book_id;
                             const isThemaGroup = groupTitle === "Thema";
-                            const isCollapsed = collapsedGroups.has(groupTitle);
+                            const isExpanded = expandedGroups.has(groupTitle);
 
                             return (
                                 <section key={groupTitle} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
@@ -518,10 +520,10 @@ export default function LessonsTab() {
                                             }`}>
                                             {groupTitle} <span className="text-zinc-400 text-xs ml-2 font-normal">({groupLessons.length})</span>
                                         </h3>
-                                        {isCollapsed ? <ChevronRight size={20} className="text-zinc-400" /> : <ChevronDown size={20} className="text-zinc-400" />}
+                                        {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
                                     </button>
 
-                                    {!isCollapsed && (
+                                    {isExpanded && (
                                         <div className="p-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800">
                                             {groupLessons.map(lesson => (
                                                 <div key={lesson.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
@@ -547,11 +549,11 @@ export default function LessonsTab() {
                                                         )}
                                                     </div>
                                                     <div className="flex gap-1 shrink-0">
-                                                        <button onClick={() => handleEdit(lesson)} className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
-                                                            <Edit size={14} />
+                                                        <button onClick={() => handleEdit(lesson)} className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
+                                                            <Edit size={18} />
                                                         </button>
-                                                        <button onClick={() => handleDelete(lesson.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                                                            <Trash2 size={14} />
+                                                        <button onClick={() => handleDelete(lesson.id)} className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                            <Trash2 size={18} />
                                                         </button>
                                                     </div>
                                                 </div>

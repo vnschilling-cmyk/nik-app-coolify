@@ -9,11 +9,14 @@ interface BibleBook {
     id: string;
     name: string;
     chapters: number;
+    order: number;
 }
 
 interface Lesson {
     id: string;
     title: string;
+    book_id: string;
+    verse_ref: string;
 }
 
 interface Fact {
@@ -42,23 +45,23 @@ const CATEGORIES = [
     { id: "map", label: "Karte", icon: MapIcon },
 ];
 
-export default function FactsTab() {
+export default function InfosTab() {
     const [facts, setFacts] = useState<Fact[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     const toggleGroup = (group: string) => {
-        const newSet = new Set(collapsedGroups);
+        const newSet = new Set(expandedGroups);
         if (newSet.has(group)) {
             newSet.delete(group);
         } else {
             newSet.add(group);
         }
-        setCollapsedGroups(newSet);
+        setExpandedGroups(newSet);
     };
 
     const [formData, setFormData] = useState({
@@ -115,12 +118,15 @@ export default function FactsTab() {
             setBooks(booksRes.map(r => ({
                 id: r.id,
                 name: r.name,
-                chapters: r.chapter_count || 50
+                chapters: r.chapter_count || 50,
+                order: r.order || 0
             })));
 
             setLessons(lessonsRes.map(r => ({
                 id: r.id,
-                title: r.title || "(Ohne Titel)"
+                title: r.title || "(Ohne Titel)",
+                book_id: r.book_id || r.book || "",
+                verse_ref: r.verse_ref || ""
             })));
         } catch (e) {
             console.error("Failed to load data:", e);
@@ -641,101 +647,184 @@ export default function FactsTab() {
             ) : (
                 <div className="space-y-4">
                     {(() => {
-                        // Grouping Logic
-                        const groups = new Map<string, Fact[]>();
+                        // 1. Group by Book (or "Allgemein" / "Ohne Buch")
+                        type BookGroup = {
+                            id: string;
+                            title: string;
+                            order: number;
+                            factCount: number;
+                            subgroups: Map<string, Fact[]>; // lesson_title -> facts
+                        };
+
+                        const bookGroups = new Map<string, BookGroup>();
 
                         facts.forEach(fact => {
-                            let key = "Ohne Lektion";
+                            let bookId = "general";
+                            let bookTitle = "Allgemeine Infos";
+                            let bookOrder = 9999;
+                            let subgroupTitle = "Allgemeine Infos";
+
+                            // Determine Book & Subgroup
                             if (fact.lesson_id) {
                                 const lesson = lessons.find(l => l.id === fact.lesson_id);
-                                if (lesson) {
-                                    key = lesson.title;
+                                if (lesson && lesson.book_id) {
+                                    const book = books.find(b => b.id === lesson.book_id);
+                                    if (book) {
+                                        bookId = book.id;
+                                        bookTitle = book.name;
+                                        bookOrder = book.order || 0;
+                                        subgroupTitle = lesson.title;
+                                    } else {
+                                        subgroupTitle = lesson.title;
+                                    }
+                                } else if (lesson) {
+                                    // Lesson without book (Thema)
+                                    bookId = "thema";
+                                    bookTitle = "Thematische Lektionen";
+                                    bookOrder = 5000;
+                                    subgroupTitle = lesson.title;
+                                }
+                            } else if (fact.book_id) {
+                                // General fact with Bible ref
+                                const book = books.find(b => b.id === fact.book_id);
+                                if (book) {
+                                    bookId = book.id;
+                                    bookTitle = book.name;
+                                    bookOrder = book.order || 0;
+                                    subgroupTitle = "Allgemeine Infos zum Buch";
                                 }
                             }
 
-                            if (!groups.has(key)) {
-                                groups.set(key, []);
+                            // Initialize Book Group
+                            if (!bookGroups.has(bookId)) {
+                                bookGroups.set(bookId, {
+                                    id: bookId,
+                                    title: bookTitle,
+                                    order: bookOrder,
+                                    factCount: 0,
+                                    subgroups: new Map()
+                                });
                             }
-                            groups.get(key)?.push(fact);
+
+                            const group = bookGroups.get(bookId)!;
+                            group.factCount++;
+
+                            // Add to Subgroup
+                            if (!group.subgroups.has(subgroupTitle)) {
+                                group.subgroups.set(subgroupTitle, []);
+                            }
+                            group.subgroups.get(subgroupTitle)?.push(fact);
                         });
 
-                        // Convert to array and sort
-                        const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
-                            // "Ohne Lektion" always last
-                            if (a[0] === "Ohne Lektion") return 1;
-                            if (b[0] === "Ohne Lektion") return -1;
-                            return a[0].localeCompare(b[0]);
-                        });
+                        // Sort Book Groups
+                        const sortedBookGroups = Array.from(bookGroups.values()).sort((a, b) => a.order - b.order);
 
-                        return sortedGroups.map(([groupTitle, groupFacts]) => {
-                            const isCollapsed = collapsedGroups.has(groupTitle);
-                            const isUnlinked = groupTitle === "Ohne Lektion";
+                        return sortedBookGroups.map(bookGroup => {
+                            const isBookSection = bookGroup.id !== "general" && bookGroup.id !== "thema";
+                            const isExpanded = expandedGroups.has(bookGroup.id);
+
+                            // Sort subgroups
+                            const sortedSubgroups = Array.from(bookGroup.subgroups.entries()).sort((a, b) => {
+                                if (a[0] === "Allgemeine Infos zum Buch") return 1;
+                                if (b[0] === "Allgemeine Infos zum Buch") return -1;
+                                return a[0].localeCompare(b[0]);
+                            });
 
                             return (
-                                <section key={groupTitle} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
                                     <button
-                                        onClick={() => toggleGroup(groupTitle)}
+                                        onClick={() => toggleGroup(bookGroup.id)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                     >
-                                        <h3 className={`text-sm font-bold uppercase tracking-wider ${isUnlinked
-                                            ? "text-zinc-500 dark:text-zinc-500"
-                                            : "text-indigo-600 dark:text-indigo-400"
-                                            }`}>
-                                            {groupTitle} <span className="text-zinc-400 text-xs ml-2 font-normal">({groupFacts.length})</span>
-                                        </h3>
-                                        {isCollapsed ? <ChevronRight size={20} className="text-zinc-400" /> : <ChevronDown size={20} className="text-zinc-400" />}
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`text-sm font-bold uppercase tracking-wider ${isBookSection
+                                                    ? "text-indigo-600 dark:text-indigo-400"
+                                                    : "text-zinc-600 dark:text-zinc-400"
+                                                }`}>
+                                                {bookGroup.title}
+                                            </h3>
+                                            <span className="text-zinc-400 text-xs font-normal">({bookGroup.factCount})</span>
+                                        </div>
+                                        {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
                                     </button>
 
-                                    {!isCollapsed && (
-                                        <div className="p-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800">
-                                            {groupFacts.map(fact => {
-                                                const linkedLessonName = lessons.find(l => l.id === fact.lesson_id)?.title;
-                                                // Find label from CATEGORIES based on type, or default to Text
-                                                const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
-                                                const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
-
-                                                // Color logic based on type (matching StudyPage)
-                                                const colorClass =
-                                                    fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
-                                                        fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
-                                                            fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
-                                                                fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
-                                                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+                                    {isExpanded && (
+                                        <div className="p-3 pt-0 space-y-4 border-t border-zinc-200 dark:border-zinc-800">
+                                            {sortedSubgroups.map(([subgroupTitle, groupFacts], idx) => {
+                                                const isLast = idx === sortedSubgroups.length - 1;
+                                                // Unique key for collapsing logic (combine bookId and subgroupTitle)
+                                                const collapseKey = `${bookGroup.id}-${subgroupTitle}`;
+                                                const isSubExpanded = expandedGroups.has(collapseKey);
 
                                                 return (
-                                                    <div key={fact.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex flex-wrap gap-2 mb-1">
-                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
-                                                                    <TypeIcon size={10} />
-                                                                    {TypeLabel}
-                                                                </span>
-                                                                {fact.category && (
-                                                                    <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
-                                                                        {fact.category}
-                                                                    </span>
-                                                                )}
-                                                                {fact.verse_ref && (
-                                                                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                                                                        <BookOpen size={10} /> {fact.verse_ref}
-                                                                    </span>
-                                                                )}
+                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-zinc-800 pb-4" : ""}>
+                                                        <button
+                                                            onClick={() => toggleGroup(collapseKey)}
+                                                            className="w-full flex items-center justify-between py-2 group"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors text-left">
+                                                                    {subgroupTitle}
+                                                                </h4>
+                                                                <span className="text-zinc-400 text-[10px] font-normal">({groupFacts.length})</span>
                                                             </div>
-                                                            <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
-                                                            {fact.description && (
-                                                                <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
-                                                                    {fact.description.replace(/<[^>]*>?/gm, ' ')}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex gap-1 shrink-0">
-                                                            <button onClick={() => handleEdit(fact)} className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
-                                                                <Edit size={14} />
-                                                            </button>
-                                                            <button onClick={() => handleDelete(fact.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
+                                                            {isSubExpanded ?
+                                                                <ChevronDown size={16} className="text-zinc-300 group-hover:text-zinc-500" /> :
+                                                                <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
+                                                            }
+                                                        </button>
+
+                                                        {isSubExpanded && (
+                                                            <div className="space-y-2 mt-1">
+                                                                {groupFacts.map(fact => {
+                                                                    const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
+                                                                    const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
+
+                                                                    const colorClass = fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                                        fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                                                                            fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
+                                                                                fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                                                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+
+                                                                    return (
+                                                                        <div key={fact.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex flex-wrap gap-2 mb-1">
+                                                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
+                                                                                        <TypeIcon size={10} />
+                                                                                        {TypeLabel}
+                                                                                    </span>
+                                                                                    {fact.category && (
+                                                                                        <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                                            {fact.category}
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {fact.verse_ref && (
+                                                                                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                                                                            <BookOpen size={10} /> {fact.verse_ref}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
+                                                                                {fact.description && (
+                                                                                    <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
+                                                                                        {fact.description.replace(/<[^>]*>?/gm, ' ')}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex gap-1 shrink-0">
+                                                                                <button onClick={() => handleEdit(fact)} className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
+                                                                                    <Edit size={14} />
+                                                                                </button>
+                                                                                <button onClick={() => handleDelete(fact.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                                                    <Trash2 size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}

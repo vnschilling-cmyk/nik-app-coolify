@@ -8,15 +8,120 @@
   --primary: #4f46e5;
   --primary-light: #818cf8;
   --accent: #f59e0b;
+
+  /* Font Variables Defaults */
+  --font-details: var(--font-montserrat);
+  --font-headings: var(--font-montserrat);
+  --font-bible: var(--font-playfair);
+
+  --heading-weight: 700;
+  --heading-style: normal;
+  --heading-decoration: none;
+
+  --font-scale-details: 1;
+  --font-scale-headings: 1;
+  --font-scale-bible: 1;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0f;
-    --foreground: #f5f5f5;
-    --primary: #6366f1;
-    --primary-light: #a5b4fc;
-  }
+html {
+  /* Scale the root font size based on Details setting.
+       This scales all REM values (most of Tailwind) */
+  font-size: calc(100% * var(--font-scale-details));
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Ensure body uses details font */
+  font-family: var(--font-details);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings Configuration
+   We want separate scaling for headings.
+   Since REMs are already scaled by --font-scale-details (via html),
+   we must divide by that and multiply by --font-scale-headings.
+   Formula: BaseSize * (HeadingScale / DetailsScale)
+*/
+h1,
+.text-4xl,
+.text-3xl {
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-style: var(--heading-style);
+  text-decoration: var(--heading-decoration);
+  /* Base approx 2.25rem (36px) for h1/4xl */
+  font-size: calc(2.25rem * var(--font-scale-headings) / var(--font-scale-details));
+  line-height: 1.1;
+}
+
+h2,
+.text-2xl {
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-style: var(--heading-style);
+  text-decoration: var(--heading-decoration);
+  /* Base approx 1.5rem (24px) */
+  font-size: calc(1.5rem * var(--font-scale-headings) / var(--font-scale-details));
+  line-height: 1.2;
+}
+
+h3,
+.text-xl {
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-style: var(--heading-style);
+  text-decoration: var(--heading-decoration);
+  /* Base approx 1.25rem (20px) */
+  font-size: calc(1.25rem * var(--font-scale-headings) / var(--font-scale-details));
+  line-height: 1.3;
+}
+
+h4,
+.text-lg {
+  /* text-lg is often used for lead text, maybe not strictly heading.
+     But user wants headings distinct. Let's apply heading font to h4 but be careful with text-lg class
+     if used for body.
+     Actually, DesignTab uses h3 with text-lg.
+     If we want 'Standardtext' header to be a Heading, it should match Heading rules.
+     Let's define standard sizes for h4-h6.
+  */
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-style: var(--heading-style);
+  text-decoration: var(--heading-decoration);
+  font-size: calc(1.125rem * var(--font-scale-headings) / var(--font-scale-details));
+}
+
+h5 {
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-size: calc(1rem * var(--font-scale-headings) / var(--font-scale-details));
+}
+
+h6 {
+  font-family: var(--font-headings);
+  font-weight: var(--heading-weight);
+  font-size: calc(0.875rem * var(--font-scale-headings) / var(--font-scale-details));
+}
+
+/* Bible Text Class */
+.bible-text {
+  font-family: var(--font-bible);
+  /* Independent scaling */
+  font-size: calc(1.125rem * var(--font-scale-bible) / var(--font-scale-details));
+  line-height: 1.8;
+}
+
+/* Dark Mode overrides via class to match Tailwind config */
+.dark {
+  /* Softer Dark Mode #121217 is slightly lighter than #0a0a0f */
+  --background: #121217;
+  --foreground: #ededed;
+  --primary: #818cf8;
+  --primary-light: #a5b4fc;
 }
 
 * {

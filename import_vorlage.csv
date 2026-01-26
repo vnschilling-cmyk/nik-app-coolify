@@ -1,0 +1,11 @@
+type;ref_id;lesson_ref;title;content;category;book_name;chapter;verse_start;verse_end;info_type;url;question;answer
+LESSON;L001;;1. Mose 1:1-10;Die Schöpfung - Einführung in die ersten Tage;Bibelarbeit;1. Mose;1;1;10;;;
+LESSON;L002;;1. Mose 1:11-25;Die Schöpfung von Pflanzen und Tieren;Bibelarbeit;1. Mose;1;11;25;;;
+LESSON;L003;;Die Bedeutung der Taufe;Einführung in die christliche Taufe;Thema;;;;;;;;;
+INFO;;L001;Das Wort Elohim;Der hebräische Gottesname in der Schöpfungsgeschichte;Sprache;;;;text;;;
+INFO;;L001;Landkarte Eden;Theorien zur geografischen Lage des Gartens Eden;Geografie;;;;map;https://example.com/eden-map;;
+INFO;;L002;Die Schöpfungstage;Übersicht der 7 Tage;Theologie;;;;image;;;
+QUESTION;;L001;;;bibeltext;;;;3;5;Was schuf Gott am ersten Tag?;Das Licht
+QUESTION;;L001;;;bibeltext;;;;1;2;Was bedeutet dass der Geist Gottes schwebte?;Gottes aktive Gegenwart
+QUESTION;;L002;;;bibeltext;;;;14;19;Wozu dienten die Lichter am Himmel?;Zur Unterscheidung von Tag und Nacht und für Zeiten
+QUESTION;;L003;;;allgemein;;;;;;;Was symbolisiert die Taufe?;Tod und Auferstehung mit Christus
