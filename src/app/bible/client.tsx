@@ -98,7 +98,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
 
     return (
         <div className="pb-20">
-            <header className="sticky top-0 z-40 bg-background/95 dark:bg-slate-800/95 backdrop-blur-md px-4 h-14 flex items-center justify-between">
+            <header className="sticky top-0 z-40 bg-background px-4 h-14 flex items-center justify-between">
                 <h1
                     className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-1"
                     onClick={() => {
