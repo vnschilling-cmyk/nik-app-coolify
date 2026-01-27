@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
+export const dynamic = 'force-dynamic';
 
 // Common biblical words with pre-defined meanings (fallback when API fails)
 const FALLBACK_WORDS: Record<string, any> = {
@@ -65,6 +65,12 @@ export async function POST(request: NextRequest) {
     let word = '';
 
     try {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json({ error: 'API key must be set when using the Gemini API.' }, { status: 500 });
+        }
+        const ai = new GoogleGenAI({ apiKey });
+
         const body = await request.json();
         word = body.word;
         const { context, testament } = body;
