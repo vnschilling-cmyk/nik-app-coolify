@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil } from "lucide-react";
 
 interface Question {
     question: string;
@@ -282,7 +282,7 @@ export default function LearningTestsTab() {
                             className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
                             title="Manuell erstellen"
                         >
-                            <Plus size={24} />
+                            <Pencil size={24} />
                         </button>
                         <button
                             onClick={() => setMode("ai")}
