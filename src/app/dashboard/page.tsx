@@ -204,7 +204,7 @@ export default function DashboardPage() {
         <div className="min-h-screen pb-24">
             {/* Hero Section with Gradient */}
             {/* Hero Section with Logo */}
-            <header className="px-6 pt-6 pb-6 bg-white dark:bg-slate-800 overflow-hidden">
+            <header className="px-6 pt-6 pb-6 bg-background overflow-hidden">
                 <div className="flex flex-col gap-2">
                     <div className="w-full max-w-md mx-auto -my-3 flex flex-col items-center">
                         {/* Light Mode Logo */}
@@ -232,36 +232,25 @@ export default function DashboardPage() {
 
             {/* Verse of the Day Card */}
             <section className="px-4 mt-4 relative z-20">
-                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm transition-all hover:shadow-md">
+                    <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                             {memoryVerse ? "Dein Lernvers" : "Vers des Tages"}
                         </span>
-                    </div>
-                    {memoryVerse ? (
-                        <>
-                            <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
-                                „{memoryVerse.text}"
-                            </p>
-                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400 -mt-2">
-                                {memoryVerse.verse_ref || (
+                        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic">
+                            {memoryVerse ? (
+                                memoryVerse.verse_ref || (
                                     <>
                                         {memoryVerse.expand?.book_id?.name || "Bibel"}
                                         {memoryVerse.chapter > 0 ? ` ${memoryVerse.chapter}:${memoryVerse.verse_start}${memoryVerse.verse_end > memoryVerse.verse_start ? `-${memoryVerse.verse_end}` : ""}` : ""}
                                     </>
-                                )}
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
-                                „Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."
-                            </p>
-                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400 -mt-2">
-                                Matthäus 6,33
-                            </p>
-                        </>
-                    )}
+                                )
+                            ) : "Matthäus 6,33"}
+                        </span>
+                    </div>
+                    <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
+                        „{memoryVerse ? memoryVerse.text : "Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."}"
+                    </p>
                 </div>
             </section>
 
