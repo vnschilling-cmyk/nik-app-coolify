@@ -1,6 +1,6 @@
 {
-    "name": "Nikodämus",
-    "short_name": "Nikodämus",
+    "name": "Nikodemus",
+    "short_name": "Nikodemus",
     "description": "Mobile-First Bibelstudium PWA",
     "start_url": "/",
     "display": "standalone",

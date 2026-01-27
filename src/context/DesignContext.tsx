@@ -31,7 +31,7 @@ interface DesignContextType {
 }
 
 const defaultSettings: DesignSettings = {
-    theme: "system",
+    theme: "light",
     fontFamilyDetails: "montserrat",
     fontFamilyHeadings: "montserrat",
     fontFamilyBible: "raleway",

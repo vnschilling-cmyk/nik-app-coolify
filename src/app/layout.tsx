@@ -36,8 +36,9 @@ const satisfy = Satisfy({ subsets: ["latin"], weight: "400", variable: "--font-s
 
 
 export const metadata: Metadata = {
-  title: "Nikodämus",
+  title: "Nikodemus",
   description: "Mobile-First Bibelstudium PWA",
+
   manifest: "/manifest.json",
 };
 

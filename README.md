@@ -1,4 +1,5 @@
-# Nikodämus
+# Nikodemus
+
 
 Eine Mobile-First PWA für Bibelstudium, basierend auf Next.js 14, TypeScript und TailwindCSS.
 
