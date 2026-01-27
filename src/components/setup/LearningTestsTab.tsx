@@ -199,7 +199,7 @@ export default function LearningTestsTab() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-end items-center mb-6">
+            <div className="flex justify-start items-center mb-6">
                 {!isCreating && (
                     <button
                         onClick={() => setIsCreating(true)}

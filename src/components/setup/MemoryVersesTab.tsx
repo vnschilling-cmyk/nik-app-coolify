@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Trash2, BookOpen, Sparkles, X, ChevronDown, ChevronRight, GraduationCap, Check, Pencil } from "lucide-react";
+import { Plus, Trash2, BookOpen, Sparkles, X, ChevronDown, ChevronRight, GraduationCap, Check, Pencil, Save } from "lucide-react";
 
 interface BibleBook {
     id: string;
@@ -239,23 +239,21 @@ export default function MemoryVersesTab() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold dark:text-white">Lernverse</h2>
+            <div className="flex justify-start items-center mb-6">
                 {!isCreating && (
                     <button
                         onClick={() => { resetForm(); setIsCreating(true); }}
-                        className="flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shrink-0"
+                        className="flex items-center justify-center w-11 h-11 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
                         title="Neuer Vers"
                     >
-                        <Plus size={20} />
+                        <Plus size={22} />
                     </button>
                 )}
             </div>
 
             {isCreating ? (
                 <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-6 animate-fadeIn">
-                    <div className="flex justify-between mb-6">
-                        <h3 className="text-lg font-bold">{isEditing ? "Vers bearbeiten" : "Neuen Vers erstellen"}</h3>
+                    <div className="flex justify-end mb-6">
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
                             <X size={24} />
                         </button>
@@ -279,15 +277,17 @@ export default function MemoryVersesTab() {
                         <div className="flex gap-4 mb-6">
                             <button
                                 onClick={() => setMode("manual")}
-                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
+                                title="Manuell erstellen"
                             >
-                                <Plus size={20} /> Manuell erstellen
+                                <Pencil size={24} />
                             </button>
                             <button
                                 onClick={() => setMode("ai")}
-                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
+                                title="Mit AI generieren"
                             >
-                                <Sparkles size={20} /> Mit AI generieren
+                                <Sparkles size={24} />
                             </button>
                         </div>
                     )}
@@ -413,9 +413,10 @@ export default function MemoryVersesTab() {
                         <button
                             onClick={handleManualSubmit}
                             disabled={!selectedLessonId || !formBookId || !formText}
-                            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 disabled:opacity-50"
+                            className="w-full py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
+                            title={isEditing ? "Änderungen speichern" : "Speichern"}
                         >
-                            {isEditing ? "Änderungen speichern" : "Vers Speichern"}
+                            <Save size={24} />
                         </button>
                     </div>
                 </div>
