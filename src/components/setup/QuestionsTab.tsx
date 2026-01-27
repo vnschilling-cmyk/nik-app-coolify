@@ -333,21 +333,19 @@ export default function QuestionsTab() {
                                         const Icon = cat.icon;
                                         const isSelected = formData.category === cat.id;
                                         const activeClass = cat.id === "bibeltext"
-                                            ? "bg-indigo-100 text-indigo-700 border-indigo-500 ring-1 ring-indigo-500"
-                                            : "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
-                                        const inactiveClass = cat.id === "bibeltext"
-                                            ? "bg-white text-indigo-600/70 border-zinc-200 hover:bg-indigo-50"
-                                            : "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50";
+                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20"
+                                            : "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
+                                        const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
 
                                         return (
                                             <button
                                                 key={cat.id}
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, category: cat.id, lesson_id: cat.id === "allgemein" ? "" : formData.lesson_id })}
-                                                className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                className={`flex items-center justify-center p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                title={cat.label}
                                             >
-                                                <Icon size={18} />
-                                                <span className="text-sm font-medium">{cat.label}</span>
+                                                <Icon size={24} />
                                             </button>
                                         );
                                     })}
@@ -549,9 +547,10 @@ export default function QuestionsTab() {
                             <button
                                 type="submit"
                                 disabled={!formData.question.trim() || (formData.category === "bibeltext" && !formData.lesson_id)}
-                                className="w-full py-2.5 bg-emerald-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                                title={editingId ? "Änderungen speichern" : "Speichern"}
                             >
-                                <Save size={16} /> Speichern
+                                <Save size={24} />
                             </button>
                         </form>
                     </div>
