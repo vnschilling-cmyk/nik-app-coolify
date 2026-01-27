@@ -70,26 +70,36 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
             }
 
             // It's a word
+            if (!measureMatch) {
+                return (
+                    <span
+                        key={i}
+                        onClick={() => onWordClick(chunk)}
+                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded px-0.5 transition-colors select-none"
+                    >
+                        {chunk}
+                    </span>
+                );
+            }
+
             return (
-                <span key={i} className="inline-flex items-baseline flex-wrap">
+                <span key={i} className="inline-flex items-baseline flex-nowrap">
                     <span
                         onClick={() => onWordClick(chunk)}
                         className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded px-0.5 transition-colors select-none"
                     >
                         {chunk}
                     </span>
-                    {measureMatch && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedMeasure({ unit: measureMatch.unit, originalWord: chunk, quantity });
-                            }}
-                            className="ml-0.5 inline-flex items-center justify-center p-0.5 text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 rounded-full hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors align-super"
-                            title={`Maßeinheit: ${measureMatch.unit.name}`}
-                        >
-                            <Calculator size={10} />
-                        </button>
-                    )}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMeasure({ unit: measureMatch.unit, originalWord: chunk, quantity });
+                        }}
+                        className="ml-0.5 inline-flex items-center justify-center p-0.5 text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 rounded-full hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors align-super shrink-0"
+                        title={`Maßeinheit: ${measureMatch.unit.name}`}
+                    >
+                        <Calculator size={10} />
+                    </button>
                 </span>
             );
         });
@@ -140,7 +150,15 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
 
                 return (
                     <div key={v.verse} className="relative group mb-6">
-                        <p className="text-justify leading-relaxed hyphens-auto whitespace-pre-wrap">
+                        <p
+                            className="text-justify leading-relaxed whitespace-pre-wrap"
+                            style={{
+                                hyphens: 'auto',
+                                WebkitHyphens: 'auto',
+                                msHyphens: 'auto',
+                                textJustify: 'inter-word'
+                            }}
+                        >
                             {/* Lesson Icons Floated in Right Margin */}
                             {currentLessons.length > 0 && (
                                 <span className="float-right ml-4 mb-2 flex flex-col gap-3">
