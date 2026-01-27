@@ -234,7 +234,7 @@ export default function SetupPage() {
     return (
         <div className="min-h-screen pb-24">
             {/* Header with Back Button */}
-            <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-slate-700/50">
+            <header className="sticky top-0 z-40 bg-transparent">
                 <div className="flex items-center gap-3 px-4 py-4">
                     <button
                         onClick={handleBack}
