@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +33,7 @@ const FALLBACK_WORDS: Record<string, any> = {
         rootMeaning: 'Agape bedeutet eine willentliche, sich opfernde Liebe unabhängig vom Verdienst des Empfängers.'
     },
     'wort': {
-        originalWord: 'דָּבָר (Davar) / λόγος (Logos)',
+        originalWord: 'דָּבָר (Davar) / λόגος (Logos)',
         transliteration: 'Davar (AT) / Logos (NT)',
         strongNumber: 'H1697 / G3056',
         meaning: 'Im NT bezeichnet Logos Jesus Christus als das fleischgewordene Wort Gottes.',
@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
     try {
         const apiKey = process.env.GOOGLE_AI_API_KEY;
         if (!apiKey) {
-            return NextResponse.json({ error: 'API key must be set when using the Gemini API.' }, { status: 500 });
+            console.error('[WordMeaning] API Key missing');
+            return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
         }
-        const ai = new GoogleGenAI({ apiKey });
 
         const body = await request.json();
         word = body.word;
@@ -79,11 +79,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Word is required' }, { status: 400 });
         }
 
-        // Check for fallback first (case-insensitive)
+        // Check for fallback first
         const lowerWord = word.toLowerCase();
         if (FALLBACK_WORDS[lowerWord]) {
             return NextResponse.json(FALLBACK_WORDS[lowerWord]);
         }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         const language = testament === 'NT' ? 'Griechisch' : 'Hebräisch';
         const languageCode = testament === 'NT' ? 'Greek' : 'Hebrew';
@@ -106,21 +109,17 @@ Gib mir folgende Informationen im JSON-Format:
 
 Antworte NUR mit dem JSON, ohne Markdown-Formatierung.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text();
 
-        let text = response.text || '';
-
-        // Clean up response - remove markdown code blocks if present
+        // Clean up response
         text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
         try {
             const data = JSON.parse(text);
             return NextResponse.json(data);
         } catch (parseError) {
-            // If JSON parsing fails, return the raw text
             return NextResponse.json({
                 originalWord: word,
                 transliteration: '',
@@ -133,16 +132,13 @@ Antworte NUR mit dem JSON, ohne Markdown-Formatierung.`;
         }
     } catch (error: any) {
         console.error('Word lookup error:', error);
-
-        // Return a helpful fallback response on API errors
-        // We use the 'word' variable captured from the outer scope
         return NextResponse.json({
             originalWord: word || '—',
             transliteration: '',
             strongNumber: '',
-            meaning: 'Die KI-Analyse ist aktuell nicht verfügbar (API-Schlüssel ungültig oder Limit erreicht).',
+            meaning: 'Die KI-Analyse ist aktuell nicht verfügbar. Bitte prüfe die Internetverbindung oder versuche es später erneut.',
             synonyms: [],
-            usage: 'Bitte überprüfe den Google AI API Key in den .env Einstellungen.',
+            usage: 'Server-seitiger Fehler beim Abrufen der Wortbedeutung.',
             rootMeaning: ''
         });
     }

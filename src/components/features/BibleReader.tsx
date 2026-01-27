@@ -75,7 +75,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                     <span
                         key={i}
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded px-0.5 transition-colors select-none"
+                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none active:scale-95 inline-block"
                     >
                         {chunk}
                     </span>
@@ -86,7 +86,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                 <span key={i} className="inline-flex items-baseline flex-nowrap">
                     <span
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded px-0.5 transition-colors select-none"
+                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none active:scale-95"
                     >
                         {chunk}
                     </span>
