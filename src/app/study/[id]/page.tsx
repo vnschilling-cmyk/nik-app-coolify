@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
 import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLink, Map as MapIcon, BookOpen, HelpCircle, StickyNote, Plus, X, Save, Trash2, Edit, Brain, GraduationCap, Trophy, ChevronRight } from "lucide-react";
@@ -135,6 +135,29 @@ interface Note {
     verse_start: number;
     verse_end: number;
     created: string;
+}
+
+function TitleMarquee({ title }: { title: string }) {
+    const [shouldMarquee, setShouldMarquee] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLHeadingElement>(null);
+
+    useEffect(() => {
+        if (containerRef.current && textRef.current) {
+            setShouldMarquee(textRef.current.offsetWidth > containerRef.current.offsetWidth);
+        }
+    }, [title]);
+
+    return (
+        <div ref={containerRef} className="marquee-container">
+            <h1
+                ref={textRef}
+                className={shouldMarquee ? "animate-marquee" : "truncate text-lg font-bold"}
+            >
+                {title}{shouldMarquee ? ` \u00A0\u00A0\u00A0\u00A0 ${title} \u00A0\u00A0\u00A0\u00A0 ` : ""}
+            </h1>
+        </div>
+    );
 }
 
 export default function LessonDetailPage({ params }: { params: { id: string } }) {
@@ -340,7 +363,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
     return (
         <div className="min-h-screen pb-24 bg-white dark:bg-slate-900">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-slate-700/50 px-4 py-4 flex items-center gap-4">
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4 flex items-center gap-4">
                 <Link href="/study" className="p-2 -ml-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                     <ChevronLeft size={24} />
                 </Link>
@@ -373,8 +396,9 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             </span>
                         )}
                     </div>
-                    <h1 className="text-lg font-bold truncate">{lesson.title}</h1>
+                    <TitleMarquee title={lesson.title} />
                 </div>
+
                 {memoryVerses.length > 0 && (
                     <button
                         onClick={() => setShowMemoryVerseModal(true)}

@@ -241,6 +241,30 @@ body {
   font-family: var(--font-details) !important;
 }
 
+
 .font-bible {
   font-family: var(--font-bible) !important;
+}
+
+/* Marquee / Live-Ticker Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 15s linear infinite;
+}
+
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
 }
