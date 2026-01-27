@@ -32,7 +32,7 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
                 <div className="w-full max-w-sm animate-fadeIn flex flex-col items-center">
                     <div className="flex flex-col items-center text-center w-full">
                         {/* Logo */}
-                        <div className="relative w-[300px] h-[200px] -mt-10 -mb-4">
+                        <div className="relative w-[300px] h-[200px]">
                             <Image
                                 src={settings.theme === 'dark' ? "/logo-dark.png" : "/logo-light.png"}
                                 alt="Nikodemos Logo"
