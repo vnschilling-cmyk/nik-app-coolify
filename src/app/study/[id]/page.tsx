@@ -7,6 +7,7 @@ import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLi
 import RichTextDisplay from "@/components/ui/RichTextDisplay";
 import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import QuizOverlay from "@/components/features/QuizOverlay";
+import clsx from "clsx";
 
 const TYPE_ICONS: Record<string, any> = {
     text: FileText,
