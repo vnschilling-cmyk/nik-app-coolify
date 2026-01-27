@@ -454,18 +454,6 @@ export default function InfosTab() {
                                 </div>
                             </div>
 
-                            {/* Title SECOND */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.title}
-                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                />
-                            </div>
-
                             {/* Topics (Real Categories) */}
                             <div>
                                 <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
@@ -513,6 +501,18 @@ export default function InfosTab() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Title below category/dynamic fields, above Description */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                />
+                            </div>
 
                             {/* Description (Rich Text) */}
                             <div>
