@@ -203,10 +203,10 @@ export default function LearningTestsTab() {
                 {!isCreating && (
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center justify-center w-12 h-12 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                        className="flex items-center justify-center w-11 h-11 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
                         title="Neuer Test"
                     >
-                        <Plus size={24} />
+                        <Plus size={22} />
                     </button>
                 )}
             </div>
@@ -279,17 +279,17 @@ export default function LearningTestsTab() {
                     <div className="flex gap-4 mb-6">
                         <button
                             onClick={() => setMode("manual")}
-                            className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
+                            className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
                             title="Manuell erstellen"
                         >
-                            <Plus size={28} />
+                            <Plus size={24} />
                         </button>
                         <button
                             onClick={() => setMode("ai")}
-                            className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
+                            className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
                             title="Mit AI generieren"
                         >
-                            <Sparkles size={28} />
+                            <Sparkles size={24} />
                         </button>
                     </div>
 
@@ -358,18 +358,18 @@ export default function LearningTestsTab() {
                     <div className="flex gap-4">
                         <button
                             onClick={addEmptyQuestion}
-                            className="flex-1 py-4 border-2 border-dashed border-zinc-300 dark:border-slate-700 rounded-xl text-zinc-400 flex items-center justify-center hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                            className="flex-1 py-2.5 bg-zinc-100 dark:bg-slate-700/50 border border-zinc-200 dark:border-slate-600 rounded-lg text-zinc-500 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
                             title="Frage hinzufügen"
                         >
-                            <Plus size={28} />
+                            <Plus size={24} />
                         </button>
                         <button
                             onClick={handleSaveQuiz}
                             disabled={currentQuestions.length === 0 || !quizTitle}
-                            className="flex-1 py-4 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
+                            className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
                             title={editingId ? "Änderungen speichern" : "Test Speichern"}
                         >
-                            <Save size={28} />
+                            <Save size={24} />
                         </button>
                     </div>
 
