@@ -28,6 +28,7 @@ interface BiblePageClientProps {
 
 export default function BiblePageClient({ verses, lessons, book, chapter, allBooks }: BiblePageClientProps) {
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    const [selectorMode, setSelectorMode] = useState<'books' | 'chapters'>('books');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
@@ -50,7 +51,6 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
         }
     };
 
-    // Calculate Next/Prev Links
     // Calculate Next/Prev Links
     const getNextChapterData = () => {
         if (chapter < book.chapters) {
@@ -93,17 +93,23 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
     const nextData = getNextChapterData();
     const prevData = getPrevChapterData();
 
+    // Find lesson that covers the whole book
+    const globalLesson = lessons.find(l => l.chapter_start === 0);
+
     return (
         <div className="pb-20">
-            <header className="sticky top-0 z-40 bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-4 h-14 flex items-center justify-between shadow-sm">
+            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-zinc-200 dark:border-slate-700 px-4 h-14 flex items-center justify-between shadow-sm">
                 <h1
-                    className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => setIsSelectorOpen(true)}
+                    className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-1"
+                    onClick={() => {
+                        setSelectorMode('books');
+                        setIsSelectorOpen(true);
+                    }}
                 >
-                    {book.name} {chapter} <span className="text-xs text-zinc-400 ml-1">▼</span>
+                    {book.name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
                 </h1>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 shrink-0">
                     <button
                         onClick={() => setIsSearchOpen(true)}
                         className="p-2 text-zinc-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors"
@@ -111,7 +117,10 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                         <Search size={20} />
                     </button>
                     <button
-                        onClick={() => setIsSelectorOpen(true)}
+                        onClick={() => {
+                            setSelectorMode('chapters');
+                            setIsSelectorOpen(true);
+                        }}
                         className="text-sm font-medium text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                     >
                         Kapitel
@@ -125,7 +134,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                 {prevData ? (
                     <Link
                         href={prevData.url}
-                        className="flex-1 px-4 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-sm font-medium text-center hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                        className="flex-1 px-4 py-3 rounded-lg bg-zinc-100 dark:bg-slate-700 text-sm font-medium text-center hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors"
                     >
                         &larr; {prevData.label}
                     </Link>
@@ -151,6 +160,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                 currentBook={book.name}
                 currentChapter={chapter}
                 books={allBooks}
+                initialView={selectorMode}
             />
 
             {/* Word Meaning Popup */}

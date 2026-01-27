@@ -19,6 +19,7 @@ interface ChapterSelectorProps {
     currentBook: string;
     currentChapter: number;
     books: BookSummary[];
+    initialView?: 'books' | 'chapters';
 }
 
 // Book genre colors based on order
@@ -66,23 +67,23 @@ const getBookColor = (shortName: string, order: number, testament: 'OT' | 'NT') 
     return { bg: "bg-rose-500", text: "text-white", label: "Prophetie" };
 };
 
-export default function ChapterSelector({ isOpen, onClose, currentBook, currentChapter, books }: ChapterSelectorProps) {
+export default function ChapterSelector({ isOpen, onClose, currentBook, currentChapter, books, initialView = 'books' }: ChapterSelectorProps) {
     const router = useRouter();
     const [selectedBook, setSelectedBook] = useState<BookSummary | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [view, setView] = useState<'books' | 'chapters'>('books');
+    const [view, setView] = useState<'books' | 'chapters'>(initialView);
 
     // Reset when opening
     useEffect(() => {
         if (isOpen) {
             setSearchQuery("");
-            setView('books');
+            setView(initialView);
             const current = books.find(b => b.name === currentBook);
             if (current) {
                 setSelectedBook(current);
             }
         }
-    }, [isOpen, currentBook, books]);
+    }, [isOpen, initialView, currentBook, books]);
 
     const filteredBooks = useMemo(() => {
         if (!searchQuery.trim()) return books;
@@ -120,14 +121,14 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
 
     return (
         <div
-            className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex flex-col animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 bg-white dark:bg-slate-800 flex flex-col animate-in fade-in duration-200"
         >
             {/* Header */}
-            <header className="shrink-0 px-4 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
+            <header className="shrink-0 px-4 py-4 border-b border-zinc-200 dark:border-slate-700 flex items-center gap-3">
                 {view === 'chapters' ? (
                     <button
                         onClick={handleBack}
-                        className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
                     >
                         <ChevronRight className="w-5 h-5 rotate-180" />
                     </button>
@@ -141,7 +142,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                 </h2>
                 <button
                     onClick={onClose}
-                    className="p-2 -mr-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="p-2 -mr-2 rounded-full hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -151,7 +152,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
             {view === 'books' && (
                 <>
                     {/* Search */}
-                    <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800/50">
+                    <div className="px-4 py-3 border-b border-zinc-100 dark:border-slate-700/50">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                             <input
@@ -159,7 +160,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                 placeholder="Buch suchen..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-zinc-900 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full pl-10 pr-4 py-2.5 bg-zinc-100 dark:bg-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 autoFocus
                             />
                         </div>
@@ -170,7 +171,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                         {/* OT Section */}
                         {otBooks.length > 0 && (
                             <div className="mb-4">
-                                <div className="sticky top-0 bg-white dark:bg-zinc-950 px-4 py-2 border-b border-zinc-100 dark:border-zinc-800/50 z-10">
+                                <div className="sticky top-0 bg-white dark:bg-slate-800 px-4 py-2 border-b border-zinc-100 dark:border-slate-700/50 z-10">
                                     <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Altes Testament</h3>
                                 </div>
                                 <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 p-2">
@@ -201,7 +202,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                         {/* NT Section */}
                         {ntBooks.length > 0 && (
                             <div className="mb-4">
-                                <div className="sticky top-0 bg-white dark:bg-zinc-950 px-4 py-2 border-b border-zinc-100 dark:border-zinc-800/50 z-10">
+                                <div className="sticky top-0 bg-white dark:bg-slate-800 px-4 py-2 border-b border-zinc-100 dark:border-slate-700/50 z-10">
                                     <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Neues Testament</h3>
                                 </div>
                                 <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 p-2">
@@ -250,7 +251,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                     "aspect-square rounded-2xl flex items-center justify-center text-lg font-semibold transition-all active:scale-95",
                                     selectedBook.name === currentBook && chapter === currentChapter
                                         ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
-                                        : "bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                                        : "bg-zinc-100 dark:bg-slate-700 hover:bg-zinc-200 dark:hover:bg-slate-600 text-zinc-700 dark:text-zinc-300"
                                 )}
                             >
                                 {chapter}

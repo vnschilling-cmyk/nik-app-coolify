@@ -13,6 +13,7 @@ const config: Config = {
                 sans: ["var(--font-details)", "sans-serif"],
                 heading: ["var(--font-headings)", "sans-serif"],
                 serif: ["var(--font-serif, 'Georgia')", "serif"], // Fallback
+                dancing: ["var(--font-dancing-script)", "cursive"],
             },
             colors: {
                 background: "var(--background)",

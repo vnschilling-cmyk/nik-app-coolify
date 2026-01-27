@@ -93,6 +93,12 @@ export default function LearningTestsTab() {
             const lesson = lessons.find(l => l.id === selectedLessonId);
             if (!lesson) return;
 
+            if (!lesson.content || lesson.content.trim().length === 0) {
+                alert("Fehler: Diese Lektion hat keinen Inhalt. Die AI kann keine Fragen generieren.");
+                setGenerating(false);
+                return;
+            }
+
             const res = await fetch('/api/generate-quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -206,7 +212,7 @@ export default function LearningTestsTab() {
             </div>
 
             {isCreating ? (
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 animate-fadeIn">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-6 animate-fadeIn">
                     <div className="flex justify-between mb-6">
                         <h3 className="text-lg font-bold">{editingId ? "Test bearbeiten" : "Neuen Test erstellen"}</h3>
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
@@ -228,7 +234,7 @@ export default function LearningTestsTab() {
                                             if (lesson) setQuizTitle(`Test: ${lesson.title}`);
                                         }
                                     }}
-                                    className="flex-1 p-2 rounded-lg border dark:bg-zinc-800 dark:border-zinc-700"
+                                    className="flex-1 p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
                                 >
                                     <option value="">Bitte wählen...</option>
                                     {lessons.map(l => (
@@ -248,7 +254,7 @@ export default function LearningTestsTab() {
                                                 if (lesson) setQuizTitle(`Test: ${lesson.title}`);
                                             }
                                         }}
-                                        className="w-6 h-6 rounded border-zinc-300 dark:border-zinc-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        className="w-6 h-6 rounded border-zinc-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                     />
                                     <label htmlFor="autoTitle" className="text-sm font-bold text-zinc-600 dark:text-zinc-400 select-none cursor-pointer whitespace-nowrap">
                                         Auto-Titel
@@ -263,7 +269,7 @@ export default function LearningTestsTab() {
                                     type="text"
                                     value={quizTitle}
                                     onChange={e => setQuizTitle(e.target.value)}
-                                    className="w-full p-2 rounded-lg border dark:bg-zinc-800 dark:border-zinc-700"
+                                    className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
                                     placeholder="z.B. Test zu 1. Petrus 1"
                                 />
                             </div>
@@ -273,13 +279,13 @@ export default function LearningTestsTab() {
                     <div className="flex gap-4 mb-6">
                         <button
                             onClick={() => setMode("manual")}
-                            className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-zinc-800 text-zinc-400"}`}
+                            className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
                         >
                             <Plus size={20} /> Manuell erstellen
                         </button>
                         <button
                             onClick={() => setMode("ai")}
-                            className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-zinc-800 text-zinc-400"}`}
+                            className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
                         >
                             <Sparkles size={20} /> Mit AI generieren
                         </button>
@@ -293,7 +299,7 @@ export default function LearningTestsTab() {
                                     <select
                                         value={aiCount}
                                         onChange={e => setAiCount(Number(e.target.value))}
-                                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-zinc-900"
+                                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-slate-700"
                                     >
                                         <option value="3">3 Fragen</option>
                                         <option value="5">5 Fragen</option>
@@ -313,13 +319,13 @@ export default function LearningTestsTab() {
 
                     <div className="space-y-4 mb-8">
                         {currentQuestions.map((q, qIdx) => (
-                            <div key={qIdx} className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 bg-zinc-50 dark:bg-zinc-800/50">
+                            <div key={qIdx} className="border border-zinc-200 dark:border-slate-700 rounded-xl p-4 bg-zinc-50 dark:bg-slate-700/50">
                                 <div className="flex justify-between mb-3">
                                     <span className="font-bold text-sm text-zinc-500">Frage {qIdx + 1}</span>
                                     <button onClick={() => removeQuestion(qIdx)} className="text-red-400 hover:text-red-500"><Trash2 size={16} /></button>
                                 </div>
                                 <input
-                                    className="w-full mb-3 p-2 rounded font-medium dark:bg-zinc-800 border dark:border-zinc-600"
+                                    className="w-full mb-3 p-2 rounded font-medium dark:bg-slate-700 border dark:border-slate-600"
                                     value={q.question}
                                     onChange={e => updateQuestion(qIdx, 'question', e.target.value)}
                                     placeholder="Die Frage..."
@@ -329,12 +335,12 @@ export default function LearningTestsTab() {
                                         <div key={oIdx} className="flex items-center gap-2">
                                             <button
                                                 onClick={() => updateQuestion(qIdx, 'correct_index', oIdx)}
-                                                className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ${q.correct_index === oIdx ? "bg-emerald-500 border-emerald-500 text-white" : "border-zinc-300 dark:border-zinc-600"}`}
+                                                className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ${q.correct_index === oIdx ? "bg-emerald-500 border-emerald-500 text-white" : "border-zinc-300 dark:border-slate-600"}`}
                                             >
                                                 {q.correct_index === oIdx && <Check size={14} />}
                                             </button>
                                             <input
-                                                className={`flex-1 p-1.5 text-sm rounded border ${q.correct_index === oIdx ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" : "dark:bg-zinc-800 dark:border-zinc-600"}`}
+                                                className={`flex-1 p-1.5 text-sm rounded border ${q.correct_index === oIdx ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" : "dark:bg-slate-700 dark:border-slate-600"}`}
                                                 value={opt}
                                                 onChange={e => updateOption(qIdx, oIdx, e.target.value)}
                                                 placeholder={`Antwort ${oIdx + 1}`}
@@ -349,7 +355,7 @@ export default function LearningTestsTab() {
                     <div className="flex gap-4">
                         <button
                             onClick={addEmptyQuestion}
-                            className="flex-1 py-3 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-500 font-medium hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                            className="flex-1 py-3 border-2 border-dashed border-zinc-300 dark:border-slate-700 rounded-xl text-zinc-500 font-medium hover:border-indigo-400 hover:text-indigo-500 transition-colors"
                         >
                             + Weitere Frage hinzufügen
                         </button>
@@ -412,7 +418,7 @@ export default function LearningTestsTab() {
                                 const totalTests = Array.from(bookGroup.lessons.values()).flat().length;
 
                                 return (
-                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-800/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
                                         <button
                                             onClick={() => toggleGroup(bookGroup.id)}
                                             className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -427,17 +433,17 @@ export default function LearningTestsTab() {
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="border-t border-zinc-200 dark:border-zinc-800">
+                                            <div className="border-t border-zinc-200 dark:border-slate-700">
                                                 {Array.from(bookGroup.lessons.entries()).map(([lessonId, lessonQuizzes]) => {
                                                     const lesson = lessons.find(l => l.id === lessonId);
                                                     const lessonKey = `${bookGroup.id}-${lessonId}`;
                                                     const isLessonExpanded = expandedGroups.has(lessonKey);
 
                                                     return (
-                                                        <div key={lessonId} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0">
+                                                        <div key={lessonId} className="border-b border-zinc-200 dark:border-slate-700 last:border-0">
                                                             <button
                                                                 onClick={() => toggleGroup(lessonKey)}
-                                                                className="w-full flex items-center justify-between p-3 pl-6 hover:bg-white dark:hover:bg-zinc-900 transition-colors"
+                                                                className="w-full flex items-center justify-between p-3 pl-6 hover:bg-white dark:hover:bg-slate-700 transition-colors"
                                                             >
                                                                 <div className="flex items-center gap-2">
                                                                     <GraduationCap size={16} className="text-fuchsia-600 dark:text-fuchsia-400" />
@@ -450,9 +456,9 @@ export default function LearningTestsTab() {
                                                             </button>
 
                                                             {isLessonExpanded && (
-                                                                <div className="p-3 pl-8 space-y-2 bg-white dark:bg-zinc-900">
+                                                                <div className="p-3 pl-8 space-y-2 bg-white dark:bg-slate-800">
                                                                     {lessonQuizzes.map(quiz => (
-                                                                        <div key={quiz.id} className="border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-center group hover:border-fuchsia-300 dark:hover:border-fuchsia-700 transition-colors bg-zinc-50 dark:bg-zinc-800/30">
+                                                                        <div key={quiz.id} className="border border-zinc-100 dark:border-slate-700 rounded-lg p-3 flex justify-between items-center group hover:border-fuchsia-300 dark:hover:border-fuchsia-700 transition-colors bg-zinc-50 dark:bg-slate-700/30">
                                                                             <div>
                                                                                 <h4 className="font-medium text-sm text-zinc-800 dark:text-zinc-200">{quiz.title}</h4>
                                                                                 <p className="text-[10px] text-zinc-500">{quiz.questions.length} Fragen</p>

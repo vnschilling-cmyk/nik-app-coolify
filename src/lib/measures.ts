@@ -431,3 +431,39 @@ export function parseGermanNumber(word: string): number | null {
 
     return null;
 }
+
+/**
+ * Formats a value with the best suitable unit (e.g. cm -> m -> km).
+ */
+export function formatBestUnit(value: number, currentUnit: string): string {
+    // Length
+    if (currentUnit === 'cm') {
+        if (value >= 100000) return `${(value / 100000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} km`;
+        if (value >= 100) return `${(value / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })} m`;
+        return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} cm`;
+    }
+    if (currentUnit === 'm') {
+        if (value >= 1000) return `${(value / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} km`;
+        return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} m`;
+    }
+
+    // Weight
+    if (currentUnit === 'g') {
+        if (value >= 1000000) return `${(value / 1000000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} t`;
+        if (value >= 1000) return `${(value / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} kg`;
+        return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} g`;
+    }
+    if (currentUnit === 'kg') {
+        if (value >= 1000) return `${(value / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} t`;
+        return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} kg`;
+    }
+
+    // Volume
+    if (currentUnit === 'L' || currentUnit === 'l') {
+        if (value >= 1000) return `${(value / 1000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} m³`;
+        return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} L`;
+    }
+
+    // Default
+    return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} ${currentUnit}`;
+}

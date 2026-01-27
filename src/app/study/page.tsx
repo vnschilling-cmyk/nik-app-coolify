@@ -15,6 +15,8 @@ interface Lesson {
     chapter_start: number;
     verse_start: number;
     verse_end: number;
+    active: boolean;
+    start_date?: string;
     expand?: {
         book_id?: {
             name: string;
@@ -48,8 +50,10 @@ export default function StudyPage() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [loading, setLoading] = useState(true);
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     useEffect(() => {
+        setCurrentUser(pb.authStore.model);
         loadData();
     }, []);
 
@@ -80,6 +84,8 @@ export default function StudyPage() {
                     chapter_start: r.chapter_start || 1,
                     verse_start: r.verse_start || 1,
                     verse_end: r.verse_end || 10,
+                    active: r.active ?? true,
+                    start_date: r.start_date,
                     expand: {
                         book_id: book ? {
                             name: book.name,
@@ -138,7 +144,7 @@ export default function StudyPage() {
     return (
         <div className="min-h-screen pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 px-4 py-4">
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-slate-700/50 px-4 py-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                         <GraduationCap className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -164,15 +170,18 @@ export default function StudyPage() {
                     (() => {
                         // Grouping Logic
                         const groups = new Map<string, Lesson[]>();
+                        const isAdmin = currentUser?.role === 'leader';
 
                         lessons.forEach(lesson => {
+                            // Filter removed: Inactive lessons should be visible but disabled
+
                             let key = lesson.category || "Allgemein";
 
                             // Check if lesson belongs to a book
                             if (lesson.expand?.book_id) {
                                 key = lesson.expand.book_id.name;
                             } else if (lesson.category === "Thema") {
-                                // Keep it as "Thema" or group it, logic was fine
+                                // Keep it as "Thema"
                             }
 
                             if (!groups.has(key)) {
@@ -181,7 +190,17 @@ export default function StudyPage() {
                             groups.get(key)?.push(lesson);
                         });
 
-                        // Convert to array and sort
+                        // Sort lessons within groups by start_date
+                        groups.forEach((groupLessons) => {
+                            groupLessons.sort((a, b) => {
+                                if (a.start_date && b.start_date) {
+                                    return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+                                }
+                                return (a.id > b.id) ? 1 : -1;
+                            });
+                        });
+
+                        // Convert to array and sort groups
                         const sortedGroups = Array.from(groups.entries()).sort((a, b) => {
                             const [keyA, lessonsA] = a;
                             const [keyB, lessonsB] = b;
@@ -199,7 +218,7 @@ export default function StudyPage() {
                             const isCollapsed = collapsedGroups.has(groupTitle);
 
                             return (
-                                <section key={groupTitle} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                <section key={groupTitle} className="bg-slate-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-600">
                                     <button
                                         onClick={() => toggleGroup(groupTitle)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -216,26 +235,29 @@ export default function StudyPage() {
                                     </button>
 
                                     {!isCollapsed && (
-                                        <div className="p-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800">
+                                        <div className="p-2 space-y-2 border-t border-zinc-200 dark:border-slate-600">
                                             {groupLessons.map(lesson => {
                                                 const lessonFacts = facts.filter(f => f.lesson_id === lesson.id);
                                                 const lessonQuestions = questions.filter(q => q.lesson_id === lesson.id);
-                                                return (
-                                                    <Link
-                                                        key={lesson.id}
-                                                        href={`/study/${lesson.id}`}
-                                                        className="w-full text-left bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex items-center gap-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors group"
-                                                    >
+
+                                                const isInactive = !lesson.active;
+
+                                                const content = (
+                                                    <>
                                                         <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0 ${lesson.category === "Thema"
                                                             ? "bg-gradient-to-br from-purple-500 to-pink-600"
                                                             : "bg-gradient-to-br from-indigo-500 to-purple-600"
-                                                            }`}>
+                                                            } ${isInactive ? "grayscale opacity-50" : ""}`}>
                                                             {lesson.category === "Thema" ? <Scroll size={16} /> : <BookOpen size={16} />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <h4 className="font-semibold text-zinc-900 dark:text-white truncate text-sm">{lesson.title}</h4>
-                                                                {lessonFacts.length > 0 && (
+                                                                <h4 className={`font-semibold text-sm ${isInactive ? "text-zinc-500 line-through" : "text-zinc-900 dark:text-white"}`}>
+                                                                    {lesson.title}
+                                                                </h4>
+                                                                {isInactive && <span className="text-[10px] bg-zinc-200 dark:bg-slate-600 text-zinc-500 px-1.5 py-0.5 rounded">Inaktiv</span>}
+
+                                                                {!isInactive && lessonFacts.length > 0 && (
                                                                     <span className="shrink-0 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                                                                         <Lightbulb size={12} /> {lessonFacts.length}
                                                                     </span>
@@ -260,7 +282,25 @@ export default function StudyPage() {
                                                                 <p className="text-xs text-zinc-500 truncate">{lesson.content.replace(/<[^>]*>?/gm, ' ')}</p>
                                                             )}
                                                         </div>
-                                                        <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-500 transition-colors" />
+                                                        {!isInactive && <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-500 transition-colors" />}
+                                                    </>
+                                                );
+
+                                                if (isInactive) {
+                                                    return (
+                                                        <div key={lesson.id} className="w-full text-left bg-zinc-100 dark:bg-slate-700/50 border border-zinc-200 dark:border-slate-600 rounded-lg p-3 flex items-center gap-3 opacity-60 cursor-not-allowed">
+                                                            {content}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <Link
+                                                        key={lesson.id}
+                                                        href={`/study/${lesson.id}`}
+                                                        className="w-full text-left bg-white dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg p-3 flex items-center gap-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors group"
+                                                    >
+                                                        {content}
                                                     </Link>
                                                 );
                                             })}

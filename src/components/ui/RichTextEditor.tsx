@@ -62,9 +62,9 @@ export default function RichTextEditor({ value, onChange, placeholder, label }: 
     return (
         <div className="w-full">
             {label && <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">{label}</label>}
-            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden bg-white dark:bg-zinc-800 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+            <div className="border border-zinc-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
                 {/* Toolbar */}
-                <div className="flex items-center gap-1 p-2 border-b border-zinc-100 dark:border-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="flex items-center gap-1 p-2 border-b border-zinc-100 dark:border-slate-700/50 bg-zinc-50 dark:bg-slate-800/50">
                     <ToolbarButton icon={<Bold size={16} />} onClick={() => insertFormat("**")} tooltip="Fett" />
                     <ToolbarButton icon={<Italic size={16} />} onClick={() => insertFormat("*")} tooltip="Kursiv" />
                     <ToolbarButton icon={<Underline size={16} />} onClick={() => insertFormat("<u>", "</u>")} tooltip="Unterstrichen" />

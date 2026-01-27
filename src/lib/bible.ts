@@ -25,6 +25,9 @@ export interface LinkedLesson {
     category: string;
     verse_start: number;
     verse_end: number;
+    chapter_start: number;
+    start_date?: string;
+    active: boolean;
 }
 
 // Cache for books to avoid repeated fetches
@@ -58,8 +61,11 @@ export async function getBooks(): Promise<BibleBook[]> {
 
 export async function getBookByShortName(shortName: string): Promise<BibleBook | undefined> {
     const books = await getBooks();
-    return books.find(b => b.short_name.toLowerCase() === shortName.toLowerCase()) ||
-        books.find(b => b.name.toLowerCase() === shortName.toLowerCase()); // Fallback to full name
+    const normalize = (s: string) => s.toLowerCase().replace(/[.\s]/g, '');
+    const target = normalize(shortName);
+
+    return books.find(b => normalize(b.short_name) === target) ||
+        books.find(b => normalize(b.name) === target);
 }
 
 export async function getVerses(bookId: string, chapter: number): Promise<BibleVerse[]> {
@@ -85,11 +91,7 @@ export async function getVerses(bookId: string, chapter: number): Promise<BibleV
 
 export async function getLessonsForChapter(bookId: string, chapter: number): Promise<LinkedLesson[]> {
     try {
-        // Filter: book_id matches AND chapter range overlaps with current chapter (simplified: equal start/end or within)
-        // For simplicity, we assume lessons are usually single chapter or we check for start range match.
-        // Let's broaden it: book_id matches. Client can filter precisely if needed, or we use complex filter.
-        // Filter: book_id = '...' && chapter_start <= X && chapter_end >= X
-        const filter = `book_id="${bookId}" && chapter_start<=${chapter} && chapter_end>=${chapter}`;
+        const filter = `book_id="${bookId}" && (chapter_start=0 || (chapter_start<=${chapter} && chapter_end>=${chapter}))`;
 
         const records = await pb.collection('lessons').getFullList({
             filter: filter,
@@ -100,15 +102,11 @@ export async function getLessonsForChapter(bookId: string, chapter: number): Pro
             id: r.id,
             title: r.title,
             category: r.category,
-            verse_start: r.verse_start,
-            verse_end: r.verse_end,
-        }));
-        return records.map(r => ({
-            id: r.id,
-            title: r.title,
-            category: r.category,
-            verse_start: r.verse_start,
-            verse_end: r.verse_end,
+            verse_start: Number(r.verse_start) || 1,
+            verse_end: Number(r.verse_end) || 1,
+            chapter_start: Number(r.chapter_start) || 0,
+            start_date: r.start_date,
+            active: r.active ?? true // Default to true
         }));
     } catch (e) {
         console.error(`Failed to fetch lessons for book ${bookId} ch ${chapter}:`, e);

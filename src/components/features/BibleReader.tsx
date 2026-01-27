@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { LinkedLesson } from "@/lib/bible";
-import { findMeasure, parseGermanNumber, Unit, ANCIENT_MEASURES } from "@/lib/measures";
+import { findMeasure, parseGermanNumber, formatBestUnit, Unit, ANCIENT_MEASURES } from "@/lib/measures";
 import { Calculator, X, Coins } from "lucide-react";
 
 export interface VerseData {
@@ -98,13 +98,50 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
     return (
         <article className="max-w-prose mx-auto px-4 py-6 dark:text-zinc-200 relative bible-text">
             {verses.map((v) => {
+                // Determine which lesson is the "next possible" one across all lessons
+                // (This could be cached outside the map if performance is an issue, but for a chapter it's fine)
+                const now = new Date();
+                const buffer = 600000; // 10 min 
+
+                const activeFutureLessons = lessons
+                    .filter(l => l.active && l.start_date && (new Date(l.start_date).getTime() > now.getTime() + buffer))
+                    .sort((a, b) => new Date(a!.start_date!).getTime() - new Date(b!.start_date!).getTime());
+
+                const nextPossibleId = activeFutureLessons.length > 0 ? activeFutureLessons[0].id : null;
+
                 // Find lessons starting at this verse
-                const currentLessons = lessons.filter(l => l.verse_start === v.verse);
+                const currentLessons = lessons
+                    .filter(l => Number(l.verse_start) === v.verse)
+                    .map(l => {
+                        const lessonDate = l.start_date ? new Date(l.start_date).getTime() : 0;
+                        const isDateReached = !l.start_date || (lessonDate <= now.getTime() + buffer);
+                        const isNextPossible = l.id === nextPossibleId;
+
+                        const isActiveFlag = l.active === true || l.active === undefined;
+                        // Effectively active if date is reached OR it's the next one in line
+                        const isEffectivelyActive = isActiveFlag && (isDateReached || isNextPossible);
+
+                        let statusText = isActiveFlag ? 'Aktiv' : 'Deaktiviert';
+                        if (isActiveFlag && !isDateReached) {
+                            statusText = isNextPossible ? 'Nächste (Vorab freigeschaltet)' : 'Geplant (Zukünftig)';
+                        }
+
+                        const debugTitle = `Lektion: ${l.title}\n` +
+                            `Status: ${statusText}\n` +
+                            `Datum: ${l.start_date ? new Date(l.start_date).toLocaleString() : 'Keins'}\n` +
+                            `Klickbar: ${isEffectivelyActive ? 'JA' : 'NEIN'}`;
+
+                        return { ...l, isEffectivelyActive, isNextPossible, debugTitle };
+                    })
+                    .sort((a, b) => {
+                        if (a.isEffectivelyActive !== b.isEffectivelyActive) return a.isEffectivelyActive ? -1 : 1;
+                        return (a.start_date || '') > (b.start_date || '') ? 1 : -1;
+                    });
 
                 return (
                     <div key={v.verse} className="relative group">
-                        <p className="mb-4 relative pr-8">
-                            <span className="text-xs font-bold text-blue-500 mr-1 select-none align-top pt-1 inline-block">
+                        <p className="mb-4 relative pr-14">
+                            <span className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block">
                                 {v.verse}
                             </span>
                             {renderInteractiveText(v.text)}
@@ -112,17 +149,30 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
 
                         {/* Lesson Icons in Right Margin */}
                         {currentLessons.length > 0 && (
-                            <div className="absolute right-0 top-1 flex flex-col gap-2 transform translate-x-2">
-                                {currentLessons.map(lesson => (
-                                    <Link
-                                        key={lesson.id}
-                                        href={`/study/${lesson.id}`}
-                                        className="bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300 p-1.5 rounded-full shadow-sm hover:scale-110 transition-transform cursor-pointer"
-                                        title={lesson.title}
-                                    >
-                                        <GraduationCap size={18} />
-                                    </Link>
-                                ))}
+                            <div className="absolute right-1 top-0 flex flex-col gap-3">
+                                {currentLessons.map(lesson => {
+                                    if (!lesson.isEffectivelyActive) {
+                                        return (
+                                            <div
+                                                key={lesson.id}
+                                                className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed border-2 border-zinc-200 dark:border-slate-600 transition-opacity"
+                                                title={lesson.debugTitle}
+                                            >
+                                                <GraduationCap size={24} strokeWidth={2.5} />
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <Link
+                                            key={lesson.id}
+                                            href={`/study/${lesson.id}`}
+                                            className="bg-indigo-600 text-white p-2.5 rounded-full shadow-xl shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer ring-4 ring-white dark:ring-zinc-900"
+                                            title={lesson.debugTitle}
+                                        >
+                                            <GraduationCap size={24} strokeWidth={2.5} />
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -133,8 +183,8 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
 
             {/* Measure Info Modal */}
             {selectedMeasure && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedMeasure(null)}>
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-zinc-200 dark:border-zinc-800 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedMeasure(null)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-zinc-200 dark:border-slate-700 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <button
                             onClick={() => setSelectedMeasure(null)}
                             className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
@@ -155,12 +205,12 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                         </div>
 
                         <div className="space-y-4">
-                            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800 space-y-3">
+                            <div className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl p-4 border border-zinc-100 dark:border-slate-700 space-y-3">
                                 <div>
                                     <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Umrechnung</p>
                                     <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                                         {selectedMeasure.quantity > 1 ? `${selectedMeasure.quantity.toLocaleString('de-DE')} x ` : ""}
-                                        1 {selectedMeasure.unit.name.split(" ")[0]} ≈ {(selectedMeasure.quantity * selectedMeasure.unit.factor).toLocaleString('de-DE', { maximumFractionDigits: 2 })} {selectedMeasure.unit.unit}
+                                        1 {selectedMeasure.unit.name.split(" ")[0]} ≈ {formatBestUnit(selectedMeasure.quantity * selectedMeasure.unit.factor, selectedMeasure.unit.unit)}
                                     </p>
                                 </div>
 

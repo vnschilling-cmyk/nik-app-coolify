@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import AuthForm from "@/components/auth/AuthForm";
+import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
@@ -19,30 +20,22 @@ export default function ProfilePage() {
         <div className="p-4">
             <h1 className="text-2xl font-bold mb-6">Mein Profil</h1>
 
-            <div className="bg-zinc-100 dark:bg-zinc-900 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center text-3xl border border-zinc-200 dark:border-zinc-800">
+            <div className="bg-zinc-100 dark:bg-slate-800 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center text-3xl border border-zinc-200 dark:border-slate-700">
                 👤
             </div>
             <div className="text-center mb-8">
                 <h2 className="font-semibold text-lg">{user.email}</h2>
                 <p className="text-zinc-500 text-sm">Mitglied</p>
-                <div className="mt-1 inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                    ID: {user.id.slice(0, 6)}...
-                </div>
+
             </div>
 
             <div className="space-y-2">
-                <button className="w-full text-left px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex justify-between items-center active:scale-[0.98] transition-transform">
-                    <span>Einstellungen</span>
-                    <span className="text-zinc-400">›</span>
-                </button>
+
                 <a href="/setup" className="w-full text-left px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/30 rounded-lg flex justify-between items-center active:scale-[0.98] transition-transform">
                     <span className="text-indigo-700 dark:text-indigo-300">📚 Inhalte verwalten</span>
                     <span className="text-indigo-400">›</span>
                 </a>
-                <button className="w-full text-left px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex justify-between items-center active:scale-[0.98] transition-transform">
-                    <span>Notizen exportieren</span>
-                    <span className="text-zinc-400">›</span>
-                </button>
+
 
                 <button
                     onClick={logout}
@@ -52,7 +45,14 @@ export default function ProfilePage() {
                     <span className="text-red-400 opacity-50">↩</span>
                 </button>
 
-                {/* Admin Section logic could act on user.isAdmin if you have such a field */}
+                <div className="flex justify-center gap-6 mt-12 pt-6 border-t border-zinc-100 dark:border-slate-700/50">
+                    <Link href="/impressum" className="text-xs text-zinc-400 hover:text-indigo-500 transition-colors">
+                        Impressum
+                    </Link>
+                    <Link href="/datenschutz" className="text-xs text-zinc-400 hover:text-indigo-500 transition-colors">
+                        Datenschutz
+                    </Link>
+                </div>
             </div>
         </div>
     );

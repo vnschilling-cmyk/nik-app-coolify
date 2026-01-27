@@ -25,6 +25,7 @@ interface Lesson {
 import { useAuth } from "@/hooks/useAuth";
 
 import { calculateGrade, getGradeColor } from "@/lib/grades";
+import { StatsRing } from "@/components/ui/StatsRing";
 
 const CATEGORIES = [
     { id: "bibeltext", label: "Bibeltext-Frage", icon: BookOpen, color: "indigo" },
@@ -33,6 +34,7 @@ const CATEGORIES = [
 
 export default function DashboardPage() {
     const { user } = useAuth();
+    const [mounted, setMounted] = useState(false);
     const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
     const [showQuestionModal, setShowQuestionModal] = useState(false);
     const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -53,6 +55,7 @@ export default function DashboardPage() {
     });
 
     useEffect(() => {
+        setMounted(true);
         // Load last read position
         const stored = localStorage.getItem('lastReadPosition');
         if (stored) {
@@ -201,29 +204,35 @@ export default function DashboardPage() {
         <div className="min-h-screen pb-24">
             {/* Hero Section with Gradient */}
             {/* Hero Section with Logo */}
-            <header className="px-6 pt-10 pb-6 bg-white dark:bg-zinc-950 overflow-hidden">
+            <header className="px-6 pt-6 pb-6 bg-white dark:bg-slate-800 overflow-hidden">
                 <div className="flex flex-col gap-2">
-                    <div className="w-full max-w-md mx-auto -my-3">
+                    <div className="w-full max-w-md mx-auto -my-3 flex flex-col items-center">
+                        {/* Light Mode Logo */}
                         <Image
-                            src="/logo.png"
+                            src="/logo-light.png"
                             alt="Nikodemos Logo"
-                            width={500}
-                            height={190}
-                            className="w-full h-auto object-contain dark:invert"
+                            width={300}
+                            height={124}
+                            className="w-[300px] h-auto object-contain dark:hidden"
+                            priority
+                        />
+                        {/* Dark Mode Logo */}
+                        <Image
+                            src="/logo-dark.png"
+                            alt="Nikodemos Logo"
+                            width={300}
+                            height={124}
+                            className="w-[300px] h-auto object-contain hidden dark:block"
                             priority
                         />
                     </div>
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-800 dark:text-white tracking-tight">
-                            Shalom, {user?.name || ""}!
-                        </h1>
-                    </div>
+
                 </div>
             </header>
 
             {/* Verse of the Day Card */}
-            <section className="px-4 -mt-2 relative z-20">
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm">
+            <section className="px-4 mt-4 relative z-20">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                             {memoryVerse ? "Dein Lernvers" : "Vers des Tages"}
@@ -231,19 +240,24 @@ export default function DashboardPage() {
                     </div>
                     {memoryVerse ? (
                         <>
-                            <p className="verse-text text-base text-slate-700 dark:text-slate-200 mb-2 font-light leading-relaxed italic">
+                            <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
                                 „{memoryVerse.text}"
                             </p>
-                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400">
-                                {memoryVerse.expand?.book_id?.name || "Bibel"} {memoryVerse.chapter}:{memoryVerse.verse_start}{memoryVerse.verse_end > memoryVerse.verse_start ? `-${memoryVerse.verse_end}` : ""}
+                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400 -mt-2">
+                                {memoryVerse.verse_ref || (
+                                    <>
+                                        {memoryVerse.expand?.book_id?.name || "Bibel"}
+                                        {memoryVerse.chapter > 0 ? ` ${memoryVerse.chapter}:${memoryVerse.verse_start}${memoryVerse.verse_end > memoryVerse.verse_start ? `-${memoryVerse.verse_end}` : ""}` : ""}
+                                    </>
+                                )}
                             </p>
                         </>
                     ) : (
                         <>
-                            <p className="verse-text text-base text-slate-700 dark:text-slate-200 mb-2 font-light leading-relaxed italic">
+                            <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
                                 „Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."
                             </p>
-                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400">
+                            <p className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400 -mt-2">
                                 Matthäus 6,33
                             </p>
                         </>
@@ -251,99 +265,99 @@ export default function DashboardPage() {
                 </div>
             </section>
 
-            {/* Quick Stats */}
-            <section className="px-4 mt-6">
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-800/30">
-                        <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mb-1" />
-                        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">7</p>
-                        <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 font-medium">Tage Streak</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 border border-blue-100 dark:border-blue-800/30">
-                        <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 mb-1" />
-                        <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">12</p>
-                        <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 font-medium">Kapitel</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 rounded-xl p-3 border border-purple-100 dark:border-purple-800/30">
-                        <Bookmark className="w-5 h-5 text-purple-600 dark:text-purple-400 mb-1" />
-                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">5</p>
-                        <p className="text-[10px] text-purple-600/70 dark:text-purple-400/70 font-medium">Notizen</p>
-                    </div>
-                </div>
-            </section>
+
+
+
 
             {/* Statistics Section */}
             <section className="px-4 mt-6">
                 <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Deine Statistik</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Personal Stats */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
                         <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Persönlich</span>
+                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                                {user?.name ? user.name.split(' ')[0] : "Persönlich"}
+                            </span>
                             <Trophy size={16} className="text-amber-500" />
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="text-center flex-1">
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    {stats.personal.last ? `${stats.personal.last}%` : "--"}
-                                </p>
-                                <p className="text-[10px] text-zinc-500 uppercase">Letzter Test</p>
-                                {stats.personal.lastGrade > 0 && (
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getGradeColor(stats.personal.lastGrade)}`}>
-                                        Note {stats.personal.lastGrade}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="w-px h-8 bg-zinc-100 dark:bg-zinc-800" />
-                            <div className="text-center flex-1">
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    {stats.personal.avg ? `${stats.personal.avg}%` : "--"}
-                                </p>
-                                <p className="text-[10px] text-zinc-500 uppercase">Schnitt</p>
-                                {stats.personal.avgGrade > 0 && (
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${getGradeColor(stats.personal.avgGrade)}`}>
-                                        Note {stats.personal.avgGrade}
-                                    </span>
-                                )}
-                            </div>
+                        <div className="flex items-center justify-around gap-2 px-2">
+                            <StatsRing
+                                percentage={stats.personal.last}
+                                label={stats.personal.lastGrade > 0 ? `${stats.personal.lastGrade}` : "--"}
+                                subLabel="Letzter"
+                                colorClass={stats.personal.lastGrade > 0 ? calculateGrade(stats.personal.last).color : "text-zinc-300"}
+                                size={90}
+                            />
+                            <div className="w-px h-12 bg-zinc-100 dark:bg-slate-700" />
+                            <StatsRing
+                                percentage={stats.personal.avg}
+                                label={stats.personal.avgGrade > 0 ? `${stats.personal.avgGrade}` : "--"}
+                                subLabel="Schnitt"
+                                colorClass={stats.personal.avgGrade > 0 ? calculateGrade(stats.personal.avg).color : "text-zinc-300"}
+                                size={90}
+                            />
                         </div>
                     </div>
 
                     {/* Group Stats */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm opacity-60">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
                         <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Gruppe</span>
+                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
                             <TrendingUp size={16} className="text-emerald-500" />
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="text-center flex-1">
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">-- %</p>
-                                <p className="text-[10px] text-zinc-500 uppercase">Letzter Test</p>
+                        <div className="flex items-center justify-around gap-2 px-2">
+                            <StatsRing
+                                percentage={82}
+                                label="Note 2"
+                                subLabel="Schnitt"
+                                colorClass="text-emerald-500"
+                                size={95}
+                            />
+                            <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
+                            <StatsRing
+                                percentage={95}
+                                label="Note 1"
+                                subLabel="Top"
+                                colorClass="text-indigo-500"
+                                size={95}
+                            />
+                        </div>
+
+                        {/* Participant Details */}
+                        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">12</p>
+                                <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
                             </div>
-                            <div className="w-px h-8 bg-zinc-100 dark:bg-zinc-800" />
-                            <div className="text-center flex-1">
-                                <p className="text-2xl font-bold text-slate-900 dark:text-white">-- %</p>
-                                <p className="text-[10px] text-zinc-500 uppercase">Schnitt</p>
+                            <div className="border-x border-slate-100 dark:border-slate-700/50">
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">8</p>
+                                <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">14</p>
+                                <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
                             </div>
                         </div>
-                        <p className="text-[9px] text-center text-zinc-500 mt-2 uppercase tracking-tighter italic">In Vorbereitung (ChurchTools Sync)</p>
+
+                        <p className="text-[9px] text-center text-zinc-500 mt-4 uppercase tracking-tighter italic">Testdaten (Echtzeit-Anbindung in Arbeit)</p>
                     </div>
                 </div>
             </section>
 
             {/* Quick Actions */}
             <section className="px-4 mt-6 space-y-3">
-                <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
+                <h3 className="font-heading text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
 
                 <Link
                     href={continueReadingLink}
-                    className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
+                    className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
                 >
                     <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
                         <BookOpen className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-lg font-bold text-slate-900 dark:text-white">Weiterlesen</p>
+                        <p className="font-heading text-lg text-slate-900 dark:text-white">Weiterlesen</p>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{continueReadingLabel}</p>
                     </div>
                     <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
@@ -351,13 +365,13 @@ export default function DashboardPage() {
 
                 <button
                     onClick={() => setShowQuestionModal(true)}
-                    className="w-full flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                    className="w-full flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
                 >
                     <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
                         <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-lg font-bold text-slate-900 dark:text-white">Frage stellen</p>
+                        <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
                     </div>
                     <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
                 </button>
@@ -371,7 +385,7 @@ export default function DashboardPage() {
             {/* Question Modal */}
             {showQuestionModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">Neue Frage stellen</h3>
                             <button onClick={() => setShowQuestionModal(false)} className="text-zinc-400 hover:text-zinc-600">
@@ -415,7 +429,7 @@ export default function DashboardPage() {
                                     required
                                     value={questionForm.lesson_id}
                                     onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                 >
                                     <option value="">Lektion wählen...</option>
                                     {lessons.map(l => (
@@ -468,7 +482,7 @@ export default function DashboardPage() {
                                     required
                                     value={questionForm.question}
                                     onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg min-h-[100px]"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px]"
                                     placeholder="Was möchtest du wissen?"
                                 />
                             </div>

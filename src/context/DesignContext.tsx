@@ -3,9 +3,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type Theme = "light" | "dark" | "system";
-export type FontFamily = "montserrat" | "outfit" | "inter" | "serif";
+export type FontFamily = "montserrat" | "raleway" | "ubuntu" | "quicksand" | "smooch_sans" | "dancing_script" | "lobster_two" | "exo_2" | "comfortaa" | "play" | "satisfy" | "momo_signature";
 export type HeadingStyle = {
     bold: boolean;
+    light: boolean;
     italic: boolean;
     underline: boolean;
 };
@@ -33,8 +34,8 @@ const defaultSettings: DesignSettings = {
     theme: "system",
     fontFamilyDetails: "montserrat",
     fontFamilyHeadings: "montserrat",
-    fontFamilyBible: "serif",
-    headingStyle: { bold: true, italic: false, underline: false },
+    fontFamilyBible: "raleway",
+    headingStyle: { bold: true, light: false, italic: false, underline: false },
     fontSizeScaleDetails: 1.0,
     fontSizeScaleHeadings: 1.0,
     fontSizeScaleBible: 1.0,
@@ -91,9 +92,16 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
     const getFontVariable = (family: FontFamily) => {
         switch (family) {
             case "montserrat": return "var(--font-montserrat)";
-            case "outfit": return "var(--font-outfit)";
-            case "inter": return "var(--font-inter)";
-            case "serif": return "var(--font-playfair)";
+            case "raleway": return "var(--font-raleway)";
+            case "ubuntu": return "var(--font-ubuntu)";
+            case "quicksand": return "var(--font-quicksand)";
+            case "smooch_sans": return "var(--font-smooch-sans)";
+            case "dancing_script": return "var(--font-dancing-script)";
+            case "lobster_two": return "var(--font-lobster-two)";
+            case "exo_2": return "var(--font-exo-2)";
+            case "comfortaa": return "var(--font-comfortaa)";
+            case "play": return "var(--font-play)";
+            case "satisfy": return "var(--font-satisfy)";
             default: return "var(--font-montserrat)";
         }
     };
@@ -105,7 +113,11 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty("--font-headings", getFontVariable(settings.fontFamilyHeadings));
         root.style.setProperty("--font-bible", getFontVariable(settings.fontFamilyBible));
 
-        root.style.setProperty("--heading-weight", settings.headingStyle.bold ? "700" : "300");
+        let weight = "400";
+        if (settings.headingStyle.bold) weight = "700";
+        if (settings.headingStyle.light) weight = "200";
+
+        root.style.setProperty("--heading-weight", weight);
         root.style.setProperty("--heading-style", settings.headingStyle.italic ? "italic" : "normal");
         root.style.setProperty("--heading-decoration", settings.headingStyle.underline ? "underline" : "none");
 

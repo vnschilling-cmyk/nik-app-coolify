@@ -166,6 +166,12 @@ export default function InfosTab() {
         if (!formData.has_bible_ref || !formData.book_id) return "";
         const book = getSelectedBook();
         if (!book) return "";
+
+        // Check for whole book
+        if (formData.chapter === 0) {
+            return book.name;
+        }
+
         const verseRange = formData.verse_start === formData.verse_end
             ? `${formData.verse_start}`
             : `${formData.verse_start}-${formData.verse_end}`;
@@ -192,9 +198,10 @@ export default function InfosTab() {
         if (formData.has_bible_ref && formData.book_id) {
             data.append('verse_ref', generateVerseRef());
             data.append('book_id', formData.book_id);
+            // If chapter is 0 (whole book), store 0.
             data.append('chapter', formData.chapter.toString());
-            data.append('verse_start', formData.verse_start.toString());
-            data.append('verse_end', formData.verse_end.toString());
+            data.append('verse_start', formData.chapter === 0 ? "0" : formData.verse_start.toString());
+            data.append('verse_end', formData.chapter === 0 ? "0" : formData.verse_end.toString());
         } else {
             data.append('verse_ref', "");
             data.append('book_id', "");
@@ -255,7 +262,7 @@ export default function InfosTab() {
             url: fact.url || "",
             has_bible_ref: !!fact.book_id,
             book_id: fact.book_id,
-            chapter: fact.chapter || 1,
+            chapter: fact.chapter,
             verse_start: fact.verse_start || 1,
             verse_end: fact.verse_end || 1,
             lesson_id: fact.lesson_id || ""
@@ -389,7 +396,7 @@ export default function InfosTab() {
                 >
                     <Plus size={16} /> Neue Info
                 </button>
-                <label className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                <label className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors cursor-pointer">
                     <Upload size={16} /> CSV Import
                     <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVImport} />
                 </label>
@@ -397,8 +404,8 @@ export default function InfosTab() {
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingId ? "Info bearbeiten" : "Neue Info"}</h3>
                             <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
@@ -412,7 +419,7 @@ export default function InfosTab() {
                                     required
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                 />
                             </div>
 
@@ -467,7 +474,7 @@ export default function InfosTab() {
                                 <select
                                     value={formData.category}
                                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                 >
                                     <option value="Allgemein">Allgemein</option>
                                     <option value="Geschichte">Geschichte</option>
@@ -482,7 +489,7 @@ export default function InfosTab() {
 
                             {/* Dynamic Fields based on Type */}
                             {formData.type === "image" && (
-                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                <div className="p-3 bg-zinc-50 dark:bg-slate-700/50 rounded-lg border border-zinc-200 dark:border-slate-600">
                                     <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">Bild hochladen</label>
                                     <input
                                         type="file"
@@ -502,7 +509,7 @@ export default function InfosTab() {
                                             type="url"
                                             value={formData.url}
                                             onChange={e => setFormData({ ...formData, url: e.target.value })}
-                                            className="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            className="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                             placeholder="https://..."
                                         />
                                     </div>
@@ -542,7 +549,7 @@ export default function InfosTab() {
                                         <select
                                             value={formData.book_id}
                                             onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                         >
                                             <option value="">Buch wählen...</option>
                                             {books.map(b => (
@@ -552,51 +559,75 @@ export default function InfosTab() {
                                     </div>
 
                                     {selectedBook && (
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div>
-                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
-                                                <select
-                                                    value={formData.chapter}
-                                                    onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
-                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                >
-                                                    {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
-                                                        <option key={num} value={num}>{num}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                                <select
-                                                    value={formData.verse_start}
+                                        <>
+                                            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-slate-700 rounded-lg">
+                                                <input
+                                                    type="checkbox"
+                                                    id="wholeBook"
+                                                    checked={formData.chapter === 0}
                                                     onChange={e => {
-                                                        const newVal = parseInt(e.target.value) || 1;
                                                         setFormData({
                                                             ...formData,
-                                                            verse_start: newVal,
-                                                            verse_end: Math.max(newVal, formData.verse_end)
+                                                            chapter: e.target.checked ? 0 : 1,
+                                                            verse_start: e.target.checked ? 0 : 1,
+                                                            verse_end: e.target.checked ? 0 : 1
                                                         });
                                                     }}
-                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                >
-                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                        <option key={num} value={num}>{num}</option>
-                                                    ))}
-                                                </select>
+                                                    className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                />
+                                                <label htmlFor="wholeBook" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer">
+                                                    Ganzes Buch (ohne Kapitel/Verse)
+                                                </label>
                                             </div>
-                                            <div>
-                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                                <select
-                                                    value={formData.verse_end}
-                                                    onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                >
-                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                        <option key={num} value={num}>{num}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
+
+                                            {formData.chapter !== 0 && (
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div>
+                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                        <select
+                                                            value={formData.chapter}
+                                                            onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
+                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                        >
+                                                            {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
+                                                                <option key={num} value={num}>{num}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                        <select
+                                                            value={formData.verse_start}
+                                                            onChange={e => {
+                                                                const newVal = parseInt(e.target.value) || 1;
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    verse_start: newVal,
+                                                                    verse_end: Math.max(newVal, formData.verse_end)
+                                                                });
+                                                            }}
+                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                        >
+                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                <option key={num} value={num}>{num}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                        <select
+                                                            value={formData.verse_end}
+                                                            onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                        >
+                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                <option key={num} value={num}>{num}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {formData.book_id && (
@@ -609,7 +640,7 @@ export default function InfosTab() {
                             )}
 
                             {/* Link to Lesson */}
-                            <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                            <div className="p-3 bg-zinc-50 dark:bg-slate-700/50 rounded-lg border border-zinc-200 dark:border-slate-600">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Link size={16} className="text-zinc-500" />
                                     <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Mit Lektion verknüpfen</label>
@@ -617,7 +648,7 @@ export default function InfosTab() {
                                 <select
                                     value={formData.lesson_id}
                                     onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
-                                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg"
                                 >
                                     <option value="">Keine Verknüpfung</option>
                                     {lessons.map(l => (
@@ -731,15 +762,15 @@ export default function InfosTab() {
                             });
 
                             return (
-                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
                                     <button
                                         onClick={() => toggleGroup(bookGroup.id)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                     >
                                         <div className="flex items-center gap-2">
                                             <h3 className={`text-sm font-bold uppercase tracking-wider ${isBookSection
-                                                    ? "text-indigo-600 dark:text-indigo-400"
-                                                    : "text-zinc-600 dark:text-zinc-400"
+                                                ? "text-indigo-600 dark:text-indigo-400"
+                                                : "text-zinc-600 dark:text-zinc-400"
                                                 }`}>
                                                 {bookGroup.title}
                                             </h3>
@@ -757,7 +788,7 @@ export default function InfosTab() {
                                                 const isSubExpanded = expandedGroups.has(collapseKey);
 
                                                 return (
-                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-zinc-800 pb-4" : ""}>
+                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-slate-700 pb-4" : ""}>
                                                         <button
                                                             onClick={() => toggleGroup(collapseKey)}
                                                             className="w-full flex items-center justify-between py-2 group"
@@ -787,7 +818,7 @@ export default function InfosTab() {
                                                                                     'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
 
                                                                     return (
-                                                                        <div key={fact.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                                                        <div key={fact.id} className="bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex flex-wrap gap-2 mb-1">
                                                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>

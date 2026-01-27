@@ -27,6 +27,7 @@ interface MemoryVerse {
     verse_start: number;
     verse_end: number;
     text: string;
+    verse_ref: string;
     translation: string;
     expand?: {
         book_id: { name: string };
@@ -135,6 +136,20 @@ export default function MemoryVersesTab() {
         }
     };
 
+    const generateVerseRef = () => {
+        const book = books.find(b => b.id === formBookId);
+        if (!book) return "";
+
+        if (formChapter === 0) {
+            return book.name;
+        }
+
+        const range = formVerseStart === formVerseEnd
+            ? `${formVerseStart}`
+            : `${formVerseStart}-${formVerseEnd}`;
+        return `${book.name} ${formChapter}:${range}`;
+    };
+
     const handleManualSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!selectedLessonId || !formBookId || !formText) return;
@@ -143,10 +158,12 @@ export default function MemoryVersesTab() {
             const data = {
                 lesson_id: selectedLessonId,
                 book_id: formBookId,
+                // If chapter is 0 (whole book), store 0.
                 chapter: formChapter,
-                verse_start: formVerseStart,
-                verse_end: formVerseEnd,
+                verse_start: formChapter === 0 ? 0 : formVerseStart,
+                verse_end: formChapter === 0 ? 0 : formVerseEnd,
                 text: formText,
+                verse_ref: generateVerseRef(),
                 translation: 'SCH2000'
             };
 
@@ -235,7 +252,7 @@ export default function MemoryVersesTab() {
             </div>
 
             {isCreating ? (
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 animate-fadeIn">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-6 animate-fadeIn">
                     <div className="flex justify-between mb-6">
                         <h3 className="text-lg font-bold">{isEditing ? "Vers bearbeiten" : "Neuen Vers erstellen"}</h3>
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
@@ -248,7 +265,7 @@ export default function MemoryVersesTab() {
                         <select
                             value={selectedLessonId}
                             onChange={e => setSelectedLessonId(e.target.value)}
-                            className="w-full p-2 rounded-lg border dark:bg-zinc-800 dark:border-zinc-700"
+                            className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
                         >
                             <option value="">Bitte wählen...</option>
                             {lessons.map(l => (
@@ -261,13 +278,13 @@ export default function MemoryVersesTab() {
                         <div className="flex gap-4 mb-6">
                             <button
                                 onClick={() => setMode("manual")}
-                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-zinc-800 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "manual" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
                             >
                                 <Plus size={20} /> Manuell erstellen
                             </button>
                             <button
                                 onClick={() => setMode("ai")}
-                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-zinc-800 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${mode === "ai" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-600" : "border-zinc-200 dark:border-slate-700 text-zinc-400"}`}
                             >
                                 <Sparkles size={20} /> Mit AI generieren
                             </button>
@@ -289,7 +306,7 @@ export default function MemoryVersesTab() {
                             {suggestions.length > 0 && (
                                 <div className="mt-6 space-y-3">
                                     {suggestions.map((s, idx) => (
-                                        <div key={idx} className="bg-white dark:bg-zinc-800 p-4 rounded-lg border border-purple-100 dark:border-purple-900 flex justify-between items-start gap-4">
+                                        <div key={idx} className="bg-white dark:bg-slate-700 p-4 rounded-lg border border-purple-100 dark:border-purple-900/50 flex justify-between items-start gap-4">
                                             <div>
                                                 <h4 className="font-bold text-indigo-600 dark:text-indigo-400">
                                                     {s.book} {s.chapter}:{s.verse_start}{s.verse_end > s.verse_start && `-${s.verse_end}`}
@@ -319,45 +336,65 @@ export default function MemoryVersesTab() {
                                     <select
                                         value={formBookId}
                                         onChange={e => { setFormBookId(e.target.value); setFormChapter(1); }}
-                                        className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm"
+                                        className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
                                     >
                                         <option value="">Wählen...</option>
                                         {books.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                                     </select>
+                                    {formBookId && (
+                                        <label className="flex items-center gap-2 mt-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={formChapter === 0}
+                                                onChange={e => {
+                                                    const checked = e.target.checked;
+                                                    setFormChapter(checked ? 0 : 1);
+                                                    setFormVerseStart(checked ? 0 : 1);
+                                                    setFormVerseEnd(checked ? 0 : 1);
+                                                }}
+                                                className="w-3 h-3 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            Ganzes Buch
+                                        </label>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Kapitel</label>
-                                    <select
-                                        value={formChapter}
-                                        onChange={e => setFormChapter(parseInt(e.target.value))}
-                                        className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm"
-                                        disabled={!formBookId}
-                                    >
-                                        {selectedBook ? Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(n => (
-                                            <option key={n} value={n}>{n}</option>
-                                        )) : <option>-</option>}
-                                    </select>
-                                </div>
-                                <div className="col-span-2 sm:col-span-2">
-                                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Verse</label>
-                                    <div className="flex gap-2 items-center">
-                                        <input
-                                            type="number" min="1"
-                                            value={formVerseStart}
-                                            onChange={e => setFormVerseStart(parseInt(e.target.value))}
-                                            className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm"
-                                            placeholder="Start"
-                                        />
-                                        <span>-</span>
-                                        <input
-                                            type="number" min="1"
-                                            value={formVerseEnd}
-                                            onChange={e => setFormVerseEnd(parseInt(e.target.value))}
-                                            className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm"
-                                            placeholder="Ende"
-                                        />
-                                    </div>
-                                </div>
+                                {formChapter !== 0 && (
+                                    <>
+                                        <div>
+                                            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Kapitel</label>
+                                            <select
+                                                value={formChapter}
+                                                onChange={e => setFormChapter(parseInt(e.target.value))}
+                                                className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                disabled={!formBookId}
+                                            >
+                                                {selectedBook ? Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(n => (
+                                                    <option key={n} value={n}>{n}</option>
+                                                )) : <option>-</option>}
+                                            </select>
+                                        </div>
+                                        <div className="col-span-2 sm:col-span-2">
+                                            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Verse</label>
+                                            <div className="flex gap-2 items-center">
+                                                <input
+                                                    type="number" min="1"
+                                                    value={formVerseStart}
+                                                    onChange={e => setFormVerseStart(parseInt(e.target.value))}
+                                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                    placeholder="Start"
+                                                />
+                                                <span>-</span>
+                                                <input
+                                                    type="number" min="1"
+                                                    value={formVerseEnd}
+                                                    onChange={e => setFormVerseEnd(parseInt(e.target.value))}
+                                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                    placeholder="Ende"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Text</label>
@@ -365,7 +402,7 @@ export default function MemoryVersesTab() {
                                     value={formText}
                                     onChange={e => setFormText(e.target.value)}
                                     placeholder="Vers Text eingeben..."
-                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-sm min-h-[80px]"
+                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm min-h-[80px]"
                                 />
                             </div>
                         </div>
@@ -430,7 +467,7 @@ export default function MemoryVersesTab() {
                                 const totalVerses = Array.from(bookGroup.lessons.values()).flat().length;
 
                                 return (
-                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-800/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
                                         <button
                                             onClick={() => toggleGroup(bookGroup.id)}
                                             className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -445,17 +482,17 @@ export default function MemoryVersesTab() {
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="border-t border-zinc-200 dark:border-zinc-800">
+                                            <div className="border-t border-zinc-200 dark:border-slate-700">
                                                 {Array.from(bookGroup.lessons.entries()).map(([lessonId, lessonVerses]) => {
                                                     const lesson = lessons.find(l => l.id === lessonId);
                                                     const lessonKey = `${bookGroup.id}-${lessonId}`;
                                                     const isLessonExpanded = expandedGroups.has(lessonKey);
 
                                                     return (
-                                                        <div key={lessonId} className="border-b border-zinc-200 dark:border-zinc-800 last:border-0">
+                                                        <div key={lessonId} className="border-b border-zinc-200 dark:border-slate-700 last:border-0">
                                                             <button
                                                                 onClick={() => toggleGroup(lessonKey)}
-                                                                className="w-full flex items-center justify-between p-3 pl-6 hover:bg-white dark:hover:bg-zinc-900 transition-colors"
+                                                                className="w-full flex items-center justify-between p-3 pl-6 hover:bg-white dark:hover:bg-slate-700 transition-colors"
                                                             >
                                                                 <div className="flex items-center gap-2">
                                                                     <GraduationCap size={16} className="text-fuchsia-600 dark:text-fuchsia-400" />
@@ -468,16 +505,16 @@ export default function MemoryVersesTab() {
                                                             </button>
 
                                                             {isLessonExpanded && (
-                                                                <div className="p-3 pl-8 space-y-2 bg-white dark:bg-zinc-900">
+                                                                <div className="p-3 pl-8 space-y-2 bg-white dark:bg-slate-800">
                                                                     {lessonVerses.map(v => (
-                                                                        <div key={v.id} className="border border-zinc-100 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-center group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors bg-zinc-50 dark:bg-zinc-800/30">
+                                                                        <div key={v.id} className="border border-zinc-100 dark:border-slate-700 rounded-lg p-3 flex justify-between items-center group hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors bg-zinc-50 dark:bg-slate-700/30">
                                                                             <div className="flex items-center gap-3">
                                                                                 <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
                                                                                     <BookOpen size={14} className="text-indigo-600 dark:text-indigo-400" />
                                                                                 </div>
                                                                                 <div>
                                                                                     <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">
-                                                                                        {v.expand?.book_id?.name || "Buch"} {v.chapter}:{v.verse_start}{v.verse_end > v.verse_start && `-${v.verse_end}`}
+                                                                                        {v.verse_ref || (v.expand?.book_id?.name || "Buch") + (v.chapter > 0 ? ` ${v.chapter}:${v.verse_start}${v.verse_end > v.verse_start ? `-${v.verse_end}` : ""}` : "")}
                                                                                     </h4>
                                                                                     <p className="text-xs text-zinc-500 truncate max-w-[200px]">{v.text}</p>
                                                                                 </div>

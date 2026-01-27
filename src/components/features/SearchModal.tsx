@@ -88,13 +88,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-slate-800/60 backdrop-blur-sm animate-fadeIn">
             <div
-                className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-zinc-800"
+                className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[85vh] border border-zinc-200 dark:border-slate-700"
                 style={{ fontFamily: currentFontVariableDetails }}
             >
                 {/* Header */}
-                <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+                <div className="p-4 border-b border-zinc-100 dark:border-slate-700 flex items-center gap-3">
                     <Search className="text-zinc-400" size={20} />
                     <form onSubmit={handleSearch} className="flex-1">
                         <input
@@ -106,18 +106,18 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             className="w-full bg-transparent border-none outline-none text-lg text-zinc-900 dark:text-white placeholder-zinc-400"
                         />
                     </form>
-                    <button onClick={onClose} className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                    <button onClick={onClose} className="p-2 bg-zinc-100 dark:bg-slate-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-slate-100 transition-colors">
                         <X size={18} />
                     </button>
                 </div>
 
                 {/* Filters */}
-                <div className="px-4 py-3 bg-zinc-50 dark:bg-zinc-950/50 border-b border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-2 items-center">
+                <div className="px-4 py-3 bg-zinc-50 dark:bg-slate-800/40 border-b border-zinc-100 dark:border-slate-700 flex flex-wrap gap-2 items-center">
                     <button
                         onClick={() => setFilterMode('ALL')}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${filterMode === 'ALL'
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                            : "bg-white dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
+                            : "bg-white dark:bg-slate-700 text-zinc-500 border border-zinc-200 dark:border-slate-600 hover:border-zinc-300"
                             }`}
                     >
                         Alle
@@ -126,7 +126,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         onClick={() => setFilterMode('OT')}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${filterMode === 'OT'
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                            : "bg-white dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
+                            : "bg-white dark:bg-slate-700 text-zinc-500 border border-zinc-200 dark:border-slate-600 hover:border-zinc-300"
                             }`}
                     >
                         AT
@@ -135,7 +135,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         onClick={() => setFilterMode('NT')}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${filterMode === 'NT'
                             ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-                            : "bg-white dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
+                            : "bg-white dark:bg-slate-700 text-zinc-500 border border-zinc-200 dark:border-slate-600 hover:border-zinc-300"
                             }`}
                     >
                         NT
@@ -150,7 +150,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             }}
                             className={`w-full appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border bg-transparent cursor-pointer transition-colors ${filterMode === 'BOOK'
                                 ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800"
-                                : "bg-white dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"
+                                : "bg-white dark:bg-slate-700 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:border-zinc-300"
                                 }`}
                         >
                             <option value="" disabled>Buch...</option>
@@ -164,7 +164,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
                 {/* Results Header */}
                 {!loading && !error && results.length > 0 && (
-                    <div className="px-4 py-2 text-xs font-medium text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                    <div className="px-4 py-2 text-xs font-medium text-zinc-500 border-b border-zinc-100 dark:border-slate-700 flex justify-between items-center">
                         <span>{count} Treffer gefunden</span>
                         {count > 50 && <span className="text-amber-600 dark:text-amber-500">Zeige erste 50</span>}
                     </div>
@@ -181,7 +181,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         <div className="flex flex-col items-center justify-center h-40 text-red-500 text-center space-y-2">
                             <p className="font-bold">Hoppla!</p>
                             <p className="text-sm">{error}</p>
-                            <button onClick={() => handleSearch()} className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-lg text-xs font-bold mt-2 hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                            <button onClick={() => handleSearch()} className="px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-900 dark:text-white rounded-lg text-xs font-bold mt-2 hover:bg-zinc-200 dark:hover:bg-slate-600">
                                 Erneut versuchen
                             </button>
                         </div>
@@ -200,7 +200,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                 return (
                                     <div key={bookName} className="space-y-2">
                                         <div
-                                            className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm py-2 border-b border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors select-none group/header"
+                                            className="sticky top-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm py-2 border-b border-zinc-100 dark:border-slate-700 cursor-pointer hover:bg-zinc-50 dark:hover:bg-slate-700/50 transition-colors select-none group/header"
                                             onClick={() => toggleGroup(bookName)}
                                         >
                                             <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-400 uppercase tracking-wider flex items-center justify-between px-1">
@@ -211,7 +211,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                                     />
                                                     <span>{bookName}</span>
                                                 </div>
-                                                <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-[10px] group-hover/header:bg-zinc-200 dark:group-hover/header:bg-zinc-700 transition-colors">
+                                                <span className="bg-zinc-100 dark:bg-slate-700 px-2 py-0.5 rounded-full text-[10px] group-hover/header:bg-zinc-200 dark:group-hover/header:bg-slate-600 transition-colors">
                                                     {verses.length}
                                                 </span>
                                             </h3>
@@ -224,7 +224,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                                         key={r.id}
                                                         href={`/bible?book=${r.bookShort}&chapter=${r.chapter}#v${r.verse}`}
                                                         onClick={onClose}
-                                                        className="block p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-900/50 group"
+                                                        className="block p-3 rounded-xl bg-zinc-50 dark:bg-slate-700/40 hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-600 group"
                                                     >
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="space-y-1">

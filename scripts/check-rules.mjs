@@ -1,36 +1,26 @@
-import 'dotenv/config';
 import PocketBase from 'pocketbase';
 
-const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090';
-const PB_EMAIL = process.env.PB_EMAIL;
-const PB_PASSWORD = process.env.PB_PASSWORD;
+const pb = new PocketBase('https://pocketbase-nik-app-coolify.195.201.231.49.nip.io');
 
-async function main() {
-    console.log(`Checking rules on ${PB_URL}...`);
-    const pb = new PocketBase(PB_URL);
-
+async function checkRules() {
     try {
-        await pb.admins.authWithPassword(PB_EMAIL, PB_PASSWORD);
-        console.log("Admin logged in.");
-    } catch (e) {
-        console.error("Login failed:", e.message);
-        process.exit(1);
-    }
+        console.log("Authenticating as Admin...");
+        await pb.admins.authWithPassword('admin@nik-app.de', 'Muenze1980!#');
 
-    try {
-        const books = await pb.collections.getOne('bible_books');
-        console.log(`\nCollection: ${books.name}`);
-        console.log(`List Rule: ${books.listRule}`);
-        console.log(`View Rule: ${books.viewRule}`);
+        console.log("Fetching collection 'users'...");
+        const collection = await pb.collections.getOne('users');
 
-        const verses = await pb.collections.getOne('verses');
-        console.log(`\nCollection: ${verses.name}`);
-        console.log(`List Rule: ${verses.listRule}`);
-        console.log(`View Rule: ${verses.viewRule}`);
+        console.log("--- API Rules ---");
+        console.log("listRule:", collection.listRule);
+        console.log("viewRule:", collection.viewRule);
+        console.log("createRule:", collection.createRule);
+        console.log("updateRule:", collection.updateRule);
+        console.log("deleteRule:", collection.deleteRule);
+        console.log("-----------------");
 
     } catch (e) {
-        console.error("Failed to fetch collections:", e);
+        console.error("Error:", e);
     }
 }
 
-main();
+checkRules();

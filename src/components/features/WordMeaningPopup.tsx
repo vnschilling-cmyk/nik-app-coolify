@@ -59,9 +59,9 @@ export default function WordMeaningPopup({ word, context, testament, onClose }: 
         : 'from-amber-500 to-orange-600';
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div
-                className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+                className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[85vh] flex flex-col border border-transparent dark:border-slate-700"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -106,7 +106,7 @@ export default function WordMeaningPopup({ word, context, testament, onClose }: 
                     {data && !loading && (
                         <>
                             {/* Original Word */}
-                            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
+                            <div className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl p-4">
                                 <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2">
                                     <Languages size={16} />
                                     <span className="text-xs font-bold uppercase">{languageLabel}</span>
@@ -164,7 +164,7 @@ export default function WordMeaningPopup({ word, context, testament, onClose }: 
 
                             {/* Usage */}
                             {data.usage && (
-                                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4">
+                                <div className="border-t border-zinc-100 dark:border-slate-700 pt-4">
                                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                         <span className="font-semibold">Verwendung:</span> {data.usage}
                                     </p>
@@ -175,10 +175,10 @@ export default function WordMeaningPopup({ word, context, testament, onClose }: 
                 </div>
 
                 {/* Footer */}
-                <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="px-5 py-3 border-t border-zinc-100 dark:border-slate-700 bg-zinc-50 dark:bg-slate-700/40">
                     <button
                         onClick={onClose}
-                        className="w-full py-2.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                        className="w-full py-2.5 bg-zinc-200 dark:bg-slate-700 rounded-lg font-medium text-zinc-700 dark:text-slate-300 hover:bg-zinc-300 dark:hover:bg-slate-600 transition-colors"
                     >
                         Schließen
                     </button>

@@ -229,7 +229,7 @@ export default function ChurchToolsTab() {
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div className="bg-white dark:bg-slate-700 rounded-2xl p-6 border border-zinc-200 dark:border-slate-600 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                         <LinkIcon className="text-blue-600 dark:text-blue-400" size={20} />
@@ -248,7 +248,7 @@ export default function ChurchToolsTab() {
                             value={config.url}
                             onChange={e => setConfig({ ...config, url: e.target.value })}
                             placeholder="https://ihre-gemeinde.churchtools.de"
-                            className="w-full mt-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full mt-1 px-4 py-2 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                     </div>
                     <div>
@@ -273,7 +273,7 @@ export default function ChurchToolsTab() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div className="bg-white dark:bg-slate-700 rounded-2xl p-6 border border-zinc-200 dark:border-slate-600 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
@@ -291,14 +291,14 @@ export default function ChurchToolsTab() {
                 </div>
 
                 {groups.length === 0 ? (
-                    <div className="text-center py-8 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700">
+                    <div className="text-center py-8 bg-zinc-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-zinc-300 dark:border-slate-700">
                         <AlertCircle className="mx-auto text-zinc-300 mb-2" size={32} />
                         <p className="text-zinc-500 text-sm">Noch keine Gruppen konfiguriert.</p>
                     </div>
                 ) : (
                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
                         {groups.map(group => (
-                            <div key={group.id} className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                            <div key={group.id} className="p-4 bg-zinc-50 dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-bold">{group.name}</p>
@@ -314,7 +314,7 @@ export default function ChurchToolsTab() {
                                                     loadGroupMembers(group.id);
                                                 }
                                             }}
-                                            className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-medium hover:bg-zinc-200 transition-colors"
+                                            className="px-3 py-1.5 bg-zinc-100 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors"
                                         >
                                             Mitglieder {selectedGroupId === group.id ? "ausblenden" : "anzeigen"}
                                         </button>
@@ -328,7 +328,7 @@ export default function ChurchToolsTab() {
                                 </div>
 
                                 {selectedGroupId === group.id && (
-                                    <div className="mt-4 pl-4 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-2 animate-fadeIn">
+                                    <div className="mt-4 pl-4 border-l-2 border-zinc-100 dark:border-slate-700 space-y-2 animate-fadeIn">
                                         {loadingMembers ? (
                                             <p className="text-xs text-zinc-500 py-2">Lade Mitglieder...</p>
                                         ) : groupMembers.length === 0 ? (
@@ -336,7 +336,7 @@ export default function ChurchToolsTab() {
                                         ) : (
                                             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
                                                 {groupMembers.map(member => (
-                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800 text-sm">
+                                                    <div key={member.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border border-zinc-100 dark:border-slate-700 text-sm">
                                                         <div className="flex flex-col">
                                                             <span className="font-medium">{member.name}</span>
                                                             <span className="text-[10px] text-zinc-500">{member.email || "Keine Email"}</span>
@@ -344,7 +344,7 @@ export default function ChurchToolsTab() {
                                                         <select
                                                             value={member.role}
                                                             onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                                                            className="text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                                                            className="text-xs bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
                                                         >
                                                             <option value="youth">Jugendlicher</option>
                                                             <option value="staff">Mitarbeiter</option>

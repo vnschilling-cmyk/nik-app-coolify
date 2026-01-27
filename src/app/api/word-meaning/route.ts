@@ -62,8 +62,12 @@ const FALLBACK_WORDS: Record<string, any> = {
 };
 
 export async function POST(request: NextRequest) {
+    let word = '';
+
     try {
-        const { word, context, testament } = await request.json();
+        const body = await request.json();
+        word = body.word;
+        const { context, testament } = body;
 
         if (!word) {
             return NextResponse.json({ error: 'Word is required' }, { status: 400 });
@@ -125,15 +129,14 @@ Antworte NUR mit dem JSON, ohne Markdown-Formatierung.`;
         console.error('Word lookup error:', error);
 
         // Return a helpful fallback response on API errors
-        const { word } = await request.clone().json().catch(() => ({ word: '' }));
-
+        // We use the 'word' variable captured from the outer scope
         return NextResponse.json({
             originalWord: word || '—',
             transliteration: '',
             strongNumber: '',
-            meaning: 'Die KI-Analyse ist aktuell nicht verfügbar. Bitte versuche es später erneut.',
+            meaning: 'Die KI-Analyse ist aktuell nicht verfügbar (API-Schlüssel ungültig oder Limit erreicht).',
             synonyms: [],
-            usage: 'API-Quota erschöpft oder Verbindungsfehler.',
+            usage: 'Bitte überprüfe den Google AI API Key in den .env Einstellungen.',
             rootMeaning: ''
         });
     }

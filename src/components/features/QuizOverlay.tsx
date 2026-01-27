@@ -111,7 +111,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     // Render Intro
     if (gameState === "intro") {
         return (
-            <div className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+            <div className="fixed inset-0 z-[100] bg-slate-800 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
                 <div className="max-w-md w-full space-y-8">
                     <Trophy className="w-24 h-24 mx-auto text-yellow-500 animate-bounce" />
                     <div>
@@ -119,7 +119,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                         <p className="text-zinc-400">Teste dein Wissen mit {quiz.questions.length} Fragen!</p>
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-left space-y-2">
+                    <div className="bg-slate-700 border border-slate-600 p-4 rounded-xl text-left space-y-2">
                         <div className="flex items-center gap-3 text-zinc-300">
                             <Timer size={20} className="text-indigo-400" />
                             <span>20 Sekunden pro Frage</span>
@@ -146,14 +146,14 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     // Render Finished
     if (gameState === "finished") {
         return (
-            <div className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-                <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+            <div className="fixed inset-0 z-[100] bg-slate-800 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
+                <div className="max-w-md w-full bg-slate-700 border border-slate-600 rounded-2xl p-8 shadow-2xl">
                     <h2 className="text-2xl font-bold text-white mb-6">Ergebnis</h2>
 
                     <div className="flex justify-center mb-8">
                         <div className="relative w-32 h-32 flex items-center justify-center">
                             <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                                <circle cx="64" cy="64" r="60" fill="none" stroke="#27272a" strokeWidth="8" />
+                                <circle cx="64" cy="64" r="60" fill="none" stroke="#1e293b" strokeWidth="8" />
                                 <circle
                                     cx="64" cy="64" r="60"
                                     fill="none"
@@ -174,7 +174,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
 
                     <button
                         onClick={onClose}
-                        className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-bold transition-colors"
+                        className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors"
                     >
                         Schließen
                     </button>
@@ -185,19 +185,19 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
 
     // Render Question (Playing or Feedback)
     return (
-        <div className="fixed inset-0 z-[100] bg-zinc-950 text-white flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-slate-800 text-white flex flex-col">
             {/* Header */}
-            <div className="p-4 flex justify-between items-center bg-zinc-900/50 backdrop-blur border-b border-zinc-800">
+            <div className="p-4 flex justify-between items-center bg-slate-700/50 backdrop-blur border-b border-slate-600">
                 <div className="flex items-center gap-2 text-zinc-400 font-medium">
                     <span>Frage {currentIndex + 1}</span>
                     <span className="text-zinc-600">/</span>
                     <span>{quiz.questions.length}</span>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full"><X size={24} /></button>
+                <button onClick={onClose} className="p-2 hover:bg-slate-600 rounded-full"><X size={24} /></button>
             </div>
 
             {/* Timer Bar */}
-            <div className="h-1 bg-zinc-900 w-full overflow-hidden">
+            <div className="h-1 bg-slate-700 w-full overflow-hidden">
                 <div
                     className={`h-full transition-all duration-1000 ease-linear ${timeLeft < 5 ? 'bg-red-500' : 'bg-indigo-500'}`}
                     style={{ width: `${(timeLeft / 20) * 100}%` }}
@@ -214,7 +214,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                 {/* Options */}
                 <div className="w-full grid gap-4">
                     {currentQ.options.map((opt, idx) => {
-                        let btnClass = "bg-zinc-900 border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600"; // Default
+                        let btnClass = "bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500"; // Default
 
                         if (gameState === "feedback") {
                             if (idx === currentQ.correct_index) {
@@ -222,7 +222,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                             } else if (idx === selectedOption) {
                                 btnClass = "bg-red-500/20 border-red-500 text-red-400"; // Wrong selected
                             } else {
-                                btnClass = "bg-zinc-900 border-zinc-800 opacity-50"; // Others dimmed
+                                btnClass = "bg-slate-700 border-slate-600 opacity-50"; // Others dimmed
                             }
                         }
 

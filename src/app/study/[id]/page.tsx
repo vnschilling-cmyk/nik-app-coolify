@@ -16,6 +16,67 @@ const TYPE_ICONS: Record<string, any> = {
     map: MapIcon
 };
 
+const TYPE_STYLES: Record<string, { bg: string, border: string, text: string, hover: string, badge: string, solidBg: string, hoverBg: string }> = {
+    image: { bg: 'bg-purple-50 dark:bg-slate-900', border: 'border-purple-200 dark:border-purple-800/50', text: 'text-purple-600 dark:text-purple-400', hover: 'hover:border-purple-400', badge: 'bg-purple-100 dark:bg-purple-900/40', solidBg: 'bg-purple-600', hoverBg: 'hover:bg-purple-700' },
+    video: { bg: 'bg-red-50 dark:bg-slate-900', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', hover: 'hover:border-red-400', badge: 'bg-red-100 dark:bg-red-900/40', solidBg: 'bg-red-600', hoverBg: 'hover:bg-red-700' },
+    map: { bg: 'bg-emerald-50 dark:bg-slate-900', border: 'border-emerald-200 dark:border-emerald-800/50', text: 'text-emerald-600 dark:text-emerald-400', hover: 'hover:border-emerald-400', badge: 'bg-emerald-100 dark:bg-emerald-900/40', solidBg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-700' },
+    link: { bg: 'bg-blue-50 dark:bg-slate-900', border: 'border-blue-200 dark:border-blue-800/50', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:border-blue-400', badge: 'bg-blue-100 dark:bg-blue-900/40', solidBg: 'bg-blue-600', hoverBg: 'hover:bg-blue-700' },
+    text: { bg: 'bg-amber-50 dark:bg-slate-900', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', hover: 'hover:border-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40', solidBg: 'bg-amber-500', hoverBg: 'hover:bg-amber-600' }
+};
+
+function UnifiedContentList({ facts, questions, onSelectFact, onSelectQuestion }: any) {
+    const combined = [
+        ...facts.map((f: any) => ({ ...f, _type: 'fact' as const })),
+        ...questions.map((q: any) => ({ ...q, _type: 'question' as const }))
+    ].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+
+    if (combined.length === 0) return (
+        <div className="text-center py-12 bg-zinc-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-zinc-200 dark:border-slate-700">
+            <BookOpen className="w-10 h-10 mx-auto mb-3 text-zinc-300" />
+            <p className="text-zinc-500 text-sm">Noch keine Inhalte für diese Lektion verfügbar.</p>
+        </div>
+    );
+
+    return (
+        <div className="space-y-4">
+            {combined.map((item: any) => {
+                if (item._type === 'fact') {
+                    const Icon = TYPE_ICONS[item.type] || FileText;
+                    const style = TYPE_STYLES[item.type] || TYPE_STYLES.text;
+                    return (
+                        <div key={item.id} className={`${style.bg} border ${style.border} rounded-xl p-4 shadow-sm group ${style.hover} transition-all cursor-pointer`} onClick={() => onSelectFact(item)}>
+                            <div className={`flex items-center gap-2 ${style.text} mb-2`}>
+                                <Icon size={16} />
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">Info</span>
+                                {item.category && <span className={`text-[10px] ${style.badge} px-2 py-0.5 rounded-full`}>{item.category}</span>}
+                            </div>
+                            <h4 className="font-bold text-zinc-800 dark:text-zinc-200">{item.title}</h4>
+                            <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 line-clamp-2">
+                                <RichTextDisplay content={item.description} />
+                            </div>
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div key={item.id} className="bg-emerald-50/50 dark:bg-slate-800/50 border border-emerald-100 dark:border-slate-700 rounded-xl p-4 shadow-sm group hover:border-emerald-400 transition-all cursor-pointer" onClick={() => onSelectQuestion(item)}>
+                            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
+                                <HelpCircle size={16} />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Frage</span>
+                            </div>
+                            <h4 className="font-medium text-zinc-800 dark:text-zinc-200">{item.question}</h4>
+                            {item.is_answered && (
+                                <div className="mt-2 flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Beantwortet
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+            })}
+        </div>
+    );
+}
+
 interface Lesson {
     id: string;
     title: string;
@@ -26,6 +87,7 @@ interface Lesson {
     chapter_start: number;
     verse_start: number;
     verse_end: number;
+    has_bible_ref: boolean;
     expand?: {
         book_id?: {
             name: string;
@@ -43,6 +105,10 @@ interface Fact {
     verse_start: number;
     verse_end: number;
     lesson_id: string;
+    order: number;
+    url?: string;
+    file?: string;
+    collectionId?: string;
 }
 
 interface Verse {
@@ -105,7 +171,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
 
             // Load other data in parallel, handling failures gracefully
             const [factsRes, questionsRes, memoryVersesRes, quizzesRes, notesRes] = await Promise.all([
-                pb.collection('facts').getFullList({ filter: `lesson_id="${id}"`, sort: 'title' }).catch(() => []),
+                pb.collection('facts').getFullList({ filter: `lesson_id="${id}"`, sort: 'order' }).catch(() => []),
                 pb.collection('questions').getFullList({ filter: `lesson_id="${id}"`, sort: 'order' }).catch(() => []),
                 pb.collection('memory_verses').getFullList({ filter: `lesson_id="${id}"`, expand: 'book_id', sort: 'created' }).catch(() => []),
                 pb.collection('quizzes').getFullList({ filter: `lesson_id="${id}"` }).catch(() => []),
@@ -122,19 +188,24 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 chapter_start: lessonRes.chapter_start || 1,
                 verse_start: lessonRes.verse_start || 1,
                 verse_end: lessonRes.verse_end || 10,
+                has_bible_ref: lessonRes.has_bible_ref || false,
                 expand: lessonRes.expand
             };
 
             setLesson(loadedLesson);
             setFacts(factsRes.map(r => ({
                 id: r.id,
-                title: r.title || "",
+                title: r.title || "Info",
                 description: r.description || "",
                 category: r.category || "",
                 type: r.type || "text",
                 verse_start: r.verse_start || 0,
                 verse_end: r.verse_end || 0,
-                lesson_id: r.lesson_id || ""
+                lesson_id: r.lesson_id || "",
+                order: r.order || 0,
+                url: r.url || "",
+                file: r.file || "",
+                collectionId: r.collectionId
             })));
 
             setMemoryVerses(memoryVersesRes.map(r => ({
@@ -157,7 +228,8 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 verse_start: r.verse_start || 0,
                 verse_end: r.verse_end || 0,
                 answer: r.answer || "",
-                is_answered: r.is_answered || false
+                is_answered: r.is_answered || false,
+                order: r.order || 0
             })));
 
             setNotes(notesRes.map(r => ({
@@ -170,7 +242,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
             })));
 
             // Load Bible Verses if applicable
-            if (loadedLesson.book_id && loadedLesson.category !== "Thema") {
+            if (loadedLesson.has_bible_ref && loadedLesson.book_id && loadedLesson.category !== "Thema") {
                 await loadVerses(loadedLesson);
             }
 
@@ -263,12 +335,12 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
     }
 
     const isThema = lesson.category === "Thema";
-    const hasBibleRef = lesson.book_id && !isThema;
+    const hasBibleRef = lesson.has_bible_ref && lesson.book_id && !isThema;
 
     return (
-        <div className="min-h-screen pb-24 bg-white dark:bg-black">
+        <div className="min-h-screen pb-24 bg-white dark:bg-slate-900">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 px-4 py-4 flex items-center gap-4">
+            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-slate-700/50 px-4 py-4 flex items-center gap-4">
                 <Link href="/study" className="p-2 -ml-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                     <ChevronLeft size={24} />
                 </Link>
@@ -349,36 +421,87 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
 
             <div className="max-w-prose mx-auto p-4">
                 {/* Fact Detail Popup */}
-                {selectedFact && (
-                    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setSelectedFact(null)}>
-                        <div className="bg-amber-50 dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-lg shadow-xl border-2 border-amber-400 flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-3 shrink-0">
-                                <Lightbulb className="w-5 h-5" />
-                                <span className="font-bold">Info</span>
-                                {selectedFact.category && (
-                                    <span className="text-xs bg-amber-200 dark:bg-amber-800 px-2 py-0.5 rounded-full">{selectedFact.category}</span>
-                                )}
-                            </div>
-                            <h3 className="font-bold text-lg mb-2 shrink-0">{selectedFact.title}</h3>
+                {selectedFact && (() => {
+                    const style = TYPE_STYLES[selectedFact.type] || TYPE_STYLES.text;
+                    const Icon = TYPE_ICONS[selectedFact.type] || Lightbulb;
 
-                            <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0 text-zinc-700 dark:text-zinc-300 pr-2">
-                                <RichTextDisplay content={selectedFact.description || "Keine Beschreibung."} />
-                            </div>
+                    return (
+                        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedFact(null)}>
+                            <div className={`${style.bg} rounded-2xl p-6 w-full max-w-lg shadow-xl border-2 ${style.border} flex flex-col max-h-[80vh]`} onClick={e => e.stopPropagation()}>
+                                <div className={`flex items-center gap-2 ${style.text} mb-4 border-b-2 border-inherit/20 pb-3 shrink-0`}>
+                                    <Icon className="w-5 h-5" />
+                                    <span className="font-bold uppercase text-[10px] tracking-widest">Information</span>
+                                    {selectedFact.category && (
+                                        <span className={`text-[10px] font-bold ${style.badge} px-2 py-0.5 rounded-full`}>{selectedFact.category}</span>
+                                    )}
+                                </div>
+                                <h3 className="font-bold text-lg mb-2 shrink-0">{selectedFact.title}</h3>
 
-                            <button
-                                onClick={() => setSelectedFact(null)}
-                                className="mt-4 w-full py-2 bg-amber-500 text-white rounded-lg font-medium shrink-0 hover:bg-amber-600 transition-colors"
-                            >
-                                Schließen
-                            </button>
+                                <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0 text-zinc-700 dark:text-zinc-300 pr-2">
+                                    {selectedFact.type === 'image' && selectedFact.file && (
+                                        <div className="mb-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700 bg-zinc-100 dark:bg-slate-900">
+                                            <img
+                                                src={`${pb.baseUrl}/api/files/${selectedFact.collectionId}/${selectedFact.id}/${selectedFact.file}`}
+                                                alt={selectedFact.title}
+                                                className="w-full h-auto object-contain max-h-[40vh]"
+                                            />
+                                        </div>
+                                    )}
+                                    <RichTextDisplay content={selectedFact.description || "Keine Beschreibung."} />
+                                </div>
+
+                                {/* Media Link */}
+                                {selectedFact.url && (() => {
+                                    const style = TYPE_STYLES[selectedFact.type] || TYPE_STYLES.text;
+                                    const Icon = TYPE_ICONS[selectedFact.type] || ExternalLink;
+                                    // Map technical type to readable label for the button
+                                    const label = selectedFact.type === 'video' ? "Video öffnen" :
+                                        selectedFact.type === 'map' ? "Karte öffnen" :
+                                            selectedFact.type === 'link' ? "Link öffnen" : "Öffnen";
+
+                                    return (
+                                        <a
+                                            href={selectedFact.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-95 text-sm border-2 ${style.bg} ${style.border} ${style.text} ${style.hover.replace('hover:', 'hover:bg-')}`}
+                                        >
+                                            <Icon size={18} />
+                                            {label}
+                                        </a>
+                                    );
+                                })()}
+
+                                {selectedFact.file && (() => {
+                                    const style = TYPE_STYLES.image;
+                                    return (
+                                        <a
+                                            href={`${pb.baseUrl}/api/files/${selectedFact.collectionId}/${selectedFact.id}/${selectedFact.file}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-95 text-sm border-2 ${style.bg} ${style.border} ${style.text} ${style.hover.replace('hover:', 'hover:bg-')}`}
+                                        >
+                                            <ImageIcon size={18} />
+                                            Datei öffnen
+                                        </a>
+                                    );
+                                })()}
+
+                                <button
+                                    onClick={() => setSelectedFact(null)}
+                                    className={`mt-4 w-full py-3 ${style.solidBg} ${style.hoverBg} text-white rounded-xl font-bold shrink-0 transition-all shadow-md active:scale-[0.98]`}
+                                >
+                                    Schließen
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                })()}
 
                 {/* Question Detail Popup */}
                 {selectedQuestion && (
                     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={() => setSelectedQuestion(null)}>
-                        <div className="bg-emerald-50 dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-lg shadow-xl border-2 border-emerald-400 flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                        <div className="bg-emerald-50 dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl border-2 border-emerald-400 flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-3 shrink-0">
                                 <HelpCircle className="w-5 h-5" />
                                 <span className="font-bold">Frage</span>
@@ -413,15 +536,22 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
 
                 {/* Main Content */}
                 <div className="space-y-6">
-                    {/* Thema: Show only description */}
+                    {/* Thema: Show description and then sorted list of items */}
                     {isThema && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-4">
-                                <FileText size={20} />
-                                <span className="font-medium">Thema-Beschreibung</span>
+                        <div className="space-y-6">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-4">
+                                    <FileText size={20} />
+                                    <span className="font-medium">Thema-Beschreibung</span>
+                                </div>
+                                <div className="prose prose-zinc dark:prose-invert text-zinc-700 dark:text-zinc-300">
+                                    <RichTextDisplay content={lesson.content || "Keine Beschreibung vorhanden."} />
+                                </div>
                             </div>
-                            <div className="prose prose-zinc dark:prose-invert text-zinc-700 dark:text-zinc-300">
-                                <RichTextDisplay content={lesson.content || "Keine Beschreibung vorhanden."} />
+
+                            {/* Sorted list of infos and questions */}
+                            <div className="pt-8 border-t border-zinc-100 dark:border-slate-800">
+                                <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                             </div>
                         </div>
                     )}
@@ -430,14 +560,18 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                         <>
                             {/* Description if exists */}
                             {lesson.content && (
-                                <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-zinc-800">
+                                <div className="bg-zinc-50 dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
                                     <RichTextDisplay content={lesson.content} className="text-sm" />
                                 </div>
                             )}
 
                             {/* Bible Text with Facts */}
                             {hasBibleRef ? (
-                                verses.length === 0 ? (
+                                lesson.chapter_start === 0 ? (
+                                    <div className="pt-4">
+                                        <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
+                                    </div>
+                                ) : verses.length === 0 ? (
                                     <div className="text-center py-8 text-zinc-500">
                                         <p>Kein Bibeltext gefunden.</p>
                                     </div>
@@ -522,9 +656,8 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                     </div>
                                 )
                             ) : (
-                                <div className="text-center py-8 text-zinc-500">
-                                    <BookOpen className="w-10 h-10 mx-auto mb-3 text-zinc-300" />
-                                    <p>Keine Bibelstelle verknüpft.</p>
+                                <div className="pt-4">
+                                    <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                                 </div>
                             )}
                         </>
@@ -595,7 +728,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                 <button
                                     key={quiz.id}
                                     onClick={() => setActiveQuiz(quiz)}
-                                    className="w-full bg-white dark:bg-zinc-900 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-between hover:shadow-md transition-all group"
+                                    className="w-full bg-white dark:bg-slate-700 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-between hover:shadow-md transition-all group"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-fuchsia-100 dark:bg-fuchsia-900/30 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400 font-bold">
@@ -617,7 +750,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
             {/* Note Modal */}
             {showNoteModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-xl">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg flex items-center gap-2">
                                 <StickyNote className="text-yellow-500" size={20} />
@@ -634,13 +767,13 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             value={noteContent}
                             onChange={e => setNoteContent(e.target.value)}
                             placeholder="Deine Gedanken zu dieser Lektion..."
-                            className="w-full px-4 py-3 bg-yellow-50 dark:bg-zinc-800 border border-yellow-200 dark:border-zinc-700 rounded-xl min-h-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            className="w-full px-4 py-3 bg-yellow-50 dark:bg-slate-700 border border-yellow-200 dark:border-slate-600 rounded-xl min-h-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             autoFocus
                         />
                         <div className="flex gap-2 mt-4">
                             <button
                                 onClick={() => { setShowNoteModal(false); setEditingNote(null); setNoteContent(""); }}
-                                className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg font-medium text-zinc-600 dark:text-zinc-400"
+                                className="flex-1 py-2.5 bg-zinc-100 dark:bg-slate-700 rounded-lg font-medium text-zinc-600 dark:text-zinc-400"
                             >
                                 Abbrechen
                             </button>

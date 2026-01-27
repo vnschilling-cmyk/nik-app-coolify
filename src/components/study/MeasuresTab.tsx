@@ -104,8 +104,8 @@ export default function MeasuresTab() {
                             key={catKey}
                             onClick={() => handleCategoryChange(catKey)}
                             className={`relative group p-4 rounded-xl text-left transition-all duration-300 overflow-hidden ${isActive
-                                ? `bg-white dark:bg-zinc-900 ring-2 ${catColors.ring} shadow-xl scale-[1.02]`
-                                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-transparent hover:shadow-xl hover:scale-[1.02]"
+                                ? `bg-white dark:bg-slate-700 ring-2 ${catColors.ring} shadow-xl scale-[1.02]`
+                                : "bg-white dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 hover:border-transparent hover:shadow-xl hover:scale-[1.02]"
                                 }`}
                         >
                             {/* Gradient Background on Hover/Active */}
@@ -143,7 +143,7 @@ export default function MeasuresTab() {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Umrechner</h2>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">{category.name} umrechnen</p>
+                        <p className="text-sm text-zinc-500 dark:text-slate-400">{category.name} umrechnen</p>
                     </div>
                 </div>
 
@@ -155,12 +155,12 @@ export default function MeasuresTab() {
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             placeholder="Wert eingeben..."
-                            className="flex-1 px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            className="flex-1 px-4 py-3 rounded-lg border border-zinc-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500 focus:border-transparent transition-all"
                         />
                         <select
                             value={selectedUnit}
                             onChange={(e) => setSelectedUnit(e.target.value)}
-                            className="px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500 focus:border-transparent transition-all min-w-[180px]"
+                            className="px-4 py-3 rounded-lg border border-zinc-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500 focus:border-transparent transition-all min-w-[180px]"
                         >
                             {Object.entries(units).map(([key, unit]) => (
                                 <option key={key} value={key}>{unit.name}</option>
@@ -170,7 +170,7 @@ export default function MeasuresTab() {
 
                     {/* Result */}
                     {result !== null && currentUnit && (
-                        <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800">
+                        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-zinc-200 dark:border-slate-700">
                             <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Ergebnis:</div>
                             <div className="text-2xl font-bold text-zinc-900 dark:text-white">
                                 {inputValue} {selectedUnit && units[selectedUnit as keyof typeof units]?.name.split(" ")[0]} = <span className={colors.text}>{result.toLocaleString('de-DE', { maximumFractionDigits: 4 })} {currentUnit.unit}</span>
@@ -180,7 +180,7 @@ export default function MeasuresTab() {
 
                     {/* Current Unit Info */}
                     {currentUnit && (
-                        <div className="bg-white/50 dark:bg-zinc-900/50 rounded-lg p-4 border border-zinc-200 dark:border-zinc-800">
+                        <div className="bg-white/50 dark:bg-slate-800/50 rounded-lg p-4 border border-zinc-200 dark:border-slate-700">
                             <div className="flex items-start gap-3">
                                 <Info className={`w-5 h-5 mt-0.5 ${colors.text}`} />
                                 <div>
@@ -199,18 +199,18 @@ export default function MeasuresTab() {
             </div>
 
             {/* Reference Table */}
-            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
+            <div className="bg-zinc-50 dark:bg-slate-800/50 rounded-xl border border-zinc-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-4 py-3 border-b border-zinc-200 dark:border-slate-700">
                     <h3 className="font-bold text-zinc-900 dark:text-white">📚 Übersicht: {category.name}</h3>
                 </div>
-                <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                <div className="divide-y divide-zinc-200 dark:divide-slate-700">
                     {Object.entries(units).map(([key, unit]) => {
                         const isExpanded = expandedInfo.has(key);
                         return (
-                            <div key={key} className="bg-white dark:bg-zinc-900">
+                            <div key={key} className="bg-white dark:bg-slate-800">
                                 <button
                                     onClick={() => toggleInfo(key)}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-left"
+                                    className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-slate-700 transition-colors text-left"
                                 >
                                     <div className="flex-1">
                                         <div className="font-medium text-zinc-900 dark:text-white">{unit.name}</div>
@@ -226,7 +226,7 @@ export default function MeasuresTab() {
                                 </button>
                                 {isExpanded && (
                                     <div className="px-4 pb-4 pt-0">
-                                        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3 text-sm">
+                                        <div className="bg-zinc-50 dark:bg-slate-700 rounded-lg p-3 text-sm">
                                             <p className="text-zinc-700 dark:text-zinc-300">{unit.description}</p>
                                             {unit.biblical && (
                                                 <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-xs italic">

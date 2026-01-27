@@ -1,55 +1,75 @@
-import 'dotenv/config';
 import PocketBase from 'pocketbase';
 
-const PB_URL = process.env.PB_URL || 'http://127.0.0.1:8090';
-const PB_EMAIL = process.env.PB_EMAIL;
-const PB_PASSWORD = process.env.PB_PASSWORD;
+const pb = new PocketBase('https://pocketbase-nik-app-coolify.195.201.231.49.nip.io');
 
-async function main() {
-    console.log(`Fixing schema on ${PB_URL}...`);
-    const pb = new PocketBase(PB_URL);
-
+async function fixSchema() {
     try {
-        await pb.admins.authWithPassword(PB_EMAIL, PB_PASSWORD);
+        console.log("Authenticating as Admin...");
+        await pb.admins.authWithPassword('admin@nik-app.de', 'Muenze1980!#');
 
-        const collection = await pb.collections.getOne('verses');
-        console.log("Found collection:", collection.name);
+        console.log("Fetching collection 'users'...");
+        const collection = await pb.collections.getOne('users');
 
-        const schema = collection.schema;
-        const translationField = schema.find(f => f.name === 'translation');
+        console.log("Keys on collection object:", Object.keys(collection));
 
-        if (!translationField) {
-            console.log("Translation field missing! Creating it...");
-            schema.push({
-                name: 'translation',
-                type: 'text',
-                required: true,
-                options: {}
-            });
+        // Try to locate fields
+        let fields = collection.fields || collection.schema || [];
+        console.log(`Current fields count: ${fields.length}`);
+
+        // Define the field
+        const newField = {
+            system: false,
+            id: 'password_changed_idx_' + Date.now(), // Unique ID
+            name: 'password_changed',
+            type: 'bool',
+            required: false,
+            presentable: false,
+            unique: false,
+            options: {}
+        };
+
+        // Check if exists
+        const idx = fields.findIndex(f => f.name === 'password_changed');
+        if (idx !== -1) {
+            console.log("Field exists, replacing...");
+            fields[idx] = newField;
         } else {
-            console.log("Translation field exists. Type:", translationField.type);
-            if (translationField.type === 'select') {
-                console.log("Current Options:", translationField.options.values);
-                const values = translationField.options.values || [];
-                if (!values.includes('SCH2000')) {
-                    console.log("Adding SCH2000 to options...");
-                    values.push('SCH2000');
-                    translationField.options.values = values;
-                }
-                if (!values.includes('DEBUG')) {
-                    values.push('DEBUG'); // For our test
-                }
-            } else {
-                console.log("Field is not a select. No changes needed usually.");
-            }
+            console.log("Field missing, adding...");
+            fields.push(newField);
         }
 
-        await pb.collections.update(collection.id, { schema });
-        console.log("Schema updated successfully!");
+        // Apply back to BOTH properties because PB JS SDK types are confusing between versions
+        if (collection.fields) collection.fields = fields;
+        if (collection.schema) collection.schema = fields; // 'schema' is often read-only or alias in newer versions but let's try.
+
+        // Manually constructing update payload might be safer if SDK strips properties
+        // But collection object usually works.
+
+        console.log("Sending update...");
+        await pb.collections.update('users', collection);
+        console.log("Update sent.");
+
+        // Verify
+        const check = await pb.collections.getOne('users');
+        const checkFields = check.fields || check.schema || [];
+        const found = checkFields.find(f => f.name === 'password_changed');
+        if (found) {
+            console.log("✅ SUCCESS: Field persisted.");
+
+            // Update Viktor
+            console.log("Updating Viktor...");
+            const v = await pb.collection('users').getFirstListItem('name ~ "Viktor Schilling"');
+            await pb.collection('users').update(v.id, { password_changed: true });
+            console.log("Viktor updated.");
+
+        } else {
+            console.error("❌ FAILED: Field not persisted.");
+            console.log("Fields returned:", checkFields.map(f => f.name));
+        }
 
     } catch (e) {
-        console.error("Failed to update schema:", e);
+        console.error("Error:", e);
     }
 }
 
-main();
+fixSchema();

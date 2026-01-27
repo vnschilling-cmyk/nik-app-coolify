@@ -138,6 +138,13 @@ export default function QuestionsTab() {
     }, [formData.lesson_id, formData.category, formData.book_id, formData.chapter, formData.has_bible_ref, lessons]);
 
     const updateMaxVersesForLesson = async (lesson: Lesson) => {
+        // If lesson covers whole book (chapter_start === 0), we can't fetch verses by chapter.
+        // In this case, maybe we just don't limit maxVerses strictly or set a default.
+        if (lesson.chapter_start === 0) {
+            setMaxVerses(176); // Fallback to max PS
+            return;
+        }
+
         try {
             const record = await pb.collection('verses').getList(1, 1, {
                 filter: `book="${lesson.book_id}" && chapter=${lesson.chapter_start}`,
@@ -179,6 +186,12 @@ export default function QuestionsTab() {
         if (!formData.book_id) return "";
         const book = getSelectedBook();
         if (!book) return "";
+
+        // Check for whole book
+        if (formData.chapter === 0) {
+            return book.name;
+        }
+
         const verseRange = formData.verse_start === formData.verse_end
             ? `${formData.verse_start}`
             : `${formData.verse_start}-${formData.verse_end}`;
@@ -210,9 +223,10 @@ export default function QuestionsTab() {
 
             if (formData.has_bible_ref && formData.book_id) {
                 data.book_id = formData.book_id;
+                // If chapter is 0 (whole book), store 0.
                 data.chapter = formData.chapter;
-                data.verse_start = formData.verse_start;
-                data.verse_end = formData.verse_end;
+                data.verse_start = formData.chapter === 0 ? 0 : formData.verse_start;
+                data.verse_end = formData.chapter === 0 ? 0 : formData.verse_end;
                 data.verse_ref = generateVerseRef();
             } else {
                 data.book_id = "";
@@ -261,7 +275,7 @@ export default function QuestionsTab() {
             lesson_id: q.lesson_id,
             has_bible_ref: !!q.book_id,
             book_id: q.book_id || "",
-            chapter: q.chapter || 1,
+            chapter: q.chapter,
             verse_start: q.verse_start || 1,
             verse_end: q.verse_end || 1,
             answer: q.answer,
@@ -303,8 +317,8 @@ export default function QuestionsTab() {
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingId ? "Frage bearbeiten" : "Neue Frage"}</h3>
                             <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
@@ -348,7 +362,7 @@ export default function QuestionsTab() {
                                     required={!isGeneralQuestion}
                                     value={formData.lesson_id}
                                     onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                 >
                                     <option value="">{isGeneralQuestion ? "Keine Lektion" : "Lektion wählen..."}</option>
                                     {lessons.map(l => (
@@ -372,7 +386,7 @@ export default function QuestionsTab() {
                                                     verse_end: Math.max(newVal, formData.verse_end)
                                                 });
                                             }}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                         >
                                             {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
                                                 <option key={num} value={num}>{num}</option>
@@ -384,7 +398,7 @@ export default function QuestionsTab() {
                                         <select
                                             value={formData.verse_end}
                                             onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                         >
                                             {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
                                                 <option key={num} value={num}>{num}</option>
@@ -418,7 +432,7 @@ export default function QuestionsTab() {
                                                 <select
                                                     value={formData.book_id}
                                                     onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
-                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                                 >
                                                     <option value="">Buch wählen...</option>
                                                     {books.map(b => (
@@ -428,51 +442,74 @@ export default function QuestionsTab() {
                                             </div>
 
                                             {selectedBook && (
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
-                                                        <select
-                                                            value={formData.chapter}
-                                                            onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
-                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                        >
-                                                            {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
-                                                                <option key={num} value={num}>{num}</option>
-                                                            ))}
-                                                        </select>
+                                                <>
+                                                    <div className="mb-2">
+                                                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.chapter === 0}
+                                                                onChange={e => {
+                                                                    setFormData({
+                                                                        ...formData,
+                                                                        chapter: e.target.checked ? 0 : 1,
+                                                                        verse_start: e.target.checked ? 0 : 1,
+                                                                        verse_end: e.target.checked ? 0 : 1
+                                                                    });
+                                                                }}
+                                                                className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                            />
+                                                            Ganzes Buch (ohne Kapitel/Verse)
+                                                        </label>
                                                     </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                                        <select
-                                                            value={formData.verse_start}
-                                                            onChange={e => {
-                                                                const newVal = parseInt(e.target.value) || 1;
-                                                                setFormData({
-                                                                    ...formData,
-                                                                    verse_start: newVal,
-                                                                    verse_end: Math.max(newVal, formData.verse_end)
-                                                                });
-                                                            }}
-                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                        >
-                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                <option key={num} value={num}>{num}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                                        <select
-                                                            value={formData.verse_end}
-                                                            onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                                        >
-                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                <option key={num} value={num}>{num}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
+
+                                                    {formData.chapter !== 0 && (
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <div>
+                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                                <select
+                                                                    value={formData.chapter}
+                                                                    onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
+                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                >
+                                                                    {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
+                                                                        <option key={num} value={num}>{num}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                                <select
+                                                                    value={formData.verse_start}
+                                                                    onChange={e => {
+                                                                        const newVal = parseInt(e.target.value) || 1;
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            verse_start: newVal,
+                                                                            verse_end: Math.max(newVal, formData.verse_end)
+                                                                        });
+                                                                    }}
+                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                >
+                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                        <option key={num} value={num}>{num}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                                <select
+                                                                    value={formData.verse_end}
+                                                                    onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                >
+                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                        <option key={num} value={num}>{num}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
 
                                             {formData.book_id && (
@@ -493,7 +530,7 @@ export default function QuestionsTab() {
                                     required
                                     value={formData.question}
                                     onChange={e => setFormData({ ...formData, question: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg min-h-[80px]"
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[80px]"
                                     placeholder="Die Frage eingeben..."
                                 />
                             </div>
@@ -619,7 +656,7 @@ export default function QuestionsTab() {
                             });
 
                             return (
-                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
                                     <button
                                         onClick={() => toggleGroup(bookGroup.id)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -642,7 +679,7 @@ export default function QuestionsTab() {
                                     </button>
 
                                     {isExpanded && (
-                                        <div className="p-3 pt-0 space-y-4 border-t border-zinc-200 dark:border-zinc-800">
+                                        <div className="p-3 pt-0 space-y-4 border-t border-zinc-200 dark:border-slate-700">
                                             {sortedSubgroups.map(([subgroupTitle, groupQuestions], idx) => {
                                                 const isLast = idx === sortedSubgroups.length - 1;
                                                 // Unique key for collapsing logic (combine bookId and subgroupTitle to be safe)
@@ -650,7 +687,7 @@ export default function QuestionsTab() {
                                                 const isSubExpanded = expandedGroups.has(collapseKey);
 
                                                 return (
-                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-zinc-800 pb-4" : ""}>
+                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-slate-700 pb-4" : ""}>
                                                         <button
                                                             onClick={() => toggleGroup(collapseKey)}
                                                             className="w-full flex items-center justify-between py-2 group"
@@ -677,7 +714,7 @@ export default function QuestionsTab() {
                                                                         : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300";
 
                                                                     return (
-                                                                        <div key={q.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
+                                                                        <div key={q.id} className="bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex flex-wrap gap-2 mb-1">
                                                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>

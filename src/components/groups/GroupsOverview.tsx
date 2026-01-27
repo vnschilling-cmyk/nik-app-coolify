@@ -1,14 +1,15 @@
-"use client";
-
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { pb } from "@/lib/pocketbase";
-import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle } from "lucide-react";
+import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle, ChevronDown } from "lucide-react";
 
 export default function GroupsOverview() {
+    const router = useRouter();
     const [config, setConfig] = useState({
         url: "",
         token: ""
     });
+    const [configOpen, setConfigOpen] = useState(false);
     const [groups, setGroups] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -37,7 +38,9 @@ export default function GroupsOverview() {
     };
 
     const loadLocalGroups = async () => {
-        const res = await pb.collection('groups').getFullList();
+        const res = await pb.collection('groups').getFullList({
+            filter: 'ct_id > 0'
+        });
         setGroups(res);
     };
 
@@ -80,6 +83,13 @@ export default function GroupsOverview() {
 
         setSyncing(true);
         try {
+            // Auth Check
+            if (!pb.authStore.isValid) {
+                router.push('/login');
+                setSyncing(false);
+                return;
+            }
+
             const res = await fetch('/api/churchtools', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -91,45 +101,68 @@ export default function GroupsOverview() {
             });
 
             if (!res.ok) throw new Error("Sync failed");
+
             const data = await res.json();
             const ctMembers = data.data || [];
 
+            let successCount = 0;
+            let failCount = 0;
+
             for (const member of ctMembers) {
-                const firstName = member.person?.domainAttributes?.firstName || "";
-                const lastName = member.person?.domainAttributes?.lastName || "";
-                const name = firstName || lastName ? `${firstName} ${lastName}`.trim() : (member.person?.title || "Unbekannt");
-                const email = member.person?.domainAttributes?.email || member.email || "";
+                try {
+                    const firstName = member.person?.domainAttributes?.firstName || "";
+                    const lastName = member.person?.domainAttributes?.lastName || "";
+                    const name = firstName || lastName ? `${firstName} ${lastName}`.trim() : (member.person?.title || "Unbekannt");
+                    // Fix: Declare email only once
+                    const rawEmail = member.person?.domainAttributes?.email || member.email || "";
+                    const email = rawEmail === "" ? null : rawEmail; // Use null for empty to be clean
 
-                const filter = `group = "${groupId}" && ct_person_id = ${member.personId}`;
-                const existing = await pb.collection('group_members').getList(1, 1, { filter });
+                    const filter = `group = "${groupId}" && ct_person_id = "${member.personId}"`;
+                    const existing = await pb.collection('group_members').getList(1, 1, { filter });
 
-                const memberData: any = {
-                    group: groupId,
-                    ct_person_id: member.personId,
-                    name: name,
-                    email: email,
-                    role: 'youth'
-                };
+                    // Sanitize Data
+                    const memberData: any = {
+                        group: groupId,
+                        ct_person_id: member.personId,
+                        name: name,
+                        email: email,
+                        role: 'youth'
+                    };
 
-                if (member.email) {
-                    try {
-                        const user = await pb.collection('users').getFirstListItem(`email="${member.email}"`);
-                        if (user) memberData.user = user.id;
-                    } catch (e) { }
-                }
+                    /* Re-enabling user linking logic safely */
+                    if (email) {
+                        try {
+                            const user = await pb.collection('users').getFirstListItem(`email="${email}"`);
+                            if (user) memberData.user = user.id;
+                        } catch (e) { }
+                    }
 
-                if (existing.items.length > 0) {
-                    await pb.collection('group_members').update(existing.items[0].id, memberData);
-                } else {
-                    await pb.collection('group_members').create(memberData);
+                    if (existing.items.length > 0) {
+                        await pb.collection('group_members').update(existing.items[0].id, memberData);
+                    } else {
+                        await pb.collection('group_members').create(memberData);
+                    }
+
+                    successCount++;
+                } catch (innerError: any) {
+                    console.error(`Failed to sync member ${member.personId}:`, innerError);
+                    failCount++;
                 }
             }
 
             if (selectedGroupId === groupId) {
                 await loadGroupMembers(groupId);
             }
+
+            if (failCount === 0) {
+                alert(`${successCount} Mitglieder erfolgreich synchronisiert.`);
+            } else {
+                alert(`Sync abgeschlossen mit Fehlern.\nErfolgreich: ${successCount}\nFehlgeschlagen: ${failCount}\n\nBitte Konsole (F12) für Details prüfen.`);
+            }
+
         } catch (e: any) {
-            console.error(e);
+            console.error("Sync Critical Error:", e);
+            alert("Kritischer Fehler beim Synchronisieren: " + e.message);
         } finally {
             setSyncing(false);
         }
@@ -192,7 +225,7 @@ export default function GroupsOverview() {
                 <button
                     onClick={syncGroups}
                     disabled={syncing}
-                    className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                    className="p-3 bg-zinc-100 dark:bg-slate-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={20} className={syncing ? "animate-spin text-indigo-500" : "text-zinc-600 dark:text-zinc-400"} />
                 </button>
@@ -201,14 +234,14 @@ export default function GroupsOverview() {
             {/* Groups Grid */}
             <div className="grid gap-4">
                 {groups.length === 0 ? (
-                    <div className="text-center py-12 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
+                    <div className="text-center py-12 bg-zinc-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-slate-700">
                         <Users className="mx-auto text-zinc-300 mb-2" size={48} />
                         <p className="text-zinc-500">Noch keine Gruppen synchronisiert.</p>
                         <p className="text-xs text-zinc-400 mt-1">Überprüfe die ChurchTools Verbindung in den Einstellungen.</p>
                     </div>
                 ) : (
                     groups.map(group => (
-                        <div key={group.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+                        <div key={group.id} className="bg-white dark:bg-slate-700 rounded-2xl border border-zinc-200 dark:border-slate-600 overflow-hidden shadow-sm">
                             <div className="p-5 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
@@ -236,8 +269,8 @@ export default function GroupsOverview() {
                                             }
                                         }}
                                         className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedGroupId === group.id
-                                                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
-                                                : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                                            ? "bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-300"
+                                            : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
                                             }`}
                                     >
                                         {selectedGroupId === group.id ? "Schließen" : "Mitglieder"}
@@ -246,7 +279,7 @@ export default function GroupsOverview() {
                             </div>
 
                             {selectedGroupId === group.id && (
-                                <div className="border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 p-5 animate-slideDown">
+                                <div className="border-t border-zinc-100 dark:border-slate-600 bg-zinc-50/50 dark:bg-slate-800/30 p-5 animate-slideDown">
                                     {loadingMembers ? (
                                         <div className="flex items-center justify-center py-4">
                                             <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
@@ -257,7 +290,7 @@ export default function GroupsOverview() {
                                                 <p className="text-center text-sm text-zinc-500 py-4">Keine Mitglieder gefunden. Bitte synchronisieren.</p>
                                             ) : (
                                                 groupMembers.map(member => (
-                                                    <div key={member.id} className="bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between shadow-sm">
+                                                    <div key={member.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-zinc-200 dark:border-slate-600 flex items-center justify-between shadow-sm">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center text-xs font-bold text-zinc-500">
                                                                 {member.name.charAt(0)}
@@ -270,7 +303,7 @@ export default function GroupsOverview() {
                                                         <select
                                                             value={member.role}
                                                             onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                                                            className="text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                            className="text-xs bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
                                                         >
                                                             <option value="youth">Jugendlicher</option>
                                                             <option value="staff">Mitarbeiter</option>
@@ -288,41 +321,52 @@ export default function GroupsOverview() {
                 )}
             </div>
 
-            {/* CT Config Settings - Compact */}
-            <div className="bg-zinc-900/5 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center gap-3 mb-4">
-                    <LinkIcon size={18} className="text-indigo-500" />
-                    <h3 className="font-bold">ChurchTools Integration</h3>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Instanz URL</label>
-                        <input
-                            type="url"
-                            value={config.url}
-                            onChange={e => setConfig({ ...config, url: e.target.value })}
-                            placeholder="https://ihre-gemeinde.churchtools.de"
-                            className="w-full mt-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Login Token</label>
-                        <input
-                            type="password"
-                            value={config.token}
-                            onChange={e => setConfig({ ...config, token: e.target.value })}
-                            placeholder="VbLguIRX..."
-                            className="w-full mt-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                        />
-                    </div>
-                </div>
+            {/* CT Config Settings - Compact Accordion */}
+            <div className="bg-white dark:bg-slate-700 rounded-2xl border border-zinc-200 dark:border-slate-600 overflow-hidden">
                 <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="mt-4 w-full py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                    onClick={() => setConfigOpen(!configOpen)}
+                    className="w-full flex items-center justify-between p-4 bg-zinc-50 dark:bg-slate-800/50 hover:bg-zinc-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                    {saving ? "Wird gespeichert..." : "Verbindung aktualisieren"}
+                    <div className="flex items-center gap-3">
+                        <LinkIcon size={18} className="text-indigo-500" />
+                        <h3 className="font-bold">ChurchTools Integration</h3>
+                    </div>
+                    <RefreshCw size={16} className={`text-zinc-400 transition-transform ${configOpen ? "rotate-180" : ""}`} />
                 </button>
+
+                {configOpen && (
+                    <div className="p-6 animate-slideDown">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Instanz URL</label>
+                                <input
+                                    type="url"
+                                    value={config.url}
+                                    onChange={e => setConfig({ ...config, url: e.target.value })}
+                                    placeholder="https://ihre-gemeinde.churchtools.de"
+                                    className="w-full mt-1 px-4 py-2 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Login Token</label>
+                                <input
+                                    type="password"
+                                    value={config.token}
+                                    onChange={e => setConfig({ ...config, token: e.target.value })}
+                                    placeholder="VbLguIRX..."
+                                    className="w-full mt-1 px-4 py-2 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="mt-4 w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
+                            {saving ? "Wird gespeichert..." : "Verbindung aktualisieren"}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

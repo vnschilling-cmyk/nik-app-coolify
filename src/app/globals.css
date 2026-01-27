@@ -12,7 +12,7 @@
   /* Font Variables Defaults */
   --font-details: var(--font-montserrat);
   --font-headings: var(--font-montserrat);
-  --font-bible: var(--font-playfair);
+  --font-bible: var(--font-raleway);
 
   --heading-weight: 700;
   --heading-style: normal;
@@ -45,65 +45,55 @@ body {
    we must divide by that and multiply by --font-scale-headings.
    Formula: BaseSize * (HeadingScale / DetailsScale)
 */
-h1,
-.text-4xl,
-.text-3xl {
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
-  font-style: var(--heading-style);
-  text-decoration: var(--heading-decoration);
-  /* Base approx 2.25rem (36px) for h1/4xl */
+h1 {
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
+  /* Base approx 2.25rem (36px) for h1 */
   font-size: calc(2.25rem * var(--font-scale-headings) / var(--font-scale-details));
   line-height: 1.1;
 }
 
-h2,
-.text-2xl {
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
-  font-style: var(--heading-style);
-  text-decoration: var(--heading-decoration);
+h2 {
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
   /* Base approx 1.5rem (24px) */
   font-size: calc(1.5rem * var(--font-scale-headings) / var(--font-scale-details));
   line-height: 1.2;
 }
 
-h3,
-.text-xl {
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
-  font-style: var(--heading-style);
-  text-decoration: var(--heading-decoration);
+h3 {
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
   /* Base approx 1.25rem (20px) */
   font-size: calc(1.25rem * var(--font-scale-headings) / var(--font-scale-details));
   line-height: 1.3;
 }
 
-h4,
-.text-lg {
-  /* text-lg is often used for lead text, maybe not strictly heading.
-     But user wants headings distinct. Let's apply heading font to h4 but be careful with text-lg class
-     if used for body.
-     Actually, DesignTab uses h3 with text-lg.
-     If we want 'Standardtext' header to be a Heading, it should match Heading rules.
-     Let's define standard sizes for h4-h6.
-  */
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
-  font-style: var(--heading-style);
-  text-decoration: var(--heading-decoration);
+h4 {
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
   font-size: calc(1.125rem * var(--font-scale-headings) / var(--font-scale-details));
 }
 
 h5 {
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
   font-size: calc(1rem * var(--font-scale-headings) / var(--font-scale-details));
 }
 
 h6 {
-  font-family: var(--font-headings);
-  font-weight: var(--heading-weight);
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
   font-size: calc(0.875rem * var(--font-scale-headings) / var(--font-scale-details));
 }
 
@@ -117,9 +107,11 @@ h6 {
 
 /* Dark Mode overrides via class to match Tailwind config */
 .dark {
-  /* Softer Dark Mode #121217 is slightly lighter than #0a0a0f */
-  --background: #121217;
-  --foreground: #ededed;
+  /* Significantly lighter dark mode - no blacks, friendly Slate 800/900 base */
+  --background: #1e293b;
+  /* Slate 800 */
+  --foreground: #f8fafc;
+  /* Slate 50 */
   --primary: #818cf8;
   --primary-light: #a5b4fc;
 }
@@ -184,7 +176,7 @@ body {
 }
 
 .dark .glass {
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(30, 41, 59, 0.7);
 }
 
 /* Smooth animations */
@@ -222,11 +214,33 @@ body {
 
 /* Verse text styling */
 .verse-text {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-bible) !important;
   line-height: 1.9;
+  letter-spacing: 0.01em;
+}
+
+.memory-verse-text {
+  font-family: var(--font-dancing-script) !important;
+  line-height: 1.4;
   letter-spacing: 0.01em;
 }
 
 .verse-number {
   @apply text-xs font-bold text-indigo-500 dark:text-indigo-400 align-super mr-1;
+}
+
+/* Utility Classes for dynamic fonts */
+.font-heading {
+  font-family: var(--font-headings) !important;
+  font-weight: var(--heading-weight) !important;
+  font-style: var(--heading-style) !important;
+  text-decoration: var(--heading-decoration) !important;
+}
+
+.font-details {
+  font-family: var(--font-details) !important;
+}
+
+.font-bible {
+  font-family: var(--font-bible) !important;
 }
