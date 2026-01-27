@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
     try {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json({ error: 'API key must be set when using the Gemini API.' }, { status: 500 });
+        }
+        const ai = new GoogleGenAI({ apiKey });
+
         const { title, content, category } = await request.json();
 
         if (!title) {
