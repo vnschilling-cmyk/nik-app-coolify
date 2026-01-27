@@ -16,8 +16,8 @@ export default function BottomNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-background/80 dark:bg-background/90 backdrop-blur-xl border-t border-zinc-200/50 dark:border-slate-700/50 pb-[env(safe-area-inset-bottom)] z-50">
-            <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+        <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-6 pointer-events-none">
+            <div className="flex justify-between items-center pointer-events-auto">
                 {navItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
                     const Icon = item.icon;
@@ -27,18 +27,13 @@ export default function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={clsx(
-                                "flex flex-col items-center justify-center w-full h-full transition-all duration-200",
+                                "flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 shadow-xl border backdrop-blur-lg",
                                 isActive
-                                    ? "text-indigo-600 dark:text-indigo-400 scale-105"
-                                    : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-95"
+                                    ? "bg-indigo-600 text-white border-indigo-500 scale-110 -translate-y-2"
+                                    : "bg-white/90 dark:bg-slate-800/90 text-zinc-400 dark:text-zinc-500 border-white dark:border-slate-700/50 hover:scale-105 active:scale-95"
                             )}
                         >
-                            <div className={clsx(
-                                "p-1.5 rounded-xl transition-all",
-                                isActive && "bg-indigo-100 dark:bg-indigo-900/40"
-                            )}>
-                                <Icon size={28} strokeWidth={isActive ? 2.5 : 1.8} />
-                            </div>
+                            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                         </Link>
                     );
                 })}
