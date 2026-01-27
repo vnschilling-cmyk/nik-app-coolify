@@ -415,7 +415,46 @@ export default function InfosTab() {
                             <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Title */}
+                            {/* Type Selector FIRST */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Medien-Typ</label>
+                                <div className="grid grid-cols-5 gap-2 mt-1">
+                                    {CATEGORIES.map(cat => {
+                                        const Icon = cat.icon;
+                                        const isSelected = formData.type === cat.id;
+
+                                        // Color logic for buttons
+                                        let activeClass = "bg-zinc-600 text-white border-zinc-600 shadow-md";
+                                        let inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
+
+                                        if (cat.id === 'image') {
+                                            activeClass = "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-500/20";
+                                        } else if (cat.id === 'video') {
+                                            activeClass = "bg-red-600 text-white border-red-600 shadow-md shadow-red-500/20";
+                                        } else if (cat.id === 'map') {
+                                            activeClass = "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
+                                        } else if (cat.id === 'link') {
+                                            activeClass = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20";
+                                        } else { // text / default
+                                            activeClass = "bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20";
+                                        }
+
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, type: cat.id })}
+                                                className={`flex items-center justify-center p-3 rounded-xl border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                title={cat.label}
+                                            >
+                                                <Icon size={24} />
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Title SECOND */}
                             <div>
                                 <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
                                 <input
@@ -425,51 +464,6 @@ export default function InfosTab() {
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                 />
-                            </div>
-
-                            {/* Type Selector */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Medien-Typ</label>
-                                <div className="grid grid-cols-5 gap-2 mt-1">
-                                    {CATEGORIES.map(cat => {
-                                        const Icon = cat.icon;
-                                        const isSelected = formData.type === cat.id;
-
-                                        // Color logic for buttons
-                                        let activeClass = "bg-zinc-100 text-zinc-900 border-zinc-300";
-                                        let inactiveClass = "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-50";
-
-                                        if (cat.id === 'image') {
-                                            activeClass = "bg-purple-100 text-purple-700 border-purple-500 ring-1 ring-purple-500";
-                                            inactiveClass = "bg-white text-purple-600/70 border-zinc-200 hover:bg-purple-50 hover:text-purple-700";
-                                        } else if (cat.id === 'video') {
-                                            activeClass = "bg-red-100 text-red-700 border-red-500 ring-1 ring-red-500";
-                                            inactiveClass = "bg-white text-red-600/70 border-zinc-200 hover:bg-red-50 hover:text-red-700";
-                                        } else if (cat.id === 'map') {
-                                            activeClass = "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
-                                            inactiveClass = "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50 hover:text-emerald-700";
-                                        } else if (cat.id === 'link') {
-                                            activeClass = "bg-blue-100 text-blue-700 border-blue-500 ring-1 ring-blue-500";
-                                            inactiveClass = "bg-white text-blue-600/70 border-zinc-200 hover:bg-blue-50 hover:text-blue-700";
-                                        } else { // text / default
-                                            activeClass = "bg-amber-100 text-amber-900 border-amber-500 ring-1 ring-amber-500";
-                                            inactiveClass = "bg-white text-amber-700/70 border-zinc-200 hover:bg-amber-50 hover:text-amber-800";
-                                        }
-
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, type: cat.id })}
-                                                className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
-                                                title={cat.label}
-                                            >
-                                                <Icon size={20} />
-                                                <span className="text-[10px] font-medium mt-1">{cat.label}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
                             </div>
 
                             {/* Topics (Real Categories) */}
@@ -492,19 +486,19 @@ export default function InfosTab() {
                             </div>
 
                             {/* Dynamic Fields based on Type */}
-                            {formData.type === "image" && (
-                                <div className="p-3 bg-zinc-50 dark:bg-slate-700/50 rounded-lg border border-zinc-200 dark:border-slate-600">
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">Bild hochladen</label>
+                            {(formData.type === "image" || formData.type === "map") && (
+                                <div className={`p-3 rounded-lg border ${formData.type === 'map' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800' : 'bg-purple-50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800'}`}>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">{formData.type === 'map' ? 'Karte (Bild) hochladen' : 'Bild hochladen'}</label>
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileSelect}
-                                        className="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/30 dark:file:text-purple-400"
+                                        className={`w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold ${formData.type === 'map' ? 'file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/30 dark:file:text-emerald-400' : 'file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-900/30 dark:file:text-purple-400'}`}
                                     />
                                 </div>
                             )}
 
-                            {(formData.type === "video" || formData.type === "link" || formData.type === "map") && (
+                            {(formData.type === "video" || formData.type === "link") && (
                                 <div>
                                     <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">URL / Link</label>
                                     <div className="relative mt-1">
@@ -664,9 +658,10 @@ export default function InfosTab() {
                             <button
                                 type="submit"
                                 disabled={!formData.title.trim()}
-                                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95"
+                                title="Speichern"
                             >
-                                <Save size={16} /> Speichern
+                                <Save size={24} />
                             </button>
                         </form>
                     </div>
