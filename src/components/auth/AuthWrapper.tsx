@@ -28,7 +28,7 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     // Not logged in -> Show Login Screen ONLY
     if (!user) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-start pt-6 sm:pt-10 p-4 bg-background transition-colors duration-500">
+            <div className="min-h-screen flex flex-col items-center justify-start pt-12 sm:pt-20 p-4 bg-background transition-colors duration-500">
                 <div className="w-full max-w-sm animate-fadeIn flex flex-col items-center">
                     <div className="flex flex-col items-center text-center w-full">
                         {/* Logo */}

@@ -98,7 +98,7 @@ export default function AuthForm() {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-zinc-200 dark:border-slate-600 shadow-sm max-w-sm mx-auto">
+        <div className="p-6">
             <h2 className="text-xl font-bold text-center mb-6 py-2 border-b border-zinc-100 dark:border-slate-700">CBG Jugend</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +145,7 @@ export default function AuthForm() {
                     disabled={isLoading}
                     className="w-full bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-500/30"
                 >
-                    {isLoading ? "Lädt..." : "CBG Jugend"}
+                    {isLoading ? "Lädt..." : "Login"}
                 </button>
             </form>
         </div>
