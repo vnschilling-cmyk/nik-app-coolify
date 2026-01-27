@@ -248,7 +248,7 @@ export default function DashboardPage() {
                             ) : "Matthäus 6,33"}
                         </span>
                     </div>
-                    <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0">
+                    <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0 text-center">
                         „{memoryVerse ? memoryVerse.text : "Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."}"
                     </p>
                 </div>
