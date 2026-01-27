@@ -13,11 +13,16 @@ export default function AttendanceSync() {
 
             try {
                 // 1. Check if user is a leader
-                const memberRecord = await pb.collection('group_members').getFirstListItem(`email = "${user.email}" && role = "leader"`);
-                if (!memberRecord) {
+                const memberList = await pb.collection('group_members').getList(1, 1, {
+                    filter: `email = "${user.email}" && role = "leader"`
+                });
+
+                if (memberList.items.length === 0) {
                     console.log("AttendanceSync: User is not a leader. Skipping sync.");
                     return;
                 }
+
+                const memberRecord = memberList.items[0];
 
                 console.log("AttendanceSync: Leader detected. Checking for current lesson...");
 
@@ -79,7 +84,12 @@ export default function AttendanceSync() {
                 for (const record of ctAttendance) {
                     // Find corresponding local group_member
                     try {
-                        const localMember = await pb.collection('group_members').getFirstListItem(`ct_person_id = ${record.personId} && group = "${group.id}"`);
+                        const memberSearch = await pb.collection('group_members').getList(1, 1, {
+                            filter: `ct_person_id = ${record.personId} && group = "${group.id}"`
+                        });
+
+                        if (memberSearch.items.length === 0) continue;
+                        const localMember = memberSearch.items[0];
 
                         const attendanceData = {
                             lesson: currentLesson.id,

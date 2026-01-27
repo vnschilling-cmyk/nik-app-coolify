@@ -33,3 +33,4 @@ if (typeof window !== 'undefined') {
 }
 
 export const pb = new PocketBase(POCKETBASE_URL);
+pb.autoCancellation(false);
