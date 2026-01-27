@@ -95,7 +95,7 @@ async function importUsers() {
                     updatedCount++;
                 } else {
                     console.log(`  -> Creating new user...`);
-                    const password = "Jugend2024!";
+                    const password = "CBGJugend2026!";
                     await pb.collection('users').create({
                         username: username,
                         email: email,

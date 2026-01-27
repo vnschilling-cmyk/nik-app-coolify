@@ -208,6 +208,7 @@ export default function SetupPage() {
                         <button
                             onClick={handleBack}
                             className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                            title="Zurück"
                         >
                             <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                         </button>
@@ -239,6 +240,7 @@ export default function SetupPage() {
                     <button
                         onClick={handleBack}
                         className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                        title="Zurück"
                     >
                         <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                     </button>

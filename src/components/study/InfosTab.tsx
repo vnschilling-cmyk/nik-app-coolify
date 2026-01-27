@@ -392,12 +392,16 @@ export default function InfosTab() {
             <div className="flex gap-2">
                 <button
                     onClick={() => { resetForm(); setShowForm(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                    className="flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shrink-0"
+                    title="Neue Info"
                 >
-                    <Plus size={16} /> Neue Info
+                    <Plus size={20} />
                 </button>
-                <label className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors cursor-pointer">
-                    <Upload size={16} /> CSV Import
+                <label
+                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors cursor-pointer shrink-0"
+                    title="CSV Import"
+                >
+                    <Upload size={20} />
                     <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVImport} />
                 </label>
             </div>
@@ -844,10 +848,18 @@ export default function InfosTab() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex gap-1 shrink-0">
-                                                                                <button onClick={() => handleEdit(fact)} className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
+                                                                                <button
+                                                                                    onClick={() => handleEdit(fact)}
+                                                                                    className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                                                    title="Bearbeiten"
+                                                                                >
                                                                                     <Edit size={14} />
                                                                                 </button>
-                                                                                <button onClick={() => handleDelete(fact.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                                                <button
+                                                                                    onClick={() => handleDelete(fact.id)}
+                                                                                    className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                                                    title="Löschen"
+                                                                                >
                                                                                     <Trash2 size={14} />
                                                                                 </button>
                                                                             </div>

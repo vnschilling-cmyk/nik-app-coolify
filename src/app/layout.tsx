@@ -40,10 +40,14 @@ export const metadata: Metadata = {
   description: "Mobile-First Bibelstudium PWA",
 
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logo-light-head.png",
+    apple: "/logo-light-head.png",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1e293b",
+  themeColor: "#fafafa",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

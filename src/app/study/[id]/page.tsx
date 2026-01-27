@@ -18,11 +18,11 @@ const TYPE_ICONS: Record<string, any> = {
 };
 
 const TYPE_STYLES: Record<string, { bg: string, border: string, text: string, hover: string, badge: string, solidBg: string, hoverBg: string }> = {
-    image: { bg: 'bg-purple-50 dark:bg-slate-900', border: 'border-purple-200 dark:border-purple-800/50', text: 'text-purple-600 dark:text-purple-400', hover: 'hover:border-purple-400', badge: 'bg-purple-100 dark:bg-purple-900/40', solidBg: 'bg-purple-600', hoverBg: 'hover:bg-purple-700' },
-    video: { bg: 'bg-red-50 dark:bg-slate-900', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', hover: 'hover:border-red-400', badge: 'bg-red-100 dark:bg-red-900/40', solidBg: 'bg-red-600', hoverBg: 'hover:bg-red-700' },
-    map: { bg: 'bg-emerald-50 dark:bg-slate-900', border: 'border-emerald-200 dark:border-emerald-800/50', text: 'text-emerald-600 dark:text-emerald-400', hover: 'hover:border-emerald-400', badge: 'bg-emerald-100 dark:bg-emerald-900/40', solidBg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-700' },
-    link: { bg: 'bg-blue-50 dark:bg-slate-900', border: 'border-blue-200 dark:border-blue-800/50', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:border-blue-400', badge: 'bg-blue-100 dark:bg-blue-900/40', solidBg: 'bg-blue-600', hoverBg: 'hover:bg-blue-700' },
-    text: { bg: 'bg-amber-50 dark:bg-slate-900', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', hover: 'hover:border-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40', solidBg: 'bg-amber-500', hoverBg: 'hover:bg-amber-600' }
+    image: { bg: 'bg-purple-50 dark:bg-slate-800/50', border: 'border-purple-200 dark:border-purple-800/50', text: 'text-purple-600 dark:text-purple-400', hover: 'hover:border-purple-400', badge: 'bg-purple-100 dark:bg-purple-900/40', solidBg: 'bg-purple-600', hoverBg: 'hover:bg-purple-700' },
+    video: { bg: 'bg-red-50 dark:bg-slate-800/50', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', hover: 'hover:border-red-400', badge: 'bg-red-100 dark:bg-red-900/40', solidBg: 'bg-red-600', hoverBg: 'hover:bg-red-700' },
+    map: { bg: 'bg-emerald-50 dark:bg-slate-800/50', border: 'border-emerald-200 dark:border-emerald-800/50', text: 'text-emerald-600 dark:text-emerald-400', hover: 'hover:border-emerald-400', badge: 'bg-emerald-100 dark:bg-emerald-900/40', solidBg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-700' },
+    link: { bg: 'bg-blue-50 dark:bg-slate-800/50', border: 'border-blue-200 dark:border-blue-800/50', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:border-blue-400', badge: 'bg-blue-100 dark:bg-blue-900/40', solidBg: 'bg-blue-600', hoverBg: 'hover:bg-blue-700' },
+    text: { bg: 'bg-amber-50 dark:bg-slate-800/50', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', hover: 'hover:border-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40', solidBg: 'bg-amber-500', hoverBg: 'hover:bg-amber-600' }
 };
 
 function UnifiedContentList({ facts, questions, onSelectFact, onSelectQuestion }: any) {
@@ -379,9 +379,9 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
     const hasBibleRef = lesson.has_bible_ref && lesson.book_id && !isThema;
 
     return (
-        <div className="min-h-screen pb-24 bg-white dark:bg-slate-900">
+        <div className="min-h-screen pb-24 bg-white dark:bg-background">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4 flex items-center gap-4">
+            <header className="sticky top-0 z-40 bg-white dark:bg-background px-4 py-4 flex items-center gap-4">
                 <Link href="/study" className="p-2 -ml-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
                     <ChevronLeft size={24} />
                 </Link>
@@ -461,7 +461,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 </div>
             )}
 
-            <div className="max-w-prose mx-auto px-4 py-2">
+            <div className="max-w-prose mx-auto px-4 py-4">
                 {/* Fact Detail Popup */}
                 {selectedFact && (() => {
                     const style = TYPE_STYLES[selectedFact.type] || TYPE_STYLES.text;
@@ -580,9 +580,9 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 <div className="space-y-4">
                     {/* Thema: Show description and then sorted list of items */}
                     {isThema && (
-                        <div className="space-y-6">
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-4">
+                        <div className="space-y-4">
+                            <div className="">
+                                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
                                     <FileText size={20} />
                                     <span className="font-medium">Thema-Beschreibung</span>
                                 </div>
@@ -592,17 +592,18 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             </div>
 
                             {/* Sorted list of infos and questions */}
-                            <div className="pt-8 border-t border-zinc-100 dark:border-slate-800">
+                            <div className="">
                                 <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                             </div>
                         </div>
                     )}
 
+
                     {!isThema && (
                         <>
                             {/* Description if exists */}
                             {lesson.content && (
-                                <div className="bg-zinc-50 dark:bg-slate-800 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
+                                <div className="bg-zinc-50 dark:bg-slate-800/50 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
                                     <RichTextDisplay content={lesson.content} className="text-sm" />
                                 </div>
                             )}
@@ -610,7 +611,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             {/* Bible Text with Facts */}
                             {hasBibleRef ? (
                                 lesson.chapter_start === 0 ? (
-                                    <div className="pt-4">
+                                    <div className="">
                                         <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                                     </div>
                                 ) : verses.length === 0 ? (
@@ -698,10 +699,11 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                     </div>
                                 )
                             ) : (
-                                <div className="pt-4">
+                                <div className="">
                                     <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                                 </div>
                             )}
+
                         </>
                     )}
                 </div>

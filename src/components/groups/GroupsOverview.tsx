@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { pb } from "@/lib/pocketbase";
-import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle, ChevronDown } from "lucide-react";
+import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle, ChevronDown, X } from "lucide-react";
 
 export default function GroupsOverview() {
     const router = useRouter();
@@ -226,6 +226,7 @@ export default function GroupsOverview() {
                     onClick={syncGroups}
                     disabled={syncing}
                     className="p-3 bg-zinc-100 dark:bg-slate-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                    title="Gruppen synchronisieren"
                 >
                     <RefreshCw size={20} className={syncing ? "animate-spin text-indigo-500" : "text-zinc-600 dark:text-zinc-400"} />
                 </button>
@@ -257,6 +258,7 @@ export default function GroupsOverview() {
                                         onClick={() => syncMembers(group.id, group.ct_id)}
                                         disabled={syncing}
                                         className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors"
+                                        title="Mitglieder synchronisieren"
                                     >
                                         <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
                                     </button>
@@ -268,12 +270,13 @@ export default function GroupsOverview() {
                                                 loadGroupMembers(group.id);
                                             }
                                         }}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedGroupId === group.id
+                                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${selectedGroupId === group.id
                                             ? "bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-300"
                                             : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
                                             }`}
+                                        title={selectedGroupId === group.id ? "Schließen" : "Mitglieder anzeigen"}
                                     >
-                                        {selectedGroupId === group.id ? "Schließen" : "Mitglieder"}
+                                        {selectedGroupId === group.id ? <X size={18} /> : <Users size={18} />}
                                     </button>
                                 </div>
                             </div>

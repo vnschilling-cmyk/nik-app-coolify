@@ -119,10 +119,18 @@ export default function GroupsList() {
                         className="flex-1 bg-zinc-100 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg px-3 py-1 text-lg font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                         autoFocus
                     />
-                    <button onClick={(e) => saveGroupName(group.id, e)} className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
+                    <button
+                        onClick={(e) => saveGroupName(group.id, e)}
+                        className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                        title="Speichern"
+                    >
                         <Check size={20} />
                     </button>
-                    <button onClick={cancelEditing} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                    <button
+                        onClick={cancelEditing}
+                        className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Abbrechen"
+                    >
                         <X size={20} />
                     </button>
                 </div>
@@ -140,7 +148,7 @@ export default function GroupsList() {
                         <button
                             onClick={(e) => startEditing(group, e)}
                             className="text-zinc-400 hover:text-indigo-500 transition-colors p-1"
-                            title="Namen ändern"
+                            title="Bearbeiten"
                         >
                             <Pencil size={16} />
                         </button>
@@ -202,9 +210,10 @@ export default function GroupsList() {
                                                     e.stopPropagation();
                                                     deleteGroup(group.id);
                                                 }}
-                                                className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1"
+                                                className="w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                title="Gruppe löschen"
                                             >
-                                                <Trash2 size={12} /> Gruppe löschen
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
 
@@ -235,6 +244,7 @@ export default function GroupsList() {
                                                         <button
                                                             onClick={() => deleteMember(member.id)}
                                                             className="p-1.5 text-zinc-300 hover:text-red-500 transition-colors"
+                                                            title="Mitglied entfernen"
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>

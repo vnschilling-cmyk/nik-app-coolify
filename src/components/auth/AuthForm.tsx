@@ -16,16 +16,17 @@ export default function AuthForm() {
         setError(null);
 
         try {
-            let loginIdentity = identity;
-            // Sanitization logic matching import script
-            // If identity is NOT an email (doesn't contain @), transform it to username format and append local domain
-            if (!identity.includes('@')) {
-                loginIdentity = identity.toLowerCase()
+            let loginIdentity = identity.trim();
+
+            // Auto-lowercase for mobile convenience if it doesn't look like a complex mixed-case username
+            if (!loginIdentity.includes('@')) {
+                loginIdentity = loginIdentity.toLowerCase()
                     .replace(/ä/g, 'ae')
                     .replace(/ö/g, 'oe')
                     .replace(/ü/g, 'ue')
                     .replace(/ß/g, 'ss')
-                    .replace(/[^a-z0-9]/g, '');
+                    .replace(/[^a-z0-9\s]/g, '') // Keep spaces for now
+                    .replace(/\s+/g, ''); // Then remove them
 
                 // Internal Email Strategy
                 loginIdentity = `${loginIdentity}@nik-app.local`;
@@ -34,8 +35,18 @@ export default function AuthForm() {
             console.log(`Login attempt: "${identity}" -> "${loginIdentity}"`);
             await login(loginIdentity, password);
         } catch (err: any) {
-            console.error(err);
-            setError(err.message || "Login fehlgeschlagen. Bitte prüfe Name und Passwort.");
+            console.error("Auth Error Object:", err);
+
+            let message = "Login fehlgeschlagen. Bitte prüfe Name und Passwort.";
+            if (err.status === 0) {
+                message = "Server nicht erreichbar. Bist du im selben WLAN wie der PC?";
+            } else if (err.status === 400) {
+                message = "Anmeldedaten ungültig. Prüfe Name und Passwort.";
+            } else if (err.message) {
+                message = err.message;
+            }
+
+            setError(message);
         }
     };
 
@@ -88,7 +99,7 @@ export default function AuthForm() {
 
     return (
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-zinc-200 dark:border-slate-600 shadow-sm max-w-sm mx-auto">
-            <h2 className="text-xl font-bold text-center mb-6 py-2 border-b border-zinc-100 dark:border-slate-700">Login</h2>
+            <h2 className="text-xl font-bold text-center mb-6 py-2 border-b border-zinc-100 dark:border-slate-700">CBG Jugend</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
@@ -134,7 +145,7 @@ export default function AuthForm() {
                     disabled={isLoading}
                     className="w-full bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm shadow-blue-500/30"
                 >
-                    {isLoading ? "Lädt..." : "Login"}
+                    {isLoading ? "Lädt..." : "CBG Jugend"}
                 </button>
             </form>
         </div>

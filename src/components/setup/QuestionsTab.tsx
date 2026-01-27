@@ -309,9 +309,10 @@ export default function QuestionsTab() {
             <div className="flex gap-2">
                 <button
                     onClick={() => { resetForm(); setShowForm(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                    className="flex items-center justify-center w-10 h-10 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shrink-0"
+                    title="Neue Frage"
                 >
-                    <Plus size={16} /> Neue Frage
+                    <Plus size={20} />
                 </button>
             </div>
 
@@ -750,10 +751,18 @@ export default function QuestionsTab() {
                                                                                 )}
                                                                             </div>
                                                                             <div className="flex gap-1 shrink-0">
-                                                                                <button onClick={() => handleEdit(q)} className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors">
+                                                                                <button
+                                                                                    onClick={() => handleEdit(q)}
+                                                                                    className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                                                                    title="Bearbeiten"
+                                                                                >
                                                                                     <Edit size={14} />
                                                                                 </button>
-                                                                                <button onClick={() => handleDelete(q.id)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                                                <button
+                                                                                    onClick={() => handleDelete(q.id)}
+                                                                                    className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                                                    title="Löschen"
+                                                                                >
                                                                                     <Trash2 size={14} />
                                                                                 </button>
                                                                             </div>

@@ -28,11 +28,11 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     // Not logged in -> Show Login Screen ONLY
     if (!user) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 transition-colors duration-500">
+            <div className="min-h-screen flex flex-col items-center justify-start pt-6 sm:pt-10 p-4 bg-background transition-colors duration-500">
                 <div className="w-full max-w-sm animate-fadeIn flex flex-col items-center">
                     <div className="flex flex-col items-center text-center w-full">
                         {/* Logo */}
-                        <div className="relative w-[350px] h-[350px] -mb-12">
+                        <div className="relative w-[300px] h-[200px] -mt-10 -mb-4">
                             <Image
                                 src={settings.theme === 'dark' ? "/logo-dark.png" : "/logo-light.png"}
                                 alt="Nikodemos Logo"
@@ -47,7 +47,7 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
                         <AuthForm />
                     </div>
 
-                    <div className="text-center text-xs text-slate-400 dark:text-slate-500">
+                    <div className="text-center text-xs text-slate-400 dark:text-slate-500 mt-12 pb-8">
                         © {new Date().getFullYear()} Nikodemus
                     </div>
                 </div>

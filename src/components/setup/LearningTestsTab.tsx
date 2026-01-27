@@ -204,9 +204,10 @@ export default function LearningTestsTab() {
                 {!isCreating && (
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                        className="flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shrink-0"
+                        title="Neuer Test"
                     >
-                        <Plus size={20} /> Neuer Test
+                        <Plus size={20} />
                     </button>
                 )}
             </div>
@@ -309,9 +310,10 @@ export default function LearningTestsTab() {
                                 <button
                                     onClick={handleGenerateAI}
                                     disabled={generating || !selectedLessonId}
-                                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed h-10"
+                                    className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed h-10 w-10 flex items-center justify-center shrink-0"
+                                    title="Vorschläge generieren"
                                 >
-                                    {generating ? <span className="animate-pulse">Generiere...</span> : "Generieren ✨"}
+                                    {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Sparkles size={20} />}
                                 </button>
                             </div>
                         </div>
@@ -467,14 +469,14 @@ export default function LearningTestsTab() {
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); handleEdit(quiz); }}
                                                                                     className="p-1.5 text-zinc-400 hover:text-indigo-500 transition-colors"
-                                                                                    title="Test bearbeiten"
+                                                                                    title="Bearbeiten"
                                                                                 >
                                                                                     <Sparkles size={16} />
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); handleDelete(quiz.id); }}
                                                                                     className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
-                                                                                    title="Test löschen"
+                                                                                    title="Löschen"
                                                                                 >
                                                                                     <Trash2 size={16} />
                                                                                 </button>

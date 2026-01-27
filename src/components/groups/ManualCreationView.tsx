@@ -120,9 +120,10 @@ export default function ManualCreationView() {
                             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Mitglieder</label>
                             <button
                                 onClick={addMemberRow}
-                                className="text-xs flex items-center gap-1 text-pink-600 dark:text-pink-400 font-bold hover:underline"
+                                className="w-8 h-8 flex items-center justify-center bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors"
+                                title="Mitglied hinzufügen"
                             >
-                                <UserPlus size={14} /> Mitglied hinzufügen
+                                <UserPlus size={16} />
                             </button>
                         </div>
 
@@ -162,6 +163,7 @@ export default function ManualCreationView() {
                                         onClick={() => removeMemberRow(index)}
                                         disabled={members.length === 1}
                                         className="p-1.5 text-zinc-400 hover:text-red-500 disabled:opacity-30 transition-colors"
+                                        title="Lösche Zeile"
                                     >
                                         <Trash2 size={16} />
                                     </button>

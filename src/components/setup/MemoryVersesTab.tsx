@@ -244,9 +244,10 @@ export default function MemoryVersesTab() {
                 {!isCreating && (
                     <button
                         onClick={() => { resetForm(); setIsCreating(true); }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                        className="flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shrink-0"
+                        title="Neuer Vers"
                     >
-                        <Plus size={20} /> Neuer Vers
+                        <Plus size={20} />
                     </button>
                 )}
             </div>
@@ -523,12 +524,14 @@ export default function MemoryVersesTab() {
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); editVerse(v); }}
                                                                                     className="p-1.5 text-zinc-400 hover:text-indigo-500 transition-colors"
+                                                                                    title="Bearbeiten"
                                                                                 >
                                                                                     <Pencil size={16} />
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); deleteVerse(v.id); }}
                                                                                     className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                                                                                    title="Löschen"
                                                                                 >
                                                                                     <Trash2 size={16} />
                                                                                 </button>

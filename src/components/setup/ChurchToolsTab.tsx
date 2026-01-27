@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle } from "lucide-react";
+import { Save, RefreshCw, Users, Link as LinkIcon, AlertCircle, X } from "lucide-react";
 
 export default function ChurchToolsTab() {
     const [config, setConfig] = useState({
@@ -285,6 +285,7 @@ export default function ChurchToolsTab() {
                         onClick={syncGroups}
                         disabled={syncing}
                         className="p-2 text-zinc-400 hover:text-emerald-500 transition-colors disabled:opacity-50"
+                        title="Alle Gruppen synchronisieren"
                     >
                         <RefreshCw size={20} className={syncing ? "animate-spin" : ""} />
                     </button>
@@ -314,15 +315,17 @@ export default function ChurchToolsTab() {
                                                     loadGroupMembers(group.id);
                                                 }
                                             }}
-                                            className="px-3 py-1.5 bg-zinc-100 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs font-medium hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors"
+                                            className="w-8 h-8 flex items-center justify-center bg-zinc-100 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors"
+                                            title={selectedGroupId === group.id ? "Mitglieder ausblenden" : "Mitglieder anzeigen"}
                                         >
-                                            Mitglieder {selectedGroupId === group.id ? "ausblenden" : "anzeigen"}
+                                            {selectedGroupId === group.id ? <X size={14} /> : <Users size={14} />}
                                         </button>
                                         <button
                                             onClick={() => syncMembers(group.id, group.ct_id)}
-                                            className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
+                                            className="w-8 h-8 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors"
+                                            title="Synchronisieren"
                                         >
-                                            Synchronisieren
+                                            <RefreshCw size={14} />
                                         </button>
                                     </div>
                                 </div>
