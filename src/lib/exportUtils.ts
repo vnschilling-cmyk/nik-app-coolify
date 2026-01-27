@@ -69,7 +69,7 @@ export const exportLessonsToExcel = async (lessonIds: string[]) => {
         });
 
         // Sheet: Quizze
-        const quizzesData = [];
+        const quizzesData: any[] = [];
         quizzes.forEach(q => {
             const relatedLesson = lessons.find(l => l.id === q.lesson_id);
             // Flatten quiz questions
