@@ -461,7 +461,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 </div>
             )}
 
-            <div className="max-w-prose mx-auto p-4">
+            <div className="max-w-prose mx-auto px-4 py-2">
                 {/* Fact Detail Popup */}
                 {selectedFact && (() => {
                     const style = TYPE_STYLES[selectedFact.type] || TYPE_STYLES.text;
@@ -577,7 +577,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 )}
 
                 {/* Main Content */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {/* Thema: Show description and then sorted list of items */}
                     {isThema && (
                         <div className="space-y-6">
