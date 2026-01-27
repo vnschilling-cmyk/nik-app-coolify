@@ -144,7 +144,7 @@ export default function StudyPage() {
     return (
         <div className="min-h-screen pb-24">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-transparent px-4 py-4">
+            <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                         <GraduationCap className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />

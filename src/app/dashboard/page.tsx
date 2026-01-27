@@ -204,7 +204,7 @@ export default function DashboardPage() {
         <div className="min-h-screen pb-24">
             {/* Hero Section with Gradient */}
             {/* Hero Section with Logo */}
-            <header className="px-6 pt-6 pb-6 bg-transparent overflow-hidden">
+            <header className="px-6 pt-6 pb-6 bg-background overflow-hidden">
                 <div className="flex flex-col gap-2">
                     <div className="w-full max-w-md mx-auto -my-3 flex flex-col items-center">
                         {/* Light Mode Logo */}

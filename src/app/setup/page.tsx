@@ -173,7 +173,7 @@ export default function SetupPage() {
         return (
             <div className="min-h-screen pb-24">
                 {/* Header */}
-                <header className="sticky top-0 z-40 bg-transparent px-4 py-4">
+                <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-zinc-100 dark:bg-slate-700 rounded-lg">
                             <Settings className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
@@ -203,7 +203,7 @@ export default function SetupPage() {
     if (isSubMenu) {
         return (
             <div className="min-h-screen pb-24">
-                <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl border-b border-zinc-200/50 dark:border-slate-700/50 px-4 py-4">
+                <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={handleBack}
@@ -234,7 +234,7 @@ export default function SetupPage() {
     return (
         <div className="min-h-screen pb-24">
             {/* Header with Back Button */}
-            <header className="sticky top-0 z-40 bg-transparent">
+            <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl">
                 <div className="flex items-center gap-3 px-4 py-4">
                     <button
                         onClick={handleBack}
