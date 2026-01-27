@@ -143,16 +143,33 @@ function TitleMarquee({ title }: { title: string }) {
     const textRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
-        if (containerRef.current && textRef.current) {
-            setShouldMarquee(textRef.current.offsetWidth > containerRef.current.offsetWidth);
-        }
+        const checkOverflow = () => {
+            if (containerRef.current && textRef.current) {
+                // scrollWidth is the real width of the content
+                // clientWidth is the width of the visible container
+                const isOverflowing = textRef.current.scrollWidth > containerRef.current.clientWidth;
+                setShouldMarquee(isOverflowing);
+            }
+        };
+
+        // Check after a short delay to ensure font loading and layout are ready
+        const timer = setTimeout(checkOverflow, 150);
+        window.addEventListener('resize', checkOverflow);
+
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', checkOverflow);
+        };
     }, [title]);
 
     return (
-        <div ref={containerRef} className="marquee-container">
+        <div ref={containerRef} className="marquee-container w-full relative">
             <h1
                 ref={textRef}
-                className={shouldMarquee ? "animate-marquee" : "truncate text-lg font-bold"}
+                className={clsx(
+                    "text-lg font-bold whitespace-nowrap",
+                    shouldMarquee ? "animate-marquee" : "truncate"
+                )}
             >
                 {title}{shouldMarquee ? ` \u00A0\u00A0\u00A0\u00A0 ${title} \u00A0\u00A0\u00A0\u00A0 ` : ""}
             </h1>

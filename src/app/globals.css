@@ -258,13 +258,15 @@ body {
 }
 
 .animate-marquee {
-  display: inline-block;
-  white-space: nowrap;
-  animation: marquee 15s linear infinite;
+  display: inline-block !important;
+  white-space: nowrap !important;
+  animation: marquee 15s linear infinite !important;
+  padding-right: 2rem;
 }
 
 .marquee-container {
-  overflow: hidden;
-  white-space: nowrap;
-  width: 100%;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  width: 100% !important;
+  position: relative;
 }
