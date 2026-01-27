@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, GraduationCap, Settings } from "lucide-react";
+import { BookOpen, Home, GraduationCap, Settings } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Dashboard", href: "/dashboard", icon: Home },
     { label: "Bibel", href: "/bible", icon: BookOpen },
     { label: "Studium", href: "/study", icon: GraduationCap },
     { label: "Setup", href: "/setup", icon: Settings },
@@ -29,7 +29,7 @@ export default function BottomNav() {
                             className={clsx(
                                 "flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 shadow-xl border backdrop-blur-lg",
                                 isActive
-                                    ? "bg-indigo-600 text-white border-indigo-500 scale-110 -translate-y-2"
+                                    ? "bg-indigo-600 text-white border-indigo-500"
                                     : "bg-white/90 dark:bg-slate-800/90 text-zinc-400 dark:text-zinc-500 border-white dark:border-slate-700/50 hover:scale-105 active:scale-95"
                             )}
                         >
