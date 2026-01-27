@@ -96,7 +96,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
     };
 
     return (
-        <article className="w-full px-4 py-6 dark:text-zinc-200 relative bible-text">
+        <article className="w-full px-4 py-6 dark:text-zinc-200 relative bible-text" lang="de">
             {verses.map((v) => {
                 // Determine which lesson is the "next possible" one across all lessons
                 // (This could be cached outside the map if performance is an issue, but for a chapter it's fine)
@@ -139,45 +139,42 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                     });
 
                 return (
-                    <div key={v.verse} className="relative group">
-                        <p className={clsx(
-                            "mb-4 relative transition-all duration-300",
-                            currentLessons.length > 0 ? "pr-14" : "pr-0"
-                        )}>
+                    <div key={v.verse} className="relative group mb-6">
+                        <p className="text-justify leading-relaxed hyphens-auto whitespace-pre-wrap">
+                            {/* Lesson Icons Floated in Right Margin */}
+                            {currentLessons.length > 0 && (
+                                <span className="float-right ml-4 mb-2 flex flex-col gap-3">
+                                    {currentLessons.map(lesson => {
+                                        if (!lesson.isEffectivelyActive) {
+                                            return (
+                                                <span
+                                                    key={lesson.id}
+                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed border-2 border-zinc-200 dark:border-slate-600 transition-opacity flex items-center justify-center"
+                                                    title={lesson.debugTitle}
+                                                >
+                                                    <GraduationCap size={24} strokeWidth={2.5} />
+                                                </span>
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={lesson.id}
+                                                href={`/study/${lesson.id}`}
+                                                className="bg-indigo-600 text-white p-2.5 rounded-full shadow-xl shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer ring-4 ring-white dark:ring-zinc-900 flex items-center justify-center"
+                                                title={lesson.debugTitle}
+                                            >
+                                                <GraduationCap size={24} strokeWidth={2.5} />
+                                            </Link>
+                                        );
+                                    })}
+                                </span>
+                            )}
+
                             <span className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block">
                                 {v.verse}
                             </span>
                             {renderInteractiveText(v.text)}
                         </p>
-
-                        {/* Lesson Icons in Right Margin */}
-                        {currentLessons.length > 0 && (
-                            <div className="absolute right-1 top-0 flex flex-col gap-3">
-                                {currentLessons.map(lesson => {
-                                    if (!lesson.isEffectivelyActive) {
-                                        return (
-                                            <div
-                                                key={lesson.id}
-                                                className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed border-2 border-zinc-200 dark:border-slate-600 transition-opacity"
-                                                title={lesson.debugTitle}
-                                            >
-                                                <GraduationCap size={24} strokeWidth={2.5} />
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <Link
-                                            key={lesson.id}
-                                            href={`/study/${lesson.id}`}
-                                            className="bg-indigo-600 text-white p-2.5 rounded-full shadow-xl shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer ring-4 ring-white dark:ring-zinc-900"
-                                            title={lesson.debugTitle}
-                                        >
-                                            <GraduationCap size={24} strokeWidth={2.5} />
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        )}
                     </div>
                 );
             })}
