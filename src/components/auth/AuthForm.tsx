@@ -39,7 +39,7 @@ export default function AuthForm() {
 
             let message = "Login fehlgeschlagen. Bitte prüfe Name und Passwort.";
             if (err.status === 0) {
-                message = "Server nicht erreichbar. Bist du im selben WLAN wie der PC?";
+                message = "Verbindung zum Server fehlgeschlagen. Bitte prüfe deine Internetverbindung oder versuche es später erneut.";
             } else if (err.status === 400) {
                 message = "Anmeldedaten ungültig. Prüfe Name und Passwort.";
             } else if (err.message) {

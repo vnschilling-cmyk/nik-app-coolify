@@ -2,18 +2,27 @@ import PocketBase from 'pocketbase';
 
 // Determine the base URL
 const getBaseUrl = () => {
-    // 1. Check environment variable
+    // 1. Check environment variable (highest priority)
     if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
         return process.env.NEXT_PUBLIC_POCKETBASE_URL;
     }
 
-    // 2. In browser, if we accessed via IP (like 192.168.x.x), use that same IP for PocketBase
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        // Only if it looks like an IP or external hostname
-        return `http://${window.location.hostname}:8090`;
+    // 2. In browser, handle production vs local
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+
+        // If we are on a nip.io domain (Coolify production)
+        if (hostname.includes('195.201.231.49.nip.io')) {
+            return `https://pocketbase-nik-app-coolify.195.201.231.49.nip.io`;
+        }
+
+        if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+            // Generic fallback for other external hosts
+            return `${window.location.protocol}//pocketbase-${hostname}`;
+        }
     }
 
-    // 3. Fallback to localhost
+    // 3. Fallback to localhost (development)
     return 'http://127.0.0.1:8090';
 };
 
