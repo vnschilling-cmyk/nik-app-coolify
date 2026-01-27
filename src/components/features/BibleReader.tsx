@@ -96,7 +96,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
     };
 
     return (
-        <article className="max-w-prose mx-auto px-4 py-6 dark:text-zinc-200 relative bible-text">
+        <article className="w-full px-4 py-6 dark:text-zinc-200 relative bible-text">
             {verses.map((v) => {
                 // Determine which lesson is the "next possible" one across all lessons
                 // (This could be cached outside the map if performance is an issue, but for a chapter it's fine)
@@ -140,7 +140,10 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
 
                 return (
                     <div key={v.verse} className="relative group">
-                        <p className="mb-4 relative pr-14">
+                        <p className={clsx(
+                            "mb-4 relative transition-all duration-300",
+                            currentLessons.length > 0 ? "pr-14" : "pr-0"
+                        )}>
                             <span className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block">
                                 {v.verse}
                             </span>
