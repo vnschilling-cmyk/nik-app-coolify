@@ -252,14 +252,14 @@ export default function MemoryVersesTab() {
             </div>
 
             {isCreating ? (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-6 animate-fadeIn">
-                    <div className="flex justify-end mb-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
+                    <div className="flex justify-end mb-4">
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
                             <X size={24} />
                         </button>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <label className="block text-sm font-medium mb-1">Lektion *</label>
                         <select
                             value={selectedLessonId}
@@ -274,7 +274,7 @@ export default function MemoryVersesTab() {
                     </div>
 
                     {!isEditing && (
-                        <div className="flex gap-4 mb-6">
+                        <div className="flex gap-4 mb-4">
                             <button
                                 onClick={() => setMode("manual")}
                                 className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
@@ -293,7 +293,7 @@ export default function MemoryVersesTab() {
                     )}
 
                     {mode === "ai" && (
-                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-800 mb-6">
+                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-800 mb-4">
                             <div className="text-center">
                                 <button
                                     onClick={getSuggestions}
@@ -330,7 +330,7 @@ export default function MemoryVersesTab() {
                     )}
 
                     {mode === "manual" && (
-                        <div className="space-y-4 mb-6">
+                        <div className="space-y-4 mb-4">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <div className="col-span-2 sm:col-span-1">
                                     <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Buch</label>

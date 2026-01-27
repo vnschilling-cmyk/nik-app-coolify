@@ -319,7 +319,7 @@ export default function QuestionsTab() {
             {/* Form Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingId ? "Frage bearbeiten" : "Neue Frage"}</h3>
                             <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>

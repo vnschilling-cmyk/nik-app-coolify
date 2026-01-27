@@ -212,15 +212,14 @@ export default function LearningTestsTab() {
             </div>
 
             {isCreating ? (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-6 animate-fadeIn">
-                    <div className="flex justify-between mb-6">
-                        <h3 className="text-lg font-bold">{editingId ? "Test bearbeiten" : "Neuen Test erstellen"}</h3>
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
+                    <div className="flex justify-end mb-4">
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
                             <X size={24} />
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Lektion *</label>
                             <div className="flex flex-col gap-2">
@@ -276,7 +275,7 @@ export default function LearningTestsTab() {
                         )}
                     </div>
 
-                    <div className="flex gap-4 mb-6">
+                    <div className="flex gap-4 mb-4">
                         <button
                             onClick={() => setMode("manual")}
                             className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
@@ -294,7 +293,7 @@ export default function LearningTestsTab() {
                     </div>
 
                     {mode === "ai" && (
-                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-800 mb-6">
+                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-800 mb-4">
                             <div className="flex items-end gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium mb-1 text-purple-900 dark:text-purple-200">Anzahl Fragen</label>
