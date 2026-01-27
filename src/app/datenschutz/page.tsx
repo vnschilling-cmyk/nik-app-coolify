@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 export default function DatenschutzPage() {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-12">
-            <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-slate-700 px-4 h-14 flex items-center gap-4">
+            <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-zinc-200 dark:border-slate-700 px-4 h-14 flex items-center gap-4">
                 <Link href="/profile" className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors">
                     <ChevronLeft size={20} />
                 </Link>
