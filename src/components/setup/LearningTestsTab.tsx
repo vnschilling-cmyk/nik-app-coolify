@@ -224,7 +224,7 @@ export default function LearningTestsTab() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium mb-1">Lektion *</label>
-                            <div className="flex gap-3 items-center">
+                            <div className="flex flex-col gap-2">
                                 <select
                                     value={selectedLessonId}
                                     onChange={e => {
@@ -235,7 +235,7 @@ export default function LearningTestsTab() {
                                             if (lesson) setQuizTitle(`Test: ${lesson.title}`);
                                         }
                                     }}
-                                    className="flex-1 p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
+                                    className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
                                 >
                                     <option value="">Bitte wählen...</option>
                                     {lessons.map(l => (
@@ -255,10 +255,10 @@ export default function LearningTestsTab() {
                                                 if (lesson) setQuizTitle(`Test: ${lesson.title}`);
                                             }
                                         }}
-                                        className="w-6 h-6 rounded border-zinc-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        className="w-5 h-5 rounded border-zinc-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                     />
                                     <label htmlFor="autoTitle" className="text-sm font-bold text-zinc-600 dark:text-zinc-400 select-none cursor-pointer whitespace-nowrap">
-                                        Auto-Titel
+                                        Test-Titel automatisch generieren
                                     </label>
                                 </div>
                             </div>
