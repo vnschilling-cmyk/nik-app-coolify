@@ -44,7 +44,7 @@ const contentTiles = [
     {
         id: "memory_verses" as Tab,
         label: "Lernverse",
-        description: "Verse verknüpfen & AI",
+        description: "Verse verknüpfen & Vorschläge",
         icon: Brain,
         color: "blue",
         gradient: "from-blue-500 to-cyan-600"
@@ -159,7 +159,7 @@ export default function SetupPage() {
                         </h3>
 
                         {/* Description */}
-                        <p className="relative text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="relative text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
                             {tile.description}
                         </p>
                     </button>

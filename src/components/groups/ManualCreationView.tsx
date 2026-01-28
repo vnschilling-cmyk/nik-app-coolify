@@ -181,7 +181,7 @@ export default function ManualCreationView() {
                     <button
                         onClick={handleCreate}
                         disabled={saving}
-                        className="w-full py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-4"
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 mt-4"
                     >
                         {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={18} />}
                         Gruppe speichern

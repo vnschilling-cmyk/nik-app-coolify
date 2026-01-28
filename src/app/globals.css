@@ -270,3 +270,153 @@ body {
   width: 100% !important;
   position: relative;
 }
+
+/* Workbook Creator Styles */
+.workbook-a5-page {
+  width: 148mm;
+  height: 210mm;
+  /* Strict A5 height */
+  padding: 15mm;
+  margin: 10px auto;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  color: black;
+  position: relative;
+  overflow: visible;
+  /* Prevent clipping of contextual toolbars */
+  isolation: isolate;
+  /* Create new stacking context */
+  /* Keep the sheet look */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.workbook-content {
+  flex: 1;
+  overflow-y: visible;
+  /* Content can grow beyond but we clip at page in screen preview */
+  line-height: 1.4;
+  /* Tightened for A5 */
+  padding-bottom: 45mm;
+  /* Safe zone for footer at 5mm */
+}
+
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 0 !important;
+    /* Forces removal of browser headers/footers */
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 100% !important;
+    height: auto !important;
+    color: black !important;
+  }
+
+  /* Hide absolutely everything except the workbook content */
+  body>*:not(main),
+  nav,
+  header,
+  aside,
+  .no-print,
+  button,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Reset main layout for print */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+  }
+
+  /* Wrapper in page.tsx */
+  main>div {
+    transform: none !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .workbook-a5-page {
+    width: 148mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 15mm !important;
+    /* Essential content margin */
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+    background: white !important;
+    display: block !important;
+    position: relative;
+    box-sizing: border-box !important;
+  }
+
+  .workbook-a5-page:last-child {
+    page-break-after: avoid;
+  }
+
+  /* Ensure colors and backgrounds are forced */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-scheme: light !important;
+  }
+}
+
+.workbook-content h1 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.workbook-content .verse-ref {
+  color: #4f46e5;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.workbook-content .bible-text-p {
+  line-height: 1.4;
+  text-align: justify;
+  margin-bottom: 1rem;
+  font-family: var(--font-bible);
+}
+
+.workbook-content .section-title {
+  font-size: 1rem;
+  font-weight: bold;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #4f46e5;
+}
+
+.workbook-content .fact-item,
+.workbook-content .question-item {
+  margin-bottom: 1rem;
+}
+
+.workbook-content .question-text {
+  font-weight: 500;
+}
+
+.workbook-content .answer-line {
+  border-bottom: 1px dotted #cbd5e1;
+  height: 2rem;
+  margin-top: 0.25rem;
+}

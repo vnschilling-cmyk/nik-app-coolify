@@ -306,254 +306,254 @@ export default function QuestionsTab() {
     return (
         <div className="space-y-4">
             {/* Actions */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => { resetForm(); setShowForm(true); }}
-                    className="flex items-center justify-center w-10 h-10 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shrink-0"
-                    title="Neue Frage"
-                >
-                    <Plus size={20} />
-                </button>
+            <div className="flex justify-start items-center mb-6">
+                {!showForm && (
+                    <button
+                        onClick={() => { resetForm(); setShowForm(true); }}
+                        className="flex items-center justify-center w-11 h-11 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                        title="Neue Frage"
+                    >
+                        <Plus size={22} />
+                    </button>
+                )}
             </div>
 
-            {/* Form Modal */}
+            {/* Form Inline */}
             {showForm && (
-                <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">{editingId ? "Frage bearbeiten" : "Neue Frage"}</h3>
-                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-lg">{editingId ? "Frage bearbeiten" : "Neue Frage"}</h3>
+                        <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={24} /></button>
+                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Lesson Selector - Required for bibeltext, Optional for allgemein */}
+                        <div>
+                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                                Lektion {isGeneralQuestion ? "(optional)" : "*"}
+                            </label>
+                            <select
+                                required={!isGeneralQuestion}
+                                value={formData.lesson_id}
+                                onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
+                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                            >
+                                <option value="">{isGeneralQuestion ? "Keine Lektion" : "Lektion wählen..."}</option>
+                                {lessons.map(l => (
+                                    <option key={l.id} value={l.id}>{l.title}</option>
+                                ))}
+                            </select>
                         </div>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Category Selector */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
-                                <div className="grid grid-cols-2 gap-2 mt-1">
-                                    {CATEGORIES.map(cat => {
-                                        const Icon = cat.icon;
-                                        const isSelected = formData.category === cat.id;
-                                        const activeClass = cat.id === "bibeltext"
-                                            ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20"
-                                            : "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
-                                        const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
 
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, category: cat.id, lesson_id: cat.id === "allgemein" ? "" : formData.lesson_id })}
-                                                className={`flex items-center justify-center p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
-                                                title={cat.label}
+                        {/* Category Selector */}
+                        <div>
+                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
+                            <div className="flex gap-2 mt-1">
+                                {CATEGORIES.map(cat => {
+                                    const Icon = cat.icon;
+                                    const isSelected = formData.category === cat.id;
+                                    const activeClass = cat.id === "bibeltext"
+                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20"
+                                        : "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
+                                    const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
+
+                                    return (
+                                        <button
+                                            key={cat.id}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, category: cat.id, lesson_id: cat.id === "allgemein" ? "" : formData.lesson_id })}
+                                            className={`flex-1 flex items-center justify-center py-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                            title={cat.label}
+                                        >
+                                            <Icon size={24} />
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Verse Range (only for bibeltext with lesson) */}
+                        {formData.category === "bibeltext" && selectedLesson && (
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                    <select
+                                        value={formData.verse_start}
+                                        onChange={e => {
+                                            const newVal = parseInt(e.target.value) || 1;
+                                            setFormData({
+                                                ...formData,
+                                                verse_start: newVal,
+                                                verse_end: Math.max(newVal, formData.verse_end)
+                                            });
+                                        }}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    >
+                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                            <option key={num} value={num}>{num}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                    <select
+                                        value={formData.verse_end}
+                                        onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    >
+                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                            <option key={num} value={num}>{num}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Bible Reference Toggle (only for allgemein) */}
+                        {isGeneralQuestion && (
+                            <>
+                                <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800/30">
+                                    <input
+                                        type="checkbox"
+                                        id="hasBibleRef"
+                                        checked={formData.has_bible_ref}
+                                        onChange={e => setFormData({ ...formData, has_bible_ref: e.target.checked })}
+                                        className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <label htmlFor="hasBibleRef" className="flex items-center gap-2 text-sm font-medium">
+                                        <BookOpen size={16} className="text-indigo-500" />
+                                        Mit Bibeltext verknüpfen
+                                    </label>
+                                </div>
+
+                                {formData.has_bible_ref && (
+                                    <>
+                                        <div>
+                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Buch</label>
+                                            <select
+                                                value={formData.book_id}
+                                                onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
+                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                             >
-                                                <Icon size={24} />
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                                <option value="">Buch wählen...</option>
+                                                {books.map(b => (
+                                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                            {/* Lesson Selector - Required for bibeltext, Optional for allgemein */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                                    Lektion {isGeneralQuestion ? "(optional)" : "*"}
-                                </label>
-                                <select
-                                    required={!isGeneralQuestion}
-                                    value={formData.lesson_id}
-                                    onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                >
-                                    <option value="">{isGeneralQuestion ? "Keine Lektion" : "Lektion wählen..."}</option>
-                                    {lessons.map(l => (
-                                        <option key={l.id} value={l.id}>{l.title}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                        {selectedBook && (
+                                            <>
+                                                <div className="mb-2">
+                                                    <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.chapter === 0}
+                                                            onChange={e => {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    chapter: e.target.checked ? 0 : 1,
+                                                                    verse_start: e.target.checked ? 0 : 1,
+                                                                    verse_end: e.target.checked ? 0 : 1
+                                                                });
+                                                            }}
+                                                            className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                        />
+                                                        Ganzes Buch (ohne Kapitel/Verse)
+                                                    </label>
+                                                </div>
 
-                            {/* Verse Range (only for bibeltext with lesson) */}
-                            {formData.category === "bibeltext" && selectedLesson && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                        <select
-                                            value={formData.verse_start}
-                                            onChange={e => {
-                                                const newVal = parseInt(e.target.value) || 1;
-                                                setFormData({
-                                                    ...formData,
-                                                    verse_start: newVal,
-                                                    verse_end: Math.max(newVal, formData.verse_end)
-                                                });
-                                            }}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                        >
-                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                <option key={num} value={num}>{num}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                        <select
-                                            value={formData.verse_end}
-                                            onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                        >
-                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                <option key={num} value={num}>{num}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Bible Reference Toggle (only for allgemein) */}
-                            {isGeneralQuestion && (
-                                <>
-                                    <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800/30">
-                                        <input
-                                            type="checkbox"
-                                            id="hasBibleRef"
-                                            checked={formData.has_bible_ref}
-                                            onChange={e => setFormData({ ...formData, has_bible_ref: e.target.checked })}
-                                            className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <label htmlFor="hasBibleRef" className="flex items-center gap-2 text-sm font-medium">
-                                            <BookOpen size={16} className="text-indigo-500" />
-                                            Mit Bibeltext verknüpfen
-                                        </label>
-                                    </div>
-
-                                    {formData.has_bible_ref && (
-                                        <>
-                                            <div>
-                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Buch</label>
-                                                <select
-                                                    value={formData.book_id}
-                                                    onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
-                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                >
-                                                    <option value="">Buch wählen...</option>
-                                                    {books.map(b => (
-                                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {selectedBook && (
-                                                <>
-                                                    <div className="mb-2">
-                                                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={formData.chapter === 0}
+                                                {formData.chapter !== 0 && (
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        <div>
+                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                            <select
+                                                                value={formData.chapter}
+                                                                onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
+                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            >
+                                                                {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
+                                                                    <option key={num} value={num}>{num}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                            <select
+                                                                value={formData.verse_start}
                                                                 onChange={e => {
+                                                                    const newVal = parseInt(e.target.value) || 1;
                                                                     setFormData({
                                                                         ...formData,
-                                                                        chapter: e.target.checked ? 0 : 1,
-                                                                        verse_start: e.target.checked ? 0 : 1,
-                                                                        verse_end: e.target.checked ? 0 : 1
+                                                                        verse_start: newVal,
+                                                                        verse_end: Math.max(newVal, formData.verse_end)
                                                                     });
                                                                 }}
-                                                                className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                                                            />
-                                                            Ganzes Buch (ohne Kapitel/Verse)
-                                                        </label>
-                                                    </div>
-
-                                                    {formData.chapter !== 0 && (
-                                                        <div className="grid grid-cols-3 gap-2">
-                                                            <div>
-                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
-                                                                <select
-                                                                    value={formData.chapter}
-                                                                    onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
-                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                                >
-                                                                    {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
-                                                                        <option key={num} value={num}>{num}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                                                <select
-                                                                    value={formData.verse_start}
-                                                                    onChange={e => {
-                                                                        const newVal = parseInt(e.target.value) || 1;
-                                                                        setFormData({
-                                                                            ...formData,
-                                                                            verse_start: newVal,
-                                                                            verse_end: Math.max(newVal, formData.verse_end)
-                                                                        });
-                                                                    }}
-                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                                >
-                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                        <option key={num} value={num}>{num}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                                                <select
-                                                                    value={formData.verse_end}
-                                                                    onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                                >
-                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                        <option key={num} value={num}>{num}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>
+                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            >
+                                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                    <option key={num} value={num}>{num}</option>
+                                                                ))}
+                                                            </select>
                                                         </div>
-                                                    )}
-                                                </>
-                                            )}
+                                                        <div>
+                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                            <select
+                                                                value={formData.verse_end}
+                                                                onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            >
+                                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                    <option key={num} value={num}>{num}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
 
-                                            {formData.book_id && (
-                                                <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg">
-                                                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">Bibelstelle</p>
-                                                    <p className="font-semibold text-indigo-800 dark:text-indigo-200">{generateVerseRef()}</p>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                </>
-                            )}
+                                        {formData.book_id && (
+                                            <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg">
+                                                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">Bibelstelle</p>
+                                                <p className="font-semibold text-indigo-800 dark:text-indigo-200">{generateVerseRef()}</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </>
+                        )}
 
-                            {/* Question Text */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Frage *</label>
-                                <textarea
-                                    required
-                                    value={formData.question}
-                                    onChange={e => setFormData({ ...formData, question: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[80px]"
-                                    placeholder="Die Frage eingeben..."
-                                />
-                            </div>
+                        {/* Question Text */}
+                        <div>
+                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Frage *</label>
+                            <textarea
+                                required
+                                value={formData.question}
+                                onChange={e => setFormData({ ...formData, question: e.target.value })}
+                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[80px]"
+                                placeholder="Die Frage eingeben..."
+                            />
+                        </div>
 
-                            {/* Answer (Rich Text) */}
-                            <div>
-                                <RichTextEditor
-                                    label="Antwort (optional)"
-                                    value={formData.answer}
-                                    onChange={(val: string) => setFormData({ ...formData, answer: val })}
-                                    placeholder="Antwort eingeben oder leer lassen..."
-                                />
-                            </div>
+                        {/* Answer (Rich Text) */}
+                        <div>
+                            <RichTextEditor
+                                label="Antwort (optional)"
+                                value={formData.answer}
+                                onChange={(val: string) => setFormData({ ...formData, answer: val })}
+                                placeholder="Antwort eingeben oder leer lassen..."
+                            />
+                        </div>
 
-                            <button
-                                type="submit"
-                                disabled={!formData.question.trim() || (formData.category === "bibeltext" && !formData.lesson_id)}
-                                className="w-full py-3 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
-                                title={editingId ? "Änderungen speichern" : "Speichern"}
-                            >
-                                <Save size={24} />
-                            </button>
-                        </form>
-                    </div>
+                        <button
+                            type="submit"
+                            disabled={!formData.question.trim() || (formData.category === "bibeltext" && !formData.lesson_id)}
+                            className="w-full py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                            title={editingId ? "Änderungen speichern" : "Speichern"}
+                        >
+                            <Save size={24} />
+                        </button>
+                    </form>
                 </div>
             )}
 

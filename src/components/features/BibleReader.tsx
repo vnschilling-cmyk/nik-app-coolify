@@ -75,7 +75,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                     <span
                         key={i}
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none active:scale-95 inline-block"
+                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none"
                     >
                         {chunk}
                     </span>
@@ -86,7 +86,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                 <span key={i} className="inline-flex items-baseline flex-nowrap">
                     <span
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none active:scale-95"
+                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none"
                     >
                         {chunk}
                     </span>
@@ -151,11 +151,9 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                 return (
                     <div key={v.verse} className="relative group mb-6">
                         <p
-                            className="text-justify leading-relaxed whitespace-pre-wrap"
+                            className="text-justify leading-relaxed whitespace-pre-wrap hyphens-auto"
+                            lang="de"
                             style={{
-                                hyphens: 'auto',
-                                WebkitHyphens: 'auto',
-                                msHyphens: 'auto',
                                 textJustify: 'inter-word'
                             }}
                         >
@@ -167,10 +165,10 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                                             return (
                                                 <span
                                                     key={lesson.id}
-                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed border-2 border-zinc-200 dark:border-slate-600 transition-opacity flex items-center justify-center"
+                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2 rounded-full shadow-md cursor-not-allowed transition-opacity flex items-center justify-center"
                                                     title={lesson.debugTitle}
                                                 >
-                                                    <GraduationCap size={24} strokeWidth={2.5} />
+                                                    <GraduationCap size={18} strokeWidth={2.5} />
                                                 </span>
                                             );
                                         }
@@ -178,10 +176,10 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                                             <Link
                                                 key={lesson.id}
                                                 href={`/study/${lesson.id}`}
-                                                className="bg-indigo-600 text-white p-2.5 rounded-full shadow-xl shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer ring-4 ring-white dark:ring-zinc-900 flex items-center justify-center"
+                                                className="bg-indigo-600 text-white p-2 rounded-full shadow-lg shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer flex items-center justify-center"
                                                 title={lesson.debugTitle}
                                             >
-                                                <GraduationCap size={24} strokeWidth={2.5} />
+                                                <GraduationCap size={18} strokeWidth={2.5} />
                                             </Link>
                                         );
                                     })}

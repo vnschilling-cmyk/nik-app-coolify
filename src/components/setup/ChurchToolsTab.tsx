@@ -266,7 +266,7 @@ export default function ChurchToolsTab() {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                         <Save size={18} /> {saving ? "Speichern..." : "Verbindung speichern"}
                     </button>

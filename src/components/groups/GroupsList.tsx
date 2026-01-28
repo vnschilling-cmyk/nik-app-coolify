@@ -121,7 +121,7 @@ export default function GroupsList() {
                     />
                     <button
                         onClick={(e) => saveGroupName(group.id, e)}
-                        className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
                         title="Speichern"
                     >
                         <Check size={20} />

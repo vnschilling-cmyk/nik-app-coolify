@@ -285,7 +285,7 @@ export default function MemoryVersesTab() {
                             <button
                                 onClick={() => setMode("ai")}
                                 className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
-                                title="Mit AI generieren"
+                                title="Vorschläge generieren"
                             >
                                 <Sparkles size={24} />
                             </button>

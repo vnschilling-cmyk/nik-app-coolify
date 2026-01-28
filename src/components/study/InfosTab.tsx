@@ -658,7 +658,7 @@ export default function InfosTab() {
                             <button
                                 type="submit"
                                 disabled={!formData.title.trim()}
-                                className="w-full py-3 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95"
+                                className="w-full py-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
                                 title="Speichern"
                             >
                                 <Save size={24} />

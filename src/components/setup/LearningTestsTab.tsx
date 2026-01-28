@@ -94,7 +94,7 @@ export default function LearningTestsTab() {
             if (!lesson) return;
 
             if (!lesson.content || lesson.content.trim().length === 0) {
-                alert("Fehler: Diese Lektion hat keinen Inhalt. Die AI kann keine Fragen generieren.");
+                alert("Fehler: Diese Lektion hat keinen Inhalt. Es können keine Fragen generiert werden.");
                 setGenerating(false);
                 return;
             }
@@ -286,7 +286,7 @@ export default function LearningTestsTab() {
                         <button
                             onClick={() => setMode("ai")}
                             className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
-                            title="Mit AI generieren"
+                            title="Vorschläge generieren"
                         >
                             <Sparkles size={24} />
                         </button>

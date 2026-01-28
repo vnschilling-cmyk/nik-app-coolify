@@ -66,8 +66,8 @@ export default function ForcePasswordChange() {
             <div className="bg-white dark:bg-slate-800 w-full max-w-md p-8 rounded-xl shadow-2xl border border-zinc-200 dark:border-slate-700">
                 <div className="text-center mb-8">
                     {/* Blue Icon Background to match Login */}
-                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Lock className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+                    <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-indigo-600 dark:text-indigo-500" />
                     </div>
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
                         Neues Passwort erforderlich
@@ -94,7 +94,7 @@ export default function ForcePasswordChange() {
                                 required
                                 value={oldPassword}
                                 onChange={(e) => setOldPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10"
+                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-10"
                                 placeholder="Start-Passwort"
                             />
                             <button
@@ -116,7 +116,7 @@ export default function ForcePasswordChange() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10"
+                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-10"
                                 placeholder="Min. 8 Zeichen"
                             />
                             <button
@@ -138,7 +138,7 @@ export default function ForcePasswordChange() {
                                 required
                                 value={confirm}
                                 onChange={(e) => setConfirm(e.target.value)}
-                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all pr-10"
+                                className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-10"
                                 placeholder="Wiederholen"
                             />
                             <button
@@ -154,7 +154,7 @@ export default function ForcePasswordChange() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm shadow-blue-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm shadow-indigo-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {isLoading ? "Speichert..." : (
                             <>

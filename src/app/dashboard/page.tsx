@@ -479,7 +479,7 @@ export default function DashboardPage() {
                             <button
                                 type="submit"
                                 disabled={saving || !questionForm.question.trim() || !questionForm.lesson_id}
-                                className="w-full py-2.5 bg-amber-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Save size={16} /> {saving ? "Speichern..." : "Frage absenden"}
                             </button>

@@ -647,7 +647,15 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                                             </div>
                                                         )}
                                                         <div className="flex-1">
-                                                            <p className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose">
+                                                            <p
+                                                                className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
+                                                                lang="de"
+                                                                style={{
+                                                                    hyphens: 'auto',
+                                                                    WebkitHyphens: 'auto',
+                                                                    msHyphens: 'auto'
+                                                                }}
+                                                            >
                                                                 <sup className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mr-1 select-none">{v.verse}</sup>
                                                                 {v.text.split(/(\s+)/g).map((chunk, i) => {
                                                                     if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
@@ -824,7 +832,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             <button
                                 onClick={handleSaveNote}
                                 disabled={savingNote || !noteContent.trim()}
-                                className="flex-1 py-2.5 bg-yellow-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-yellow-600 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50"
                             >
                                 <Save size={16} /> {savingNote ? "..." : "Speichern"}
                             </button>

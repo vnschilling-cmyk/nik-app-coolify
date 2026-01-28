@@ -15,6 +15,8 @@ const navItems = [
 export default function BottomNav() {
     const pathname = usePathname();
 
+    if (pathname === "/setup/workbook") return null;
+
     return (
         <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-6 pointer-events-none">
             <div className="flex justify-between items-center pointer-events-auto">

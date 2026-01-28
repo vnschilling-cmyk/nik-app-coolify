@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { exportLessonsToExcel } from "@/lib/exportUtils";
+import { useRouter } from "next/navigation";
 interface BibleBook {
     id: string;
     name: string;
@@ -33,6 +34,7 @@ interface Lesson {
 const CATEGORIES = ["Bibelarbeit", "Gruppenarbeit", "Exkurs", "Thema"];
 
 export default function LessonsTab() {
+    const router = useRouter();
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,6 +80,11 @@ export default function LessonsTab() {
 
     const handleExport = () => {
         exportLessonsToExcel(Array.from(selectedLessons));
+    };
+
+    const handleWorkbook = () => {
+        const ids = Array.from(selectedLessons).join(',');
+        router.push(`/setup/workbook?ids=${ids}`);
     };
 
     const toggleGroup = (group: string) => {
@@ -385,6 +392,14 @@ export default function LessonsTab() {
                             className="text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 px-2"
                         >
                             {selectedLessons.size === lessons.length ? "Keine" : "Alle"}
+                        </button>
+                        <button
+                            onClick={handleWorkbook}
+                            disabled={selectedLessons.size === 0}
+                            className="flex items-center justify-center w-10 h-10 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={`Arbeitsheft erstellen (${selectedLessons.size})`}
+                        >
+                            <FileText size={20} />
                         </button>
                         <button
                             onClick={handleExport}
