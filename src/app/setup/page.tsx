@@ -104,18 +104,10 @@ const mainTiles = [
     {
         id: "user" as Tab,
         label: "Benutzer",
-        description: "Profil & Einstellungen",
+        description: "Profil, Design & Einstellungen",
         icon: User,
         color: "purple",
         gradient: "from-purple-500 to-pink-600"
-    },
-    {
-        id: "design" as Tab,
-        label: "Design",
-        description: "Schrift & Farben",
-        icon: Palette,
-        color: "pink",
-        gradient: "from-pink-500 to-rose-600"
     },
 ];
 
