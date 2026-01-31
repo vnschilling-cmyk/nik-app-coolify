@@ -48,7 +48,7 @@ const CATEGORIES = [
 ];
 
 interface InfosTabProps {
-    mode?: 'info' | 'word_study' | 'quote' | 'text_study';
+    mode?: 'info' | 'word_study' | 'quote' | 'text_study' | 'illustration';
 }
 
 export default function InfosTab({ mode = 'info' }: InfosTabProps) {
@@ -61,6 +61,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [activeWordStudyTab, setActiveWordStudyTab] = useState<'general' | 'lessons'>('general');
     const [activeTextStudyTab, setActiveTextStudyTab] = useState<'KI' | 'Andere' | 'Eigene'>('KI');
+    const [activeIllustrationTab, setActiveIllustrationTab] = useState<'KI' | 'Andere' | 'Eigene'>('KI');
 
     const toggleGroup = (group: string) => {
         const newSet = new Set(expandedGroups);
@@ -265,7 +266,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         setFormData({
             title: "",
             description: "",
-            category: mode === 'word_study' ? "Wortstudie" : mode === 'quote' ? "Zitat" : mode === 'text_study' ? "KI" : "Allgemein",
+            category: mode === 'word_study' ? "Wortstudie" : mode === 'quote' ? "Zitat" : (mode === 'text_study' || mode === 'illustration') ? "KI" : "Allgemein",
             type: "text",
             word: "",
             url: "",
@@ -614,8 +615,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                 </div>
                             )}
 
-                            {/* Category selector for Text Study */}
-                            {mode === 'text_study' && (
+                            {/* Category selector for Text Study & Illustration */}
+                            {(mode === 'text_study' || mode === 'illustration') && (
                                 <div>
                                     <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie</label>
                                     <select
@@ -908,8 +909,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             </div>
                         )}
 
-                        {/* Text Study Tabs */}
-                        {mode === 'text_study' && (
+                        {/* Text Study & Illustration Tabs */}
+                        {(mode === 'text_study' || mode === 'illustration') && (
                             <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
                                 {[
                                     { id: 'KI', label: 'KI' },
@@ -918,10 +919,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                 ].map((tab) => (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTextStudyTab(tab.id as any)}
+                                        onClick={() => mode === 'text_study' ? setActiveTextStudyTab(tab.id as any) : setActiveIllustrationTab(tab.id as any)}
                                         className={clsx(
                                             "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
-                                            activeTextStudyTab === tab.id
+                                            (mode === 'text_study' ? activeTextStudyTab === tab.id : activeIllustrationTab === tab.id)
                                                 ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
                                                 : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                                         )}
@@ -933,12 +934,14 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                         )}
 
                         {(() => {
-                            // Filter by selected tab if in word study mode
+                            // Filter by selected tab if in word study mode or text study / illustration
                             const filteredFacts = mode === 'word_study'
                                 ? facts.filter(f => activeWordStudyTab === 'lessons' ? !!f.lesson_id : !f.lesson_id)
                                 : mode === 'text_study'
                                     ? facts.filter(f => f.category === activeTextStudyTab)
-                                    : facts;
+                                    : mode === 'illustration'
+                                        ? facts.filter(f => f.category === activeIllustrationTab)
+                                        : facts;
 
                             if (filteredFacts.length === 0) {
                                 return (

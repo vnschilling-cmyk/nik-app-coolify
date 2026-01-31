@@ -13,7 +13,7 @@ import GroupsTab from "@/components/setup/GroupsTab";
 import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations";
 
 // 1. Content Management Sub-Tiles
 const contentTiles = [
@@ -110,6 +110,14 @@ const mainTiles = [
         gradient: "from-teal-500 to-emerald-600"
     },
     {
+        id: "illustrations" as Tab,
+        label: "Illustrationen",
+        description: "Bsp. & Geschichten",
+        icon: Palette,
+        color: "orange",
+        gradient: "from-orange-400 to-amber-500"
+    },
+    {
         id: "user" as Tab,
         label: "Benutzer",
         description: "Profil, Design & Einstellungen",
@@ -130,6 +138,7 @@ export default function SetupPage() {
             case "word_studies": return <InfosTab mode="word_study" />;
             case "quotes": return <InfosTab mode="quote" />;
             case "text_studies": return <InfosTab mode="text_study" />;
+            case "illustrations": return <InfosTab mode="illustration" />;
             case "measures": return <MeasuresTab />;
             case "questions": return <QuestionsTab />;
             case "user": return <UserTab />;

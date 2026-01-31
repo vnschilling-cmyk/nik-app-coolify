@@ -33,7 +33,7 @@ async function main() {
 
         // 2. Add or update 'fact_kind' field (select)
         const factKindField = fields.find(f => f.name === 'fact_kind');
-        const allowedValues = ['info', 'word_study', 'quote', 'text_study'];
+        const allowedValues = ['info', 'word_study', 'quote', 'text_study', 'illustration'];
 
         if (!factKindField) {
             console.log("Adding 'fact_kind' field...");
@@ -50,10 +50,12 @@ async function main() {
             });
             needsUpdate = true;
         } else {
-            // Check if text_study is missing
+            // Check if any allowed values are missing
             const currentValues = factKindField.values || factKindField.options?.values || [];
-            if (!currentValues.includes('text_study')) {
-                console.log("Updating 'fact_kind' field values to include 'text_study'...");
+            const missingValues = allowedValues.filter(v => !currentValues.includes(v));
+
+            if (missingValues.length > 0) {
+                console.log(`Updating 'fact_kind' field values to include: ${missingValues.join(', ')}...`);
                 factKindField.values = allowedValues;
                 if (factKindField.options) {
                     factKindField.options.values = allowedValues;
