@@ -1,20 +1,32 @@
-const https = require('https');
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import 'dotenv/config';
 
-const API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GOOGLE_API_KEY || "AIzaSyBFXbTWotvyYK82lCJBTn-QpxujLQGfmmM";
+const apiKey = process.env.GOOGLE_AI_API_KEY;
 
-const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
+if (!apiKey) {
+    console.error("No API key found in GOOGLE_AI_API_KEY");
+    process.exit(1);
+}
 
-https.get(url, (res) => {
-    let data = '';
-    res.on('data', (chunk) => { data += chunk; });
-    res.on('end', () => {
-        try {
-            const json = JSON.parse(data);
-            console.log(JSON.stringify(json, null, 2));
-        } catch (e) {
-            console.log(data);
+const genAI = new GoogleGenerativeAI(apiKey);
+
+async function main() {
+    try {
+        // The SDK doesn't have a direct listModels, so we must use fetch to the API
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.error) {
+            console.error("API Error:", data.error);
+        } else {
+            console.log("Available Models:");
+            data.models?.forEach(m => {
+                console.log(`- ${m.name} (${m.displayName})`);
+            });
         }
-    });
-}).on('error', (e) => {
-    console.error(e);
-});
+    } catch (e) {
+        console.error("Fetch Error:", e);
+    }
+}
+
+main();

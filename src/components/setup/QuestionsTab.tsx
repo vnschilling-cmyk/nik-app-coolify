@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, MessageCircleQuestion, HelpCircle } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, MessageCircleQuestion, HelpCircle, Book } from "lucide-react";
+import clsx from "clsx";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 
 interface BibleBook {
@@ -107,9 +108,9 @@ export default function QuestionsTab() {
                 id: r.id,
                 title: r.title || "(Ohne Titel)",
                 book_id: r.book_id || "",
-                chapter_start: r.chapter_start || 1,
-                verse_start: r.verse_start || 1,
-                verse_end: r.verse_end || 10
+                chapter_start: r.chapter_start ?? 1,
+                verse_start: r.verse_start ?? 1,
+                verse_end: r.verse_end ?? 10
             })));
 
             setBooks(booksRes.map(r => ({
@@ -131,11 +132,25 @@ export default function QuestionsTab() {
             const lesson = lessons.find(l => l.id === formData.lesson_id);
             if (lesson && lesson.book_id) {
                 updateMaxVersesForLesson(lesson);
+
+                // ONLY sync book/chapter if they are currently empty or if it's a NEW lesson selection
+                // We check if values are currently 0 or empty to avoid overwriting manual changes 
+                // like "Ganzes Buch" (chapter 0)
+                setFormData(prev => {
+                    if (prev.book_id === lesson.book_id && (prev.chapter === lesson.chapter_start || prev.chapter === 0)) {
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        book_id: lesson.book_id,
+                        chapter: lesson.chapter_start ?? 1
+                    };
+                });
             }
         } else if (formData.category === "allgemein" && formData.has_bible_ref && formData.book_id && formData.chapter) {
             updateMaxVersesForBook();
         }
-    }, [formData.lesson_id, formData.category, formData.book_id, formData.chapter, formData.has_bible_ref, lessons]);
+    }, [formData.lesson_id, formData.category, lessons]);
 
     const updateMaxVersesForLesson = async (lesson: Lesson) => {
         // If lesson covers whole book (chapter_start === 0), we can't fetch verses by chapter.
@@ -192,6 +207,11 @@ export default function QuestionsTab() {
             return book.name;
         }
 
+        // Check for whole chapter
+        if (formData.verse_start === 0) {
+            return `${book.name} ${formData.chapter}`;
+        }
+
         const verseRange = formData.verse_start === formData.verse_end
             ? `${formData.verse_start}`
             : `${formData.verse_start}-${formData.verse_end}`;
@@ -212,21 +232,20 @@ export default function QuestionsTab() {
         if (formData.category === "bibeltext") {
             // Bibeltext questions are linked to a lesson
             data.lesson_id = formData.lesson_id;
-            data.verse_start = formData.verse_start;
-            data.verse_end = formData.verse_end;
-            data.book_id = "";
-            data.chapter = 0;
-            data.verse_ref = "";
+            data.book_id = formData.book_id;
+            data.chapter = formData.chapter;
+            data.verse_start = (formData.chapter === 0 || formData.verse_start === 0) ? 0 : formData.verse_start;
+            data.verse_end = (formData.chapter === 0 || formData.verse_start === 0) ? 0 : formData.verse_end;
+            data.verse_ref = generateVerseRef();
         } else {
             // General questions - lesson is optional, but can have Bible reference
             data.lesson_id = formData.lesson_id || "";
 
             if (formData.has_bible_ref && formData.book_id) {
                 data.book_id = formData.book_id;
-                // If chapter is 0 (whole book), store 0.
                 data.chapter = formData.chapter;
-                data.verse_start = formData.chapter === 0 ? 0 : formData.verse_start;
-                data.verse_end = formData.chapter === 0 ? 0 : formData.verse_end;
+                data.verse_start = (formData.chapter === 0 || formData.verse_start === 0) ? 0 : formData.verse_start;
+                data.verse_end = (formData.chapter === 0 || formData.verse_start === 0) ? 0 : formData.verse_end;
                 data.verse_ref = generateVerseRef();
             } else {
                 data.book_id = "";
@@ -276,8 +295,8 @@ export default function QuestionsTab() {
             has_bible_ref: !!q.book_id,
             book_id: q.book_id || "",
             chapter: q.chapter,
-            verse_start: q.verse_start || 1,
-            verse_end: q.verse_end || 1,
+            verse_start: q.verse_start ?? 1,
+            verse_end: q.verse_end ?? 1,
             answer: q.answer,
             is_answered: q.is_answered
         });
@@ -373,37 +392,121 @@ export default function QuestionsTab() {
 
                         {/* Verse Range (only for bibeltext with lesson) */}
                         {formData.category === "bibeltext" && selectedLesson && (
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                    <select
-                                        value={formData.verse_start}
-                                        onChange={e => {
-                                            const newVal = parseInt(e.target.value) || 1;
-                                            setFormData({
-                                                ...formData,
-                                                verse_start: newVal,
-                                                verse_end: Math.max(newVal, formData.verse_end)
-                                            });
+                            <div className="space-y-4">
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const isCurrentlyWholeBook = formData.chapter === 0;
+                                            if (isCurrentlyWholeBook) {
+                                                // Turn OFF whole book -> back to lesson start, reset verse
+                                                setFormData({
+                                                    ...formData,
+                                                    chapter: (selectedLesson.chapter_start || 1),
+                                                    verse_start: 1,
+                                                    verse_end: 1
+                                                });
+                                            } else {
+                                                // Turn ON whole book -> chapter 0, verse 0
+                                                setFormData({
+                                                    ...formData,
+                                                    chapter: 0,
+                                                    verse_start: 0,
+                                                    verse_end: 0
+                                                });
+                                            }
                                         }}
-                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                        className={clsx(
+                                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all",
+                                            formData.chapter === 0
+                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20"
+                                                : "bg-zinc-100 dark:bg-slate-700/50 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-200"
+                                        )}
                                     >
-                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                            <option key={num} value={num}>{num}</option>
-                                        ))}
-                                    </select>
+                                        <div className={clsx("w-4 h-4 rounded border flex items-center justify-center", formData.chapter === 0 ? "border-white bg-white/20" : "border-zinc-300 dark:border-slate-500 bg-white/5")}>
+                                            {formData.chapter === 0 && <div className="w-2.5 h-2.5 bg-white rounded-[2px]" />}
+                                        </div>
+                                        Ganzes Buch
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const isCurrentlyWholeChapter = formData.verse_start === 0 && formData.chapter !== 0;
+                                            if (isCurrentlyWholeChapter) {
+                                                // Turn OFF whole chapter -> back to verse 1
+                                                setFormData({
+                                                    ...formData,
+                                                    chapter: formData.chapter === 0 ? (selectedLesson.chapter_start || 1) : formData.chapter,
+                                                    verse_start: 1,
+                                                    verse_end: 1
+                                                });
+                                            } else {
+                                                // Turn ON whole chapter -> verse 0, ensure chapter is not 0
+                                                setFormData({
+                                                    ...formData,
+                                                    chapter: formData.chapter === 0 ? (selectedLesson.chapter_start || 1) : formData.chapter,
+                                                    verse_start: 0,
+                                                    verse_end: 0
+                                                });
+                                            }
+                                        }}
+                                        className={clsx(
+                                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all",
+                                            formData.verse_start === 0 && formData.chapter !== 0
+                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20"
+                                                : "bg-zinc-100 dark:bg-slate-700/50 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-200"
+                                        )}
+                                    >
+                                        <div className={clsx("w-4 h-4 rounded border flex items-center justify-center", formData.verse_start === 0 && formData.chapter !== 0 ? "border-white bg-white/20" : "border-zinc-300 dark:border-slate-500 bg-white/5")}>
+                                            {formData.verse_start === 0 && formData.chapter !== 0 && <div className="w-2.5 h-2.5 bg-white rounded-[2px]" />}
+                                        </div>
+                                        Ganzes Kapitel
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                    <select
-                                        value={formData.verse_end}
-                                        onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                    >
-                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                            <option key={num} value={num}>{num}</option>
-                                        ))}
-                                    </select>
+
+                                {formData.chapter !== 0 && formData.verse_start !== 0 && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1 block">Von Vers</label>
+                                            <select
+                                                value={formData.verse_start}
+                                                onChange={e => {
+                                                    const newVal = parseInt(e.target.value) || 1;
+                                                    setFormData({
+                                                        ...formData,
+                                                        verse_start: newVal,
+                                                        verse_end: Math.max(newVal, formData.verse_end)
+                                                    });
+                                                }}
+                                                className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            >
+                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                    <option key={num} value={num}>{num}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1 block">Bis Vers</label>
+                                            <select
+                                                value={formData.verse_end}
+                                                onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                            >
+                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                    <option key={num} value={num}>{num}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-indigo-500/10 dark:bg-indigo-500/20 px-4 py-3 rounded-xl border border-indigo-500/30 flex items-center justify-between shadow-inner">
+                                    <div className="flex items-center gap-2.5">
+                                        <Book size={18} className="text-indigo-500" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600/80 dark:text-indigo-400/80">Vorschau Referenz</span>
+                                    </div>
+                                    <p className="font-bold text-indigo-700 dark:text-indigo-100">{generateVerseRef()}</p>
                                 </div>
                             </div>
                         )}
@@ -443,70 +546,113 @@ export default function QuestionsTab() {
 
                                         {selectedBook && (
                                             <>
-                                                <div className="mb-2">
-                                                    <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={formData.chapter === 0}
-                                                            onChange={e => {
+                                                <div className="flex gap-2 mb-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const isCurrentlyWholeBook = formData.chapter === 0;
+                                                            if (isCurrentlyWholeBook) {
+                                                                setFormData({ ...formData, chapter: 1, verse_start: 1, verse_end: 1 });
+                                                            } else {
+                                                                setFormData({ ...formData, chapter: 0, verse_start: 0, verse_end: 0 });
+                                                            }
+                                                        }}
+                                                        className={clsx(
+                                                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all",
+                                                            formData.chapter === 0
+                                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20"
+                                                                : "bg-zinc-100 dark:bg-slate-700/50 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-200"
+                                                        )}
+                                                    >
+                                                        <div className={clsx("w-4 h-4 rounded border flex items-center justify-center", formData.chapter === 0 ? "border-white bg-white/20" : "border-zinc-300 dark:border-slate-500 bg-white/5")}>
+                                                            {formData.chapter === 0 && <div className="w-2.5 h-2.5 bg-white rounded-[2px]" />}
+                                                        </div>
+                                                        Ganzes Buch
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const isCurrentlyWholeChapter = formData.verse_start === 0 && formData.chapter !== 0;
+                                                            if (isCurrentlyWholeChapter) {
                                                                 setFormData({
                                                                     ...formData,
-                                                                    chapter: e.target.checked ? 0 : 1,
-                                                                    verse_start: e.target.checked ? 0 : 1,
-                                                                    verse_end: e.target.checked ? 0 : 1
+                                                                    chapter: formData.chapter === 0 ? 1 : formData.chapter,
+                                                                    verse_start: 1,
+                                                                    verse_end: 1
                                                                 });
-                                                            }}
-                                                            className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                                                        />
-                                                        Ganzes Buch (ohne Kapitel/Verse)
-                                                    </label>
+                                                            } else {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    chapter: formData.chapter === 0 ? 1 : formData.chapter,
+                                                                    verse_start: 0,
+                                                                    verse_end: 0
+                                                                });
+                                                            }
+                                                        }}
+                                                        className={clsx(
+                                                            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all",
+                                                            formData.verse_start === 0 && formData.chapter !== 0
+                                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20"
+                                                                : "bg-zinc-100 dark:bg-slate-700/50 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-200"
+                                                        )}
+                                                    >
+                                                        <div className={clsx("w-4 h-4 rounded border flex items-center justify-center", formData.verse_start === 0 && formData.chapter !== 0 ? "border-white bg-white/20" : "border-zinc-300 dark:border-slate-500 bg-white/5")}>
+                                                            {formData.verse_start === 0 && formData.chapter !== 0 && <div className="w-2.5 h-2.5 bg-white rounded-[2px]" />}
+                                                        </div>
+                                                        Ganzes Kapitel
+                                                    </button>
                                                 </div>
 
                                                 {formData.chapter !== 0 && (
-                                                    <div className="grid grid-cols-3 gap-2">
+                                                    <div className="grid grid-cols-3 gap-3">
                                                         <div>
-                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1 block">Kapitel</label>
                                                             <select
                                                                 value={formData.chapter}
                                                                 onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
-                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                                                             >
                                                                 {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
                                                                     <option key={num} value={num}>{num}</option>
                                                                 ))}
                                                             </select>
                                                         </div>
-                                                        <div>
-                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                                            <select
-                                                                value={formData.verse_start}
-                                                                onChange={e => {
-                                                                    const newVal = parseInt(e.target.value) || 1;
-                                                                    setFormData({
-                                                                        ...formData,
-                                                                        verse_start: newVal,
-                                                                        verse_end: Math.max(newVal, formData.verse_end)
-                                                                    });
-                                                                }}
-                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                            >
-                                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                    <option key={num} value={num}>{num}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                                            <select
-                                                                value={formData.verse_end}
-                                                                onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                            >
-                                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                    <option key={num} value={num}>{num}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
+                                                        {formData.verse_start !== 0 && (
+                                                            <>
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1 block">Von</label>
+                                                                    <select
+                                                                        value={formData.verse_start}
+                                                                        onChange={e => {
+                                                                            const newVal = parseInt(e.target.value) || 1;
+                                                                            setFormData({
+                                                                                ...formData,
+                                                                                verse_start: newVal,
+                                                                                verse_end: Math.max(newVal, formData.verse_end)
+                                                                            });
+                                                                        }}
+                                                                        className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                    >
+                                                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                            <option key={num} value={num}>{num}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1 block">Bis</label>
+                                                                    <select
+                                                                        value={formData.verse_end}
+                                                                        onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                                        className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                    >
+                                                                        {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                            <option key={num} value={num}>{num}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </>

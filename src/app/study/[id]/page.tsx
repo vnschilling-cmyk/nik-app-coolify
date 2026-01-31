@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
-import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLink, Map as MapIcon, BookOpen, HelpCircle, StickyNote, Plus, X, Save, Trash2, Edit, Brain, GraduationCap, Trophy, ChevronRight } from "lucide-react";
+import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLink, Map as MapIcon, BookOpen, HelpCircle, StickyNote, Plus, X, Save, Trash2, Edit, Brain, GraduationCap, Trophy, ChevronRight, Languages, Quote } from "lucide-react";
 import RichTextDisplay from "@/components/ui/RichTextDisplay";
 import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import QuizOverlay from "@/components/features/QuizOverlay";
@@ -14,7 +14,9 @@ const TYPE_ICONS: Record<string, any> = {
     image: ImageIcon,
     video: Video,
     link: ExternalLink,
-    map: MapIcon
+    map: MapIcon,
+    word_study: Languages,
+    quote: Quote
 };
 
 const TYPE_STYLES: Record<string, { bg: string, border: string, text: string, hover: string, badge: string, solidBg: string, hoverBg: string }> = {
@@ -42,14 +44,16 @@ function UnifiedContentList({ facts, questions, onSelectFact, onSelectQuestion }
         <div className="space-y-4">
             {combined.map((item: any) => {
                 if (item._type === 'fact') {
-                    const Icon = TYPE_ICONS[item.type] || FileText;
+                    const Icon = TYPE_ICONS[item.fact_kind] || TYPE_ICONS[item.type] || FileText;
                     const style = TYPE_STYLES[item.type] || TYPE_STYLES.text;
+                    const label = item.fact_kind === 'word_study' ? 'Wortstudie' : item.fact_kind === 'quote' ? 'Zitat' : 'Info';
                     return (
                         <div key={item.id} className={`${style.bg} border ${style.border} rounded-xl p-4 shadow-sm group ${style.hover} transition-all cursor-pointer`} onClick={() => onSelectFact(item)}>
                             <div className={`flex items-center gap-2 ${style.text} mb-2`}>
                                 <Icon size={16} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">Info</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{label}</span>
                                 {item.category && <span className={`text-[10px] ${style.badge} px-2 py-0.5 rounded-full`}>{item.category}</span>}
+                                {item.word && <span className="text-[10px] font-bold bg-white/50 px-2 py-0.5 rounded-full">Wort: {item.word}</span>}
                             </div>
                             <h4 className="font-bold text-zinc-800 dark:text-zinc-200">{item.title}</h4>
                             <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 line-clamp-2">
@@ -103,6 +107,8 @@ interface Fact {
     description: string;
     category: string;
     type: string;
+    fact_kind?: string;
+    word?: string;
     verse_start: number;
     verse_end: number;
     lesson_id: string;
@@ -226,10 +232,10 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 category: lessonRes.category || "",
                 verse_ref: lessonRes.verse_ref || "",
                 book_id: lessonRes.book_id || "",
-                chapter_start: lessonRes.chapter_start || 1,
-                verse_start: lessonRes.verse_start || 1,
-                verse_end: lessonRes.verse_end || 10,
-                has_bible_ref: lessonRes.has_bible_ref || false,
+                chapter_start: lessonRes.chapter_start ?? 0,
+                verse_start: lessonRes.verse_start ?? 0,
+                verse_end: lessonRes.verse_end ?? 0,
+                has_bible_ref: !!lessonRes.book_id,
                 expand: lessonRes.expand
             };
 
@@ -240,6 +246,8 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 description: r.description || "",
                 category: r.category || "",
                 type: r.type || "text",
+                fact_kind: r.fact_kind,
+                word: r.word,
                 verse_start: r.verse_start || 0,
                 verse_end: r.verse_end || 0,
                 lesson_id: r.lesson_id || "",
@@ -376,7 +384,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
     }
 
     const isThema = lesson.category === "Thema";
-    const hasBibleRef = lesson.has_bible_ref && lesson.book_id && !isThema;
+    const hasBibleRef = !!lesson.book_id && !isThema;
 
     return (
         <div className="min-h-screen pb-24 bg-white dark:bg-background">
@@ -608,110 +616,82 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                 </div>
                             )}
 
-                            {/* Bible Text with Facts */}
-                            {hasBibleRef ? (
-                                lesson.chapter_start === 0 ? (
-                                    <div className="">
-                                        <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
+                            {/* Bible Text Section - Only for concrete passages */}
+                            {hasBibleRef && lesson.chapter_start !== 0 && verses.length > 0 && (
+                                <div className="bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+                                    <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 border-b border-indigo-100 dark:border-indigo-900/30 pb-3">
+                                        <BookOpen size={18} />
+                                        <span className="font-bold uppercase text-[10px] tracking-widest leading-none">Bibeltext</span>
+                                        <span className="text-xs font-medium ml-auto opacity-70">
+                                            {lesson.verse_ref}
+                                        </span>
                                     </div>
-                                ) : verses.length === 0 ? (
-                                    <div className="text-center py-8 text-zinc-500">
-                                        <p>Kein Bibeltext gefunden.</p>
-                                    </div>
-                                ) : (
-                                    <div className="verse-text space-y-4">
+                                    <div className="space-y-4">
                                         {verses.map(v => {
-                                            const verseFacts = facts.filter(f =>
-                                                v.verse >= f.verse_start && v.verse <= f.verse_end
-                                            );
-                                            const verseQuestions = questions.filter(q =>
-                                                q.category === "bibeltext" && v.verse >= q.verse_start && v.verse <= q.verse_end
-                                            );
+                                            // Combine current lesson facts with any potential global word studies
+                                            // For the BibleReader component, we treat word study facts as 'LinkedLesson'
+                                            const wordStudyLessons = facts
+                                                .filter(f => f.fact_kind === 'word_study')
+                                                .map(f => ({
+                                                    id: f.id,
+                                                    title: f.title,
+                                                    word: f.word,
+                                                    category: 'Wortstudie'
+                                                }));
 
                                             return (
-                                                <div key={v.id} className="relative pl-0 md:pl-4">
-                                                    <div className="flex items-start gap-3">
-                                                        {/* Question icons on the left */}
-                                                        {verseQuestions.length > 0 && (
-                                                            <div className="flex flex-col gap-1 shrink-0 pt-1">
-                                                                {verseQuestions.map(q => (
-                                                                    <button
-                                                                        key={q.id}
-                                                                        onClick={() => setSelectedQuestion(q)}
-                                                                        className="w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-110 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 hover:bg-emerald-200"
-                                                                        title={q.question}
-                                                                    >
-                                                                        <HelpCircle size={16} />
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <p
-                                                                className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
-                                                                lang="de"
-                                                                style={{
-                                                                    hyphens: 'auto',
-                                                                    WebkitHyphens: 'auto',
-                                                                    msHyphens: 'auto'
+                                                <p
+                                                    key={v.id}
+                                                    className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
+                                                    lang="de"
+                                                >
+                                                    <sup className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mr-1 select-none">{v.verse}</sup>
+                                                    {v.text.split(/(\s+|[.,;!?]+)/g).map((chunk, i) => {
+                                                        if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
+                                                        if (/^[.,;!?]+$/.test(chunk)) return <span key={i} className="text-zinc-500">{chunk}</span>;
+
+                                                        const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim().toLowerCase();
+                                                        const matchingFact = facts.find((f: any) =>
+                                                            f.fact_kind === 'word_study' &&
+                                                            f.word?.toLowerCase() === cleanWord
+                                                        );
+
+                                                        if (matchingFact) {
+                                                            return (
+                                                                <span
+                                                                    key={i}
+                                                                    onClick={() => setSelectedFact(matchingFact)}
+                                                                    className="cursor-pointer font-bold bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 rounded px-0.5 transition-colors border-b-2 border-cyan-400 dark:border-cyan-500"
+                                                                >
+                                                                    {chunk}
+                                                                </span>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <span
+                                                                key={i}
+                                                                onClick={() => {
+                                                                    const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
+                                                                    if (clean.length > 1) setSelectedWord(clean);
                                                                 }}
+                                                                className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded px-0.5 transition-colors"
                                                             >
-                                                                <sup className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mr-1 select-none">{v.verse}</sup>
-                                                                {v.text.split(/(\s+)/g).map((chunk, i) => {
-                                                                    if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
-                                                                    return (
-                                                                        <span
-                                                                            key={i}
-                                                                            onClick={() => {
-                                                                                const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
-                                                                                if (cleanWord.length > 1) setSelectedWord(cleanWord);
-                                                                            }}
-                                                                            className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded px-0.5 transition-colors"
-                                                                        >
-                                                                            {chunk}
-                                                                        </span>
-                                                                    );
-                                                                })}
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Facts column */}
-                                                        {verseFacts.length > 0 && (
-                                                            <div className="flex flex-col gap-2 shrink-0 pt-1">
-                                                                {verseFacts.map(fact => {
-                                                                    const Icon = TYPE_ICONS[fact.type] || FileText;
-                                                                    const colorClass =
-                                                                        fact.type === 'image' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400 hover:bg-purple-200' :
-                                                                            fact.type === 'video' ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400 hover:bg-red-200' :
-                                                                                fact.type === 'map' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 hover:bg-emerald-200' :
-                                                                                    fact.type === 'link' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 hover:bg-blue-200' :
-                                                                                        'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 hover:bg-amber-200';
-
-                                                                    return (
-                                                                        <button
-                                                                            key={fact.id}
-                                                                            onClick={() => setSelectedFact(fact)}
-                                                                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm hover:scale-110 ${colorClass}`}
-                                                                            title={fact.title}
-                                                                        >
-                                                                            <Icon size={18} />
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                                {chunk}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </p>
                                             );
                                         })}
                                     </div>
-                                )
-                            ) : (
-                                <div className="">
-                                    <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
                                 </div>
                             )}
 
+                            {/* Content cards list (Facts and Questions) */}
+                            <div className="">
+                                <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
+                            </div>
                         </>
                     )}
                 </div>

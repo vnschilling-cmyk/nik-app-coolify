@@ -9,8 +9,10 @@ import clsx from "clsx";
 import { LinkedLesson } from "@/lib/bible";
 import { Search } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
+import { useSearchParams } from "next/navigation";
 
 interface BookSummary {
+    id: string;
     name: string;
     short_name: string;
     chapters: number;
@@ -27,6 +29,9 @@ interface BiblePageClientProps {
 }
 
 export default function BiblePageClient({ verses, lessons, book, chapter, allBooks }: BiblePageClientProps) {
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get('q') || undefined;
+
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [selectorMode, setSelectorMode] = useState<'books' | 'chapters'>('books');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -128,7 +133,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                 </div>
             </header>
 
-            <BibleReader verses={verses} lessons={lessons} onWordClick={handleWordClick} />
+            <BibleReader verses={verses} lessons={lessons} onWordClick={handleWordClick} searchQuery={searchQuery} />
 
             <div className="flex justify-between px-4 py-8 max-w-prose mx-auto gap-4">
                 {prevData ? (
@@ -169,6 +174,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                     word={selectedWord}
                     context={`${book.name} ${chapter}`}
                     testament={book.testament}
+                    bookId={book.id}
                     onClose={() => setSelectedWord(null)}
                 />
             )}

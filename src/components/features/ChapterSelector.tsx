@@ -174,7 +174,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                 <div className="sticky top-0 bg-white dark:bg-slate-800 px-4 py-2 border-b border-zinc-100 dark:border-slate-700/50 z-10">
                                     <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Altes Testament</h3>
                                 </div>
-                                <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 p-2">
+                                <div className="grid grid-cols-8 sm:grid-cols-11 gap-1 p-2">
                                     {otBooks.map(book => {
                                         const color = getBookColor(book.short_name, book.order, book.testament);
                                         const isActive = book.name === currentBook;
@@ -205,7 +205,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                 <div className="sticky top-0 bg-white dark:bg-slate-800 px-4 py-2 border-b border-zinc-100 dark:border-slate-700/50 z-10">
                                     <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Neues Testament</h3>
                                 </div>
-                                <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 p-2">
+                                <div className="grid grid-cols-8 sm:grid-cols-11 gap-1 p-2">
                                     {ntBooks.map(book => {
                                         const color = getBookColor(book.short_name, book.order, book.testament);
                                         const isActive = book.name === currentBook;
@@ -242,7 +242,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
             {/* Chapters View */}
             {view === 'chapters' && selectedBook && (
                 <div className="flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-8 sm:grid-cols-10 gap-2">
                         {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(chapter => (
                             <button
                                 key={chapter}

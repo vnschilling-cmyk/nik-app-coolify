@@ -28,6 +28,7 @@ export interface LinkedLesson {
     chapter_start: number;
     start_date?: string;
     active: boolean;
+    word?: string;
 }
 
 // Cache for books to avoid repeated fetches
@@ -91,14 +92,20 @@ export async function getVerses(bookId: string, chapter: number): Promise<BibleV
 
 export async function getLessonsForChapter(bookId: string, chapter: number): Promise<LinkedLesson[]> {
     try {
-        const filter = `book_id="${bookId}" && (chapter_start=0 || (chapter_start<=${chapter} && chapter_end>=${chapter}))`;
+        const lessonFilter = `book_id="${bookId}" && (chapter_start=0 || (chapter_start<=${chapter} && chapter_end>=${chapter}))`;
 
-        const records = await pb.collection('lessons').getFullList({
-            filter: filter,
-            sort: 'verse_start',
-        });
+        // Fetch both lessons and standalone word studies (facts)
+        const [lessonRecords, factRecords] = await Promise.all([
+            pb.collection('lessons').getFullList({
+                filter: lessonFilter,
+                sort: 'verse_start',
+            }),
+            pb.collection('facts').getFullList({
+                filter: `fact_kind="word_study" && word != ""`,
+            })
+        ]);
 
-        return records.map(r => ({
+        const lessons: LinkedLesson[] = lessonRecords.map(r => ({
             id: r.id,
             title: r.title,
             category: r.category,
@@ -106,10 +113,24 @@ export async function getLessonsForChapter(bookId: string, chapter: number): Pro
             verse_end: Number(r.verse_end) || 1,
             chapter_start: Number(r.chapter_start) || 0,
             start_date: r.start_date,
-            active: r.active ?? true // Default to true
+            active: r.active ?? true,
+            word: r.word
         }));
+
+        const factsAsLessons: LinkedLesson[] = factRecords.map(r => ({
+            id: r.id,
+            title: r.title,
+            category: "Wortstudie",
+            verse_start: 0,
+            verse_end: 0,
+            chapter_start: 0,
+            active: true,
+            word: r.word
+        }));
+
+        return [...lessons, ...factsAsLessons];
     } catch (e) {
-        console.error(`Failed to fetch lessons for book ${bookId} ch ${chapter}:`, e);
+        console.error(`Failed to fetch context data for book ${bookId} ch ${chapter}:`, e);
         return [];
     }
 }

@@ -222,7 +222,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                                 {verses.map(r => (
                                                     <Link
                                                         key={r.id}
-                                                        href={`/bible?book=${r.bookShort}&chapter=${r.chapter}#v${r.verse}`}
+                                                        href={`/bible?book=${r.bookShort}&chapter=${r.chapter}&q=${query}#v${r.verse}`}
                                                         onClick={onClose}
                                                         className="block p-3 rounded-xl bg-zinc-50 dark:bg-slate-700/40 hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-600 group"
                                                     >

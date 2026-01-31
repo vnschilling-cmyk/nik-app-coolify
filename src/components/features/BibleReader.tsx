@@ -17,9 +17,10 @@ interface BibleReaderProps {
     verses: VerseData[];
     lessons?: LinkedLesson[];
     onWordClick: (word: string) => void;
+    searchQuery?: string;
 }
 
-export default function BibleReader({ verses, lessons = [], onWordClick }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], onWordClick, searchQuery }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -69,13 +70,46 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                 }
             }
 
-            // It's a word
+            // Clean the word for lookup
+            const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim().toLowerCase();
+            const wordStudy = lessons?.find(l =>
+                l.category === 'Wortstudie' &&
+                (l as any).word?.toLowerCase() === cleanWord
+            );
+
+            // Is it the searched word?
+            const isMatch = searchQuery && cleanWord === searchQuery.toLowerCase();
+
+            // It's a word study word
+            if (wordStudy) {
+                return (
+                    <span
+                        key={i}
+                        onClick={() => onWordClick(chunk)}
+                        className={clsx(
+                            "cursor-pointer font-bold rounded px-0.5 transition-all select-none border-b-2",
+                            isMatch
+                                ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border-amber-500"
+                                : "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 border-cyan-400 dark:border-cyan-500"
+                        )}
+                    >
+                        {chunk}
+                    </span>
+                );
+            }
+
+            // It's a normal word
             if (!measureMatch) {
                 return (
                     <span
                         key={i}
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none"
+                        className={clsx(
+                            "cursor-pointer rounded px-0.5 transition-all select-none",
+                            isMatch
+                                ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
+                                : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
+                        )}
                     >
                         {chunk}
                     </span>
@@ -86,7 +120,12 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                 <span key={i} className="inline-flex items-baseline flex-nowrap">
                     <span
                         onClick={() => onWordClick(chunk)}
-                        className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800 rounded px-0.5 transition-all select-none"
+                        className={clsx(
+                            "cursor-pointer rounded px-0.5 transition-all select-none",
+                            isMatch
+                                ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
+                                : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
+                        )}
                     >
                         {chunk}
                     </span>
@@ -149,7 +188,7 @@ export default function BibleReader({ verses, lessons = [], onWordClick }: Bible
                     });
 
                 return (
-                    <div key={v.verse} className="relative group mb-6">
+                    <div key={v.verse} id={`v${v.verse}`} className="relative group mb-6 scroll-mt-20">
                         <p
                             className="text-justify leading-relaxed whitespace-pre-wrap hyphens-auto"
                             lang="de"

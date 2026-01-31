@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import clsx from "clsx";
 
 interface BibleBook {
     id: string;
@@ -23,9 +24,10 @@ interface Fact {
     id: string;
     title: string;
     description: string;
-    category: string;
-    type: string;
-    source: string;
+    category: string; // Thematic category (e.g., "Geschichte")
+    type: string;     // Media type (e.g., "text", "image")
+    fact_kind?: string; // Content kind ("info", "word_study", "quote")
+    word?: string;      // Target word for word_study
     verse_ref: string;
     book_id: string;
     chapter: number;
@@ -45,7 +47,11 @@ const CATEGORIES = [
     { id: "map", label: "Karte", icon: MapIcon },
 ];
 
-export default function InfosTab() {
+interface InfosTabProps {
+    mode?: 'info' | 'word_study' | 'quote';
+}
+
+export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [facts, setFacts] = useState<Fact[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -53,6 +59,7 @@ export default function InfosTab() {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+    const [activeWordStudyTab, setActiveWordStudyTab] = useState<'general' | 'lessons'>('general');
 
     const toggleGroup = (group: string) => {
         const newSet = new Set(expandedGroups);
@@ -67,9 +74,9 @@ export default function InfosTab() {
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        category: "text",
+        category: "Allgemein",
         type: "text",
-        source: "",
+        word: "",
         url: "",
         has_bible_ref: false,
         book_id: "",
@@ -85,14 +92,31 @@ export default function InfosTab() {
     const [maxVerses, setMaxVerses] = useState(176);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Word selection state
+    const [wordSelectorOpen, setWordSelectorOpen] = useState(false);
+    const [wordSelectorText, setWordSelectorText] = useState("");
+    const [wordSelectorLoading, setWordSelectorLoading] = useState(false);
+
+    // AI Generation state
+    const [aiLoading, setAiLoading] = useState(false);
+
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
         try {
+            // Filter by fact_kind. 
+            // Older records without fact_kind are treated as "info"
+            const filter = mode === 'info'
+                ? 'fact_kind = "" || fact_kind = "info"'
+                : `fact_kind = "${mode}"`;
+
             const [factsRes, booksRes, lessonsRes] = await Promise.all([
-                pb.collection('facts').getFullList({ sort: 'category,title' }),
+                pb.collection('facts').getFullList({
+                    filter,
+                    sort: 'category,title'
+                }),
                 pb.collection('bible_books').getFullList({ sort: 'order' }),
                 pb.collection('lessons').getFullList({ sort: 'title' })
             ]);
@@ -101,14 +125,15 @@ export default function InfosTab() {
                 id: r.id,
                 title: r.title || "",
                 description: r.description || "",
-                category: r.category || "text",
+                category: r.category || "Allgemein",
                 type: r.type || "text",
-                source: r.source || "",
+                fact_kind: r.fact_kind || "info",
+                word: r.word || "",
                 verse_ref: r.verse_ref || "",
                 book_id: r.book_id || "",
-                chapter: r.chapter || 1,
-                verse_start: r.verse_start || 1,
-                verse_end: r.verse_end || 1,
+                chapter: r.chapter ?? 1,
+                verse_start: r.verse_start ?? 1,
+                verse_end: r.verse_end ?? 1,
                 lesson_id: r.lesson_id || "",
                 file: r.file || "",
                 url: r.url || "",
@@ -187,7 +212,10 @@ export default function InfosTab() {
         data.append('description', formData.description);
         data.append('category', formData.category);
         data.append('type', formData.type);
-        // source removed
+        data.append('fact_kind', mode);
+        if (mode === 'word_study') {
+            data.append('word', formData.word);
+        }
         data.append('url', formData.url);
         data.append('lesson_id', formData.lesson_id || "");
 
@@ -236,9 +264,9 @@ export default function InfosTab() {
         setFormData({
             title: "",
             description: "",
-            category: "text",
+            category: mode === 'word_study' ? "Wortstudie" : mode === 'quote' ? "Zitat" : "Allgemein",
             type: "text",
-            source: "",
+            word: "",
             url: "",
             has_bible_ref: false,
             book_id: "",
@@ -256,15 +284,15 @@ export default function InfosTab() {
         setFormData({
             title: fact.title,
             description: fact.description,
-            category: fact.category || "text",
+            category: fact.category || "Allgemein",
             type: fact.type || "text",
-            source: fact.source,
+            word: fact.word || "",
             url: fact.url || "",
             has_bible_ref: !!fact.book_id,
             book_id: fact.book_id,
             chapter: fact.chapter,
-            verse_start: fact.verse_start || 1,
-            verse_end: fact.verse_end || 1,
+            verse_start: fact.verse_start ?? 1,
+            verse_end: fact.verse_end ?? 1,
             lesson_id: fact.lesson_id || ""
         });
         setEditingId(fact.id);
@@ -379,6 +407,107 @@ export default function InfosTab() {
         }
     };
 
+    const handleOpenWordSelector = async () => {
+        if (!formData.book_id || !formData.chapter) {
+            alert("Bitte wähle zuerst ein Buch und Kapitel aus.");
+            return;
+        }
+
+        setWordSelectorLoading(true);
+        setWordSelectorOpen(true);
+        setWordSelectorText("");
+
+        try {
+            const filter = `book="${formData.book_id}" && chapter=${formData.chapter} && verse >= ${formData.verse_start} && verse <= ${formData.verse_end}`;
+            const records = await pb.collection('verses').getFullList({
+                filter,
+                sort: 'verse'
+            });
+
+            const text = records.map(r => r.text).join(" ");
+            setWordSelectorText(text);
+        } catch (e) {
+            console.error("Error loading verses for word selector:", e);
+            alert("Fehler beim Laden des Bibeltexts.");
+            setWordSelectorOpen(false);
+        } finally {
+            setWordSelectorLoading(false);
+        }
+    };
+
+    const handleGenerateAIStudy = async () => {
+        if (!formData.word.trim()) {
+            alert("Bitte gib zuerst ein Wort ein oder wähle eines aus.");
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const selectedBook = books.find(b => b.id === formData.book_id);
+            const testament = selectedBook && selectedBook.order >= 40 ? 'NT' : 'OT';
+
+            const res = await fetch('/api/word-meaning', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    word: formData.word,
+                    context: formData.title || "Biblisches Wort",
+                    testament
+                })
+            });
+
+            if (!res.ok) throw new Error("KI-Analyse fehlgeschlagen");
+
+            const data = await res.json();
+
+            // Format AI response as Rich Text/HTML
+            const formattedDescription = `
+                <div class="space-y-4">
+                    <div class="bg-zinc-50 dark:bg-slate-700/40 rounded-xl p-4 border border-zinc-100 dark:border-slate-600">
+                        <p class="text-2xl font-serif mb-1">${data.originalWord || '—'}</p>
+                        ${data.transliteration ? `<p class="text-sm text-zinc-500 italic">${data.transliteration}</p>` : ''}
+                        ${data.strongNumber ? `<p class="text-xs text-indigo-500 mt-2 font-mono">Strong: ${data.strongNumber}</p>` : ''}
+                    </div>
+                    
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-amber-600 mb-2">Bedeutung</p>
+                        <p>${data.meaning || '—'}</p>
+                    </div>
+
+                    ${data.rootMeaning ? `
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-purple-600 mb-2">Wortwurzel</p>
+                        <p class="text-sm">${data.rootMeaning}</p>
+                    </div>` : ''}
+
+                    ${data.synonyms?.length ? `
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-2">Synonyme</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${data.synonyms.map((s: string) => `<span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-xs">${s}</span>`).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    ${data.usage ? `
+                    <div class="pt-2 border-t border-zinc-100 dark:border-slate-700">
+                        <p class="text-xs text-zinc-500 italic"><span class="font-bold">Verwendung:</span> ${data.usage}</p>
+                    </div>` : ''}
+                </div>
+            `.trim();
+
+            setFormData(prev => ({
+                ...prev,
+                description: formattedDescription
+            }));
+
+        } catch (e: any) {
+            console.error("AI Generation error:", e);
+            alert("Fehler bei der KI-Generierung: " + e.message);
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
     if (loading) {
         return <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>;
     }
@@ -393,7 +522,7 @@ export default function InfosTab() {
                 <button
                     onClick={() => { resetForm(); setShowForm(true); }}
                     className="flex items-center justify-center w-10 h-10 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shrink-0"
-                    title="Neue Info"
+                    title={mode === 'word_study' ? 'Neue Wortstudie' : mode === 'quote' ? 'Neues Zitat' : 'Neue Info'}
                 >
                     <Plus size={20} />
                 </button>
@@ -411,67 +540,120 @@ export default function InfosTab() {
                 <div className="fixed inset-0 bg-slate-800/60 z-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">{editingId ? "Info bearbeiten" : "Neue Info"}</h3>
+                            <h3 className="font-bold text-lg">
+                                {editingId
+                                    ? (mode === 'word_study' ? 'Wortstudie bearbeiten' : mode === 'quote' ? 'Zitat bearbeiten' : 'Info bearbeiten')
+                                    : (mode === 'word_study' ? 'Neue Wortstudie' : mode === 'quote' ? 'Neues Zitat' : 'Neue Info')
+                                }
+                            </h3>
                             <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Type Selector FIRST */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Medien-Typ</label>
-                                <div className="grid grid-cols-5 gap-2 mt-1">
-                                    {CATEGORIES.map(cat => {
-                                        const Icon = cat.icon;
-                                        const isSelected = formData.type === cat.id;
+                            {/* Type Selector (Only for general Info) */}
+                            {mode === 'info' && (
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Medien-Typ</label>
+                                    <div className="grid grid-cols-5 gap-2 mt-1">
+                                        {CATEGORIES.map(cat => {
+                                            const Icon = cat.icon;
+                                            const isSelected = formData.type === cat.id;
 
-                                        // Color logic for buttons
-                                        let activeClass = "bg-zinc-600 text-white border-zinc-600 shadow-md";
-                                        let inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
+                                            // Color logic for buttons
+                                            let activeClass = "bg-zinc-600 text-white border-zinc-600 shadow-md";
+                                            let inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
 
-                                        if (cat.id === 'image') {
-                                            activeClass = "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-500/20";
-                                        } else if (cat.id === 'video') {
-                                            activeClass = "bg-red-600 text-white border-red-600 shadow-md shadow-red-500/20";
-                                        } else if (cat.id === 'map') {
-                                            activeClass = "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
-                                        } else if (cat.id === 'link') {
-                                            activeClass = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20";
-                                        } else { // text / default
-                                            activeClass = "bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20";
-                                        }
+                                            if (cat.id === 'image') {
+                                                activeClass = "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-500/20";
+                                            } else if (cat.id === 'video') {
+                                                activeClass = "bg-red-600 text-white border-red-600 shadow-md shadow-red-500/20";
+                                            } else if (cat.id === 'map') {
+                                                activeClass = "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
+                                            } else if (cat.id === 'link') {
+                                                activeClass = "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20";
+                                            } else { // text / default
+                                                activeClass = "bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20";
+                                            }
 
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, type: cat.id })}
-                                                className={`flex items-center justify-center p-3 rounded-xl border transition-all ${isSelected ? activeClass : inactiveClass}`}
-                                                title={cat.label}
-                                            >
-                                                <Icon size={24} />
-                                            </button>
-                                        );
-                                    })}
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, type: cat.id })}
+                                                    className={`flex items-center justify-center p-3 rounded-xl border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                    title={cat.label}
+                                                >
+                                                    <Icon size={24} />
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Topics (Real Categories) */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
-                                <select
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                >
-                                    <option value="Allgemein">Allgemein</option>
-                                    <option value="Geschichte">Geschichte</option>
-                                    <option value="Geografie">Geografie</option>
-                                    <option value="Archäologie">Archäologie</option>
-                                    <option value="Kultur">Kultur</option>
-                                    <option value="Sprache">Sprache</option>
-                                    <option value="Wissenschaft">Wissenschaft</option>
-                                    <option value="Theologie">Theologie</option>
-                                </select>
-                            </div>
+                            {/* Topics (Only for general Info) */}
+                            {mode === 'info' && (
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    >
+                                        <option value="Allgemein">Allgemein</option>
+                                        <option value="Geschichte">Geschichte</option>
+                                        <option value="Geografie">Geografie</option>
+                                        <option value="Archäologie">Archäologie</option>
+                                        <option value="Kultur">Kultur</option>
+                                        <option value="Sprache">Sprache</option>
+                                        <option value="Wissenschaft">Wissenschaft</option>
+                                        <option value="Theologie">Theologie</option>
+                                        <option value="Wortstudie">Wortstudie</option>
+                                        <option value="Zitat">Zitat</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Word field for word studies */}
+                            {mode === 'word_study' && (
+                                <div>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Ziel-Wort *</label>
+                                    </div>
+                                    <div className="flex gap-2 mb-3">
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.word}
+                                            onChange={e => setFormData({ ...formData, word: e.target.value })}
+                                            className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                            placeholder="z.B. Glaube"
+                                        />
+                                        {formData.has_bible_ref && (
+                                            <button
+                                                type="button"
+                                                onClick={handleOpenWordSelector}
+                                                className="flex items-center gap-2 px-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shrink-0"
+                                                title="Aus Bibeltext wählen"
+                                            >
+                                                <Search size={18} />
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateAIStudy}
+                                            disabled={aiLoading || !formData.word.trim()}
+                                            className="flex items-center gap-2 px-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shrink-0 disabled:opacity-50"
+                                            title="KI-Studie generieren"
+                                        >
+                                            {aiLoading ? (
+                                                <div className="animate-spin w-4.5 h-4.5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                                            ) : (
+                                                <Sparkles size={18} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Dynamic Fields based on Type */}
                             {(formData.type === "image" || formData.type === "map") && (
@@ -521,6 +703,7 @@ export default function InfosTab() {
                                     value={formData.description}
                                     onChange={(val: string) => setFormData({ ...formData, description: val })}
                                     placeholder="Inhalt beschreiben..."
+                                    expandOnFocus={true}
                                 />
                             </div>
 
@@ -670,13 +853,56 @@ export default function InfosTab() {
 
             {/* List */}
             {facts.length === 0 ? (
-                <div className="text-center py-12 text-zinc-500">
-                    <p className="text-4xl mb-2">💡</p>
-                    <p>Noch keine Infos vorhanden.</p>
+                <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
+                    <p className="text-4xl mb-2">
+                        {mode === 'word_study' ? "📝" : mode === 'quote' ? "💬" : "💡"}
+                    </p>
+                    <p>Noch keine {mode === 'word_study' ? 'Wortstudien' : mode === 'quote' ? 'Zitate' : 'Infos'} vorhanden.</p>
                 </div>
             ) : (
                 <div className="space-y-4">
+                    {/* Word Study Tabs */}
+                    {mode === 'word_study' && (
+                        <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
+                            <button
+                                onClick={() => setActiveWordStudyTab('general')}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                                    activeWordStudyTab === 'general'
+                                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Allgemein
+                            </button>
+                            <button
+                                onClick={() => setActiveWordStudyTab('lessons')}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                                    activeWordStudyTab === 'lessons'
+                                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Textbezogen
+                            </button>
+                        </div>
+                    )}
+
                     {(() => {
+                        // Filter by selected tab if in word study mode
+                        const filteredFacts = mode === 'word_study'
+                            ? facts.filter(f => activeWordStudyTab === 'lessons' ? !!f.lesson_id : !f.lesson_id)
+                            : facts;
+
+                        if (filteredFacts.length === 0) {
+                            return (
+                                <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
+                                    <p className="text-sm">Keine Einträge in dieser Kategorie.</p>
+                                </div>
+                            );
+                        }
+
                         // 1. Group by Book (or "Allgemein" / "Ohne Buch")
                         type BookGroup = {
                             id: string;
@@ -688,14 +914,21 @@ export default function InfosTab() {
 
                         const bookGroups = new Map<string, BookGroup>();
 
-                        facts.forEach(fact => {
+                        filteredFacts.forEach(fact => {
                             let bookId = "general";
                             let bookTitle = "Allgemeine Infos";
                             let bookOrder = 9999;
                             let subgroupTitle = "Allgemeine Infos";
 
                             // Determine Book & Subgroup
-                            if (fact.lesson_id) {
+                            if (mode === 'word_study' && activeWordStudyTab === 'general' && fact.word) {
+                                // Alphabetical grouping for General Word Studies
+                                const firstChar = fact.word.trim().charAt(0).toUpperCase();
+                                bookId = `alpha-${firstChar}`;
+                                bookTitle = firstChar;
+                                bookOrder = firstChar.charCodeAt(0);
+                                subgroupTitle = ""; // Signal flat list (no nested toggle)
+                            } else if (fact.lesson_id) {
                                 const lesson = lessons.find(l => l.id === fact.lesson_id);
                                 if (lesson && lesson.book_id) {
                                     const book = books.find(b => b.id === lesson.book_id);
@@ -703,8 +936,6 @@ export default function InfosTab() {
                                         bookId = book.id;
                                         bookTitle = book.name;
                                         bookOrder = book.order || 0;
-                                        subgroupTitle = lesson.title;
-                                    } else {
                                         subgroupTitle = lesson.title;
                                     }
                                 } else if (lesson) {
@@ -784,25 +1015,27 @@ export default function InfosTab() {
                                                 const isLast = idx === sortedSubgroups.length - 1;
                                                 // Unique key for collapsing logic (combine bookId and subgroupTitle)
                                                 const collapseKey = `${bookGroup.id}-${subgroupTitle}`;
-                                                const isSubExpanded = expandedGroups.has(collapseKey);
+                                                const isSubExpanded = expandedGroups.has(collapseKey) || !subgroupTitle; // Always expanded if no title (flat list)
 
                                                 return (
                                                     <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-slate-700 pb-4" : ""}>
-                                                        <button
-                                                            onClick={() => toggleGroup(collapseKey)}
-                                                            className="w-full flex items-center justify-between py-2 group"
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors text-left">
-                                                                    {subgroupTitle}
-                                                                </h4>
-                                                                <span className="text-zinc-400 text-[10px] font-normal">({groupFacts.length})</span>
-                                                            </div>
-                                                            {isSubExpanded ?
-                                                                <ChevronDown size={16} className="text-zinc-300 group-hover:text-zinc-500" /> :
-                                                                <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
-                                                            }
-                                                        </button>
+                                                        {subgroupTitle && (
+                                                            <button
+                                                                onClick={() => toggleGroup(collapseKey)}
+                                                                className="w-full flex items-center justify-between py-2 group"
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors text-left">
+                                                                        {subgroupTitle}
+                                                                    </h4>
+                                                                    <span className="text-zinc-400 text-[10px] font-normal">({groupFacts.length})</span>
+                                                                </div>
+                                                                {isSubExpanded ?
+                                                                    <ChevronDown size={16} className="text-zinc-300 group-hover:text-zinc-500" /> :
+                                                                    <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
+                                                                }
+                                                            </button>
+                                                        )}
 
                                                         {isSubExpanded && (
                                                             <div className="space-y-2 mt-1">
@@ -824,6 +1057,11 @@ export default function InfosTab() {
                                                                                         <TypeIcon size={10} />
                                                                                         {TypeLabel}
                                                                                     </span>
+                                                                                    {fact.word && (
+                                                                                        <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                                            Wort: {fact.word}
+                                                                                        </span>
+                                                                                    )}
                                                                                     {fact.category && (
                                                                                         <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
                                                                                             {fact.category}
@@ -872,6 +1110,48 @@ export default function InfosTab() {
                             );
                         });
                     })()}
+                </div>
+            )}
+
+            {/* Word Selection Modal */}
+            {wordSelectorOpen && (
+                <div className="fixed inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">Wort aus Bibeltext wählen</h3>
+                            <button onClick={() => setWordSelectorOpen(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                        </div>
+
+                        <div className="bg-zinc-50 dark:bg-slate-700/50 rounded-xl p-4 border border-zinc-200 dark:border-slate-600 max-h-[60vh] overflow-y-auto">
+                            {wordSelectorLoading ? (
+                                <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>
+                            ) : wordSelectorText ? (
+                                <div className="flex flex-wrap gap-x-1 gap-y-2 leading-relaxed text-lg">
+                                    {wordSelectorText.split(/(\s+)/g).map((chunk, i) => {
+                                        if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
+                                        const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
+                                        if (!clean) return <span key={i}>{chunk}</span>;
+
+                                        return (
+                                            <span
+                                                key={i}
+                                                onClick={() => {
+                                                    setFormData({ ...formData, word: clean, title: `Wortstudie: ${clean}` });
+                                                    setWordSelectorOpen(false);
+                                                }}
+                                                className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-300 rounded px-1 transition-colors border-b border-transparent hover:border-indigo-400"
+                                            >
+                                                {chunk}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-center text-zinc-500 italic">Kein Text verfügbar.</p>
+                            )}
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-4 text-center">Klicke auf ein Wort, um es als Ziel für die Wortstudie zu übernehmen.</p>
+                    </div>
                 </div>
             )}
         </div>

@@ -11,7 +11,15 @@ import {
   Comfortaa,
   Play,
   Satisfy,
-  // Momo_Signature - Not standard in generic imports, removing to fix error.
+  Poiret_One,
+  Montserrat_Alternates,
+  Jura,
+  Sulphur_Point,
+  Gruppo,
+  Pompiere,
+  Great_Vibes,
+  Delius_Swash_Caps,
+  Tinos,
 } from "next/font/google"; // Load all fonts
 import "./globals.css";
 import BottomNav from "@/components/layout/BottomNav";
@@ -32,7 +40,17 @@ const exo2 = Exo_2({ subsets: ["latin"], variable: "--font-exo-2" });
 const comfortaa = Comfortaa({ subsets: ["latin"], variable: "--font-comfortaa" });
 const play = Play({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-play" });
 const satisfy = Satisfy({ subsets: ["latin"], weight: "400", variable: "--font-satisfy" });
-// Momo Signature skipped for now.
+
+// New Project Fonts
+const poiretOne = Poiret_One({ subsets: ["latin"], weight: "400", variable: "--font-poiret-one" });
+const montserratAlternates = Montserrat_Alternates({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-montserrat-alternates" });
+const jura = Jura({ subsets: ["latin"], variable: "--font-jura" });
+const sulphurPoint = Sulphur_Point({ subsets: ["latin"], weight: ["300", "400", "700"], variable: "--font-sulphur-point" });
+const gruppo = Gruppo({ subsets: ["latin"], weight: "400", variable: "--font-gruppo" });
+const pompiere = Pompiere({ subsets: ["latin"], weight: "400", variable: "--font-pompiere" });
+const greatVibes = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-great-vibes" });
+const deliusSwashCaps = Delius_Swash_Caps({ subsets: ["latin"], weight: "400", variable: "--font-delius-swash-caps" });
+const tinos = Tinos({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-tinos" });
 
 
 export const metadata: Metadata = {
@@ -69,9 +87,17 @@ export default function RootLayout({
           ${dancingScript.variable} 
           ${lobsterTwo.variable} 
           ${exo2.variable} 
-          ${comfortaa.variable} 
           ${play.variable} 
           ${satisfy.variable}
+          ${poiretOne.variable}
+          ${montserratAlternates.variable}
+          ${jura.variable}
+          ${sulphurPoint.variable}
+          ${gruppo.variable}
+          ${pompiere.variable}
+          ${greatVibes.variable}
+          ${deliusSwashCaps.variable}
+          ${tinos.variable}
     `}>
       <body
         className="antialiased bg-background text-foreground transition-colors duration-300"

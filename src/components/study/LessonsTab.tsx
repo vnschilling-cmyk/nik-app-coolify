@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText, Sparkles, Brain, Quote, Type, Search, Check, HelpCircle, ChevronLeft } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { exportLessonsToExcel } from "@/lib/exportUtils";
 import { useRouter } from "next/navigation";
@@ -35,9 +35,47 @@ const CATEGORIES = ["Bibelarbeit", "Gruppenarbeit", "Exkurs", "Thema"];
 
 export default function LessonsTab() {
     const router = useRouter();
+    const [factCategories, setFactCategories] = useState<string[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // ... existing useEffect logic ...
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            // ... existing fetch logic ...
+            const records = await pb.collection('lessons').getFullList<Lesson>({
+                sort: '-start_date',
+            });
+            const bibleBooks = await pb.collection('bible_books').getFullList<BibleBook>({
+                sort: 'order',
+            });
+
+            // New: Fetch existing categories from facts to populate the dropdown dynamically
+            const allFacts = await pb.collection('facts').getFullList({
+                fields: 'category',
+            });
+            const uniqueCategories = new Set<string>(['Allgemein']); // Default
+            allFacts.forEach(f => {
+                if (f.category) uniqueCategories.add(f.category);
+            });
+            // Also add standard categories if they don't exist yet
+            ["Geschichte", "Hintergrund", "Kultur", "Archäologie", "Geographie", "Sprache", "Anwendung"].forEach(c => uniqueCategories.add(c));
+
+            setFactCategories(Array.from(uniqueCategories).sort());
+
+            setLessons(records);
+            setBooks(bibleBooks);
+        } catch (error) {
+            console.error("Error loading data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
@@ -58,6 +96,19 @@ export default function LessonsTab() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [selectedLessons, setSelectedLessons] = useState<Set<string>>(new Set());
+
+    // Import Wizard State
+    const [showImportWizard, setShowImportWizard] = useState(false);
+    const [wizardStep, setWizardStep] = useState<'input' | 'process'>('input');
+    const [importText, setImportText] = useState("");
+    const [importConfig, setImportConfig] = useState({
+        lessonId: "",
+        hasBibleRef: false,
+        refType: 'buch' as 'vers' | 'buch'
+    });
+    const [parsedItems, setParsedItems] = useState<{ title: string, content: string, factKind: string, category: string, isQuestion?: boolean }[]>([]);
+    const [currentItemIdx, setCurrentItemIdx] = useState(0);
+    const [isImporting, setIsImporting] = useState(false);
 
     const toggleSelection = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -153,10 +204,10 @@ export default function LessonsTab() {
                 order: r.order || 0,
                 verse_ref: r.verse_ref || "",
                 book_id: r.book_id || "",
-                chapter_start: r.chapter_start || 1,
-                chapter_end: r.chapter_end || 1,
-                verse_start: r.verse_start || 1,
-                verse_end: r.verse_end || 10,
+                chapter_start: r.chapter_start ?? 1,
+                chapter_end: r.chapter_end ?? 1,
+                verse_start: r.verse_start ?? 1,
+                verse_end: r.verse_end ?? 10,
                 has_bible_ref: r.book_id ? true : false,
                 start_date: r.start_date || "",
                 active: r.active ?? true
@@ -265,8 +316,8 @@ export default function LessonsTab() {
             has_bible_ref: hasBibleRef,
             book_id: lesson.book_id,
             chapter: lesson.chapter_start,
-            verse_start: lesson.verse_start || 1,
-            verse_end: lesson.verse_end || 10,
+            verse_start: lesson.verse_start ?? 1,
+            verse_end: lesson.verse_end ?? 10,
             title: lesson.title,
             content: lesson.content,
             start_date: formattedDate,
@@ -335,26 +386,144 @@ export default function LessonsTab() {
         }
     };
 
-    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const text = await file.text();
-        const lines = text.split('\n').filter(l => l.trim());
-        let imported = 0;
-        for (let i = 1; i < lines.length; i++) {
-            const [title, content, category] = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
-            if (title) {
-                try {
-                    await pb.collection('lessons').create({ title, content, category, order: i });
-                    imported++;
-                } catch (e) {
-                    console.error(`Failed to import line ${i}:`, e);
+    const startImportWizard = () => {
+        if (!importText.trim()) {
+            alert("Bitte Markdown Text einfügen!");
+            return;
+        }
+        if (!importConfig.lessonId) {
+            alert("Bitte eine Lektion auswählen!");
+            return;
+        }
+
+        const lines = importText.split('\n');
+        const sections: { title: string, content: string, factKind: string, category: string, isQuestion?: boolean }[] = [];
+        let currentSection: { title: string, content: string, factKind: string, category: string } | null = null;
+
+        const processSection = (section: { title: string, content: string, factKind: string, category: string }) => {
+            // Flexible detection for "Fragen", "7. Fragen", "Fragen zur Lektion" etc.
+            if (/\bfragen\b/i.test(section.title)) {
+                const qLines = section.content.split('\n').filter(l => l.trim());
+                for (const qLine of qLines) {
+                    // Keep numbering for questions, just trim whitespace
+                    const qText = qLine.trim();
+                    if (qText) {
+                        sections.push({
+                            title: 'Frage',
+                            content: qText,
+                            factKind: 'bibeltext',
+                            category: 'bibeltext',
+                            isQuestion: true
+                        });
+                    }
                 }
+            } else {
+                sections.push(section);
+            }
+        };
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('#')) {
+                if (currentSection) processSection(currentSection);
+                currentSection = {
+                    title: trimmed.replace(/^#+\s*/, '').trim(),
+                    content: '',
+                    factKind: 'info',
+                    category: 'Allgemein'
+                };
+            } else if (currentSection) {
+                currentSection.content += line + '\n';
             }
         }
-        alert(`${imported} Lektionen importiert!`);
-        loadLessons();
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (currentSection) processSection(currentSection);
+
+        if (sections.length === 0) {
+            alert("Keine Infos gefunden. Bitte Überschriften (#) verwenden!");
+            return;
+        }
+
+        setParsedItems(sections);
+        setCurrentItemIdx(0);
+        setWizardStep('process');
+    };
+
+    const handleImportItem = async (skip = false) => {
+        if (skip) {
+            if (currentItemIdx + 1 < parsedItems.length) {
+                setCurrentItemIdx(prev => prev + 1);
+            } else {
+                finishImport();
+            }
+            return;
+        }
+
+        setIsImporting(true);
+        try {
+            const item = parsedItems[currentItemIdx];
+            const lesson = lessons.find(l => l.id === importConfig.lessonId);
+            const collection = item.isQuestion ? 'questions' : 'facts';
+
+            const data: any = item.isQuestion ? {
+                question: item.content,
+                answer: "",
+                category: item.category, // Bibeltext-Frage or Allgemeine Frage
+                lesson_id: importConfig.lessonId,
+                is_answered: false
+            } : {
+                title: item.title,
+                description: item.content.trim(),
+                category: item.category,
+                type: 'text',
+                fact_kind: item.factKind,
+                lesson_id: importConfig.lessonId,
+            };
+
+            if (!item.isQuestion && item.factKind === 'word_study') {
+                data.word = item.title;
+            }
+
+            if (importConfig.hasBibleRef && lesson) {
+                data.book_id = lesson.book_id;
+                if (importConfig.refType === 'buch') {
+                    data.chapter = 0;
+                    data.verse_start = 0;
+                    data.verse_end = 0;
+                    const book = books.find(b => b.id === lesson.book_id);
+                    data.verse_ref = book?.name || "";
+                } else {
+                    data.chapter = lesson.chapter_start;
+                    data.verse_start = lesson.verse_start;
+                    data.verse_end = lesson.verse_end;
+                    data.verse_ref = lesson.verse_ref;
+                }
+            }
+
+            await pb.collection(collection).create(data);
+
+            if (currentItemIdx + 1 < parsedItems.length) {
+                setCurrentItemIdx(prev => prev + 1);
+            } else {
+                finishImport();
+            }
+        } catch (e: any) {
+            alert("Fehler beim Import: " + e.message);
+        } finally {
+            setIsImporting(false);
+        }
+    };
+
+    const finishImport = () => {
+        alert("Import abgeschlossen!");
+        setShowImportWizard(false);
+        setWizardStep('input');
+        setImportText("");
+        setParsedItems([]);
+        setCurrentItemIdx(0);
+    };
+
+    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Obsolete but kept function signature to avoid errors if referenced elsewhere
     };
 
     if (loading) {
@@ -375,13 +544,13 @@ export default function LessonsTab() {
                 >
                     <Plus size={20} />
                 </button>
-                <label
-                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 dark:bg-slate-800 text-zinc-700 dark:text-slate-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors cursor-pointer shrink-0"
-                    title="CSV Import"
+                <button
+                    onClick={() => setShowImportWizard(true)}
+                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 dark:bg-slate-800 text-zinc-700 dark:text-slate-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+                    title="Markdown Info Import"
                 >
                     <Upload size={20} />
-                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVImport} />
-                </label>
+                </button>
 
                 <div className="flex-1" />
 
@@ -689,6 +858,227 @@ export default function LessonsTab() {
                                 <Save size={16} /> Speichern
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Import Wizard Modal */}
+            {showImportWizard && (
+                <div className="fixed inset-0 bg-slate-800/60 z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto border border-white/20">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="text-indigo-500" size={24} />
+                                <h3 className="font-bold text-xl">Info-Import Assistent</h3>
+                            </div>
+                            <button onClick={() => setShowImportWizard(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                        </div>
+
+                        {wizardStep === 'input' ? (
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2 text-zinc-700 dark:text-zinc-300">Markdown Inhalt hier einfügen</label>
+                                    <textarea
+                                        value={importText}
+                                        onChange={e => setImportText(e.target.value)}
+                                        placeholder="# Info-Überschrift 1\nInhalt hier...\n\n# Info-Überschrift 2\nInhalt hier..."
+                                        className="w-full h-48 px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                                    />
+                                    <p className="text-[10px] text-zinc-400 mt-2 px-1 flex items-center gap-1">
+                                        <Type size={10} /> Nutze # für jede neue Information
+                                    </p>
+                                </div>
+
+                                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl space-y-4 border border-indigo-100 dark:border-indigo-800/50">
+                                    <div>
+                                        <label className="block text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2">Ziel-Lektion</label>
+                                        <select
+                                            value={importConfig.lessonId}
+                                            onChange={e => setImportConfig({ ...importConfig, lessonId: e.target.value })}
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm shadow-sm"
+                                        >
+                                            <option value="">Lektion wählen...</option>
+                                            {lessons.map(l => (
+                                                <option key={l.id} value={l.id}>{l.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3">
+                                        <label className="flex items-center gap-3 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={importConfig.hasBibleRef}
+                                                onChange={e => setImportConfig({ ...importConfig, hasBibleRef: e.target.checked })}
+                                                className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Mit Bibeltext der Lektion verknüpfen</span>
+                                        </label>
+
+                                        {importConfig.hasBibleRef && (
+                                            <div className="flex gap-4 ml-8">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="refType"
+                                                        checked={importConfig.refType === 'buch'}
+                                                        onChange={() => setImportConfig({ ...importConfig, refType: 'buch' })}
+                                                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-zinc-300"
+                                                    />
+                                                    <span className="text-xs font-medium">Ganzes Buch</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="refType"
+                                                        checked={importConfig.refType === 'vers'}
+                                                        onChange={() => setImportConfig({ ...importConfig, refType: 'vers' })}
+                                                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-zinc-300"
+                                                    />
+                                                    <span className="text-xs font-medium">Spezifischer Vers-Bereich</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={startImportWizard}
+                                    className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 hover:scale-[1.02] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+                                >
+                                    Review & Analysieren <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 animate-fadeIn">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                                        Eintrag {currentItemIdx + 1} von {parsedItems.length}
+                                    </span>
+                                    <div className="flex gap-1">
+                                        {parsedItems.map((_, i) => (
+                                            <div key={i} className={`h-1.5 w-4 rounded-full transition-all ${i === currentItemIdx ? 'bg-indigo-500' : 'bg-zinc-200 dark:bg-slate-700'}`} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="p-5 bg-zinc-50 dark:bg-slate-700/50 rounded-2xl border border-zinc-100 dark:border-slate-700 shadow-inner">
+                                    <h4 className="font-bold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-2">
+                                        <Search size={16} /> {parsedItems[currentItemIdx].title}
+                                    </h4>
+                                    <div className="text-sm text-zinc-600 dark:text-zinc-300 line-clamp-[8] whitespace-pre-wrap italic">
+                                        {parsedItems[currentItemIdx].content.trim() || "(Kein Inhalt)"}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {!parsedItems[currentItemIdx].isQuestion ? (
+                                        <div>
+                                            <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-tighter mb-2 pl-1">Art des Inhalts</label>
+                                            <div className="flex flex-col gap-2">
+                                                {[
+                                                    { id: 'info', label: 'Info', icon: Brain, color: 'text-amber-500' },
+                                                    { id: 'word_study', label: 'Wortstudie', icon: Sparkles, color: 'text-indigo-500' },
+                                                    { id: 'quote', label: 'Zitat', icon: Quote, color: 'text-fuchsia-500' }
+                                                ].map(kind => (
+                                                    <button
+                                                        key={kind.id}
+                                                        type="button"
+                                                        onClick={() => setParsedItems(prev => {
+                                                            const n = [...prev];
+                                                            n[currentItemIdx].factKind = kind.id;
+                                                            return n;
+                                                        })}
+                                                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${parsedItems[currentItemIdx].factKind === kind.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600' : 'border-zinc-100 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                    >
+                                                        <kind.icon size={18} className={kind.color} />
+                                                        <span className="text-sm font-bold">{kind.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="col-span-1 flex flex-col justify-center">
+                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-4 rounded-xl flex items-center gap-3">
+                                                <HelpCircle className="text-emerald-500" size={24} />
+                                                <div>
+                                                    <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">Fragen-Import</p>
+                                                    <p className="text-[10px] text-emerald-500 uppercase font-black">Wird als Lektionsfrage gespeichert</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-tighter mb-2 pl-1">Kategorie</label>
+                                        <div className="space-y-2">
+                                            <select
+                                                required
+                                                value={parsedItems[currentItemIdx].category}
+                                                onChange={e => setParsedItems(prev => {
+                                                    const n = [...prev];
+                                                    n[currentItemIdx].category = e.target.value;
+                                                    return n;
+                                                })}
+                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                            >
+                                                {parsedItems[currentItemIdx].isQuestion ? (
+                                                    [
+                                                        { id: "bibeltext", label: "Bibeltext-Frage" },
+                                                        { id: "allgemein", label: "Allgemeine Frage" }
+                                                    ].map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                                    ))
+                                                ) : (
+                                                    factCategories.map(cat => (
+                                                        <option key={cat} value={cat}>{cat}</option>
+                                                    ))
+                                                )}
+                                            </select>
+                                            {!parsedItems[currentItemIdx].isQuestion && (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Andere Kategorie..."
+                                                    value={parsedItems[currentItemIdx].category}
+                                                    onChange={e => setParsedItems(prev => {
+                                                        const n = [...prev];
+                                                        n[currentItemIdx].category = e.target.value;
+                                                        return n;
+                                                    })}
+                                                    className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 pt-4 border-t border-zinc-100 dark:border-slate-700">
+                                    <button
+                                        type="button"
+                                        onClick={() => setWizardStep('input')}
+                                        className="px-6 py-3 text-zinc-400 hover:text-zinc-600 font-bold transition-colors flex items-center gap-2 mr-auto"
+                                    >
+                                        <ChevronLeft size={20} /> Text bearbeiten
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleImportItem(true)}
+                                        className="px-6 py-3 text-zinc-400 hover:text-zinc-600 font-bold transition-colors"
+                                    >
+                                        Überspringen
+                                    </button>
+                                    <div className="flex-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleImportItem(false)}
+                                        disabled={isImporting}
+                                        className="flex-1 max-w-[200px] py-4 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50"
+                                    >
+                                        {isImporting ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : <><Check size={20} /> Importieren</>}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

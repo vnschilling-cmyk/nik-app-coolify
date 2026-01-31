@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
-import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Scroll, Brain } from "lucide-react";
+import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Scroll, Brain, Languages, Quote } from "lucide-react";
 
 interface Lesson {
     id: string;
@@ -30,6 +30,7 @@ interface Fact {
     title: string;
     category: string;
     lesson_id: string;
+    fact_kind?: string;
 }
 
 interface Question {
@@ -99,7 +100,8 @@ export default function StudyPage() {
                 id: r.id,
                 title: r.title || "",
                 category: r.category || "",
-                lesson_id: r.lesson_id || ""
+                lesson_id: r.lesson_id || "",
+                fact_kind: r.fact_kind || ""
             })));
 
             setQuestions(questionsRes.map(r => ({
@@ -257,10 +259,24 @@ export default function StudyPage() {
                                                                 </h4>
                                                                 {isInactive && <span className="text-[10px] bg-zinc-200 dark:bg-slate-600 text-zinc-500 px-1.5 py-0.5 rounded">Inaktiv</span>}
 
-                                                                {!isInactive && lessonFacts.length > 0 && (
-                                                                    <span className="shrink-0 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                                                                        <Lightbulb size={12} /> {lessonFacts.length}
-                                                                    </span>
+                                                                {!isInactive && (
+                                                                    <>
+                                                                        {lessonFacts.filter(f => !f.fact_kind || f.fact_kind === 'info').length > 0 && (
+                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                                                                <Lightbulb size={12} /> {lessonFacts.filter(f => !f.fact_kind || f.fact_kind === 'info').length}
+                                                                            </span>
+                                                                        )}
+                                                                        {lessonFacts.filter(f => f.fact_kind === 'word_study').length > 0 && (
+                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-cyan-600 dark:text-cyan-400">
+                                                                                <Languages size={12} /> {lessonFacts.filter(f => f.fact_kind === 'word_study').length}
+                                                                            </span>
+                                                                        )}
+                                                                        {lessonFacts.filter(f => f.fact_kind === 'quote').length > 0 && (
+                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400">
+                                                                                <Quote size={12} /> {lessonFacts.filter(f => f.fact_kind === 'quote').length}
+                                                                            </span>
+                                                                        )}
+                                                                    </>
                                                                 )}
                                                                 {lessonQuestions.length > 0 && (
                                                                     <span className="shrink-0 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">

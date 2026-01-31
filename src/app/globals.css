@@ -276,15 +276,16 @@ body {
   width: 148mm;
   height: 210mm;
   /* Strict A5 height */
-  padding: 15mm;
+  padding: 15mm 15mm 7mm 15mm;
+  /* Ultra-tight bottom padding */
   margin: 10px auto;
   background: white;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   color: black;
   position: relative;
-  overflow: visible;
+  overflow: visible !important;
   /* Prevent clipping of contextual toolbars */
-  isolation: isolate;
+  /* isolation: isolate; removed to prevent clipping scaled elements */
   /* Create new stacking context */
   /* Keep the sheet look */
   display: flex;
@@ -294,12 +295,39 @@ body {
 
 .workbook-content {
   flex: 1;
-  overflow-y: visible;
-  /* Content can grow beyond but we clip at page in screen preview */
-  line-height: 1.4;
-  /* Tightened for A5 */
-  padding-bottom: 45mm;
-  /* Safe zone for footer at 5mm */
+  overflow: visible !important;
+  padding-bottom: 0px;
+}
+
+/* Reset Tailwind Typography inside Workbook for precision pagination */
+.workbook-content .prose,
+.workbook-content .prose p,
+.workbook-content .prose ul,
+.workbook-content .prose ol,
+.workbook-content .prose li,
+.workbook-content .prose p::before,
+.workbook-content .prose p::after {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.workbook-content .prose p,
+.workbook-content .prose ul,
+.workbook-content .prose ol,
+.workbook-content .prose li,
+.workbook-content .prose p::before,
+.workbook-content .prose p::after {
+  line-height: inherit !important;
+  font-size: inherit !important;
+}
+
+.workbook-content .prose p {
+  display: inline;
+  /* Ensure <br /> based breaks are the source of truth */
+}
+
+.workbook-content>div:last-child {
+  margin-bottom: 0 !important;
 }
 
 @media print {
@@ -392,7 +420,7 @@ body {
 .workbook-content .bible-text-p {
   line-height: 1.4;
   text-align: justify;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   font-family: var(--font-bible);
 }
 

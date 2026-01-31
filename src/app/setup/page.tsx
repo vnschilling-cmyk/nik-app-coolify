@@ -10,10 +10,10 @@ import DesignTab from "@/components/setup/DesignTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
 import GroupsTab from "@/components/setup/GroupsTab";
-import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library } from "lucide-react";
+import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes";
 
 // 1. Content Management Sub-Tiles
 const contentTiles = [
@@ -32,6 +32,14 @@ const contentTiles = [
         icon: Lightbulb,
         color: "amber",
         gradient: "from-amber-400 to-orange-500"
+    },
+    {
+        id: "quotes" as Tab,
+        label: "Zitate",
+        description: "Zitate pflegen",
+        icon: Quote,
+        color: "rose",
+        gradient: "from-rose-500 to-pink-600"
     },
     {
         id: "questions" as Tab,
@@ -78,6 +86,14 @@ const mainTiles = [
         gradient: "from-cyan-500 to-teal-600"
     },
     {
+        id: "word_studies" as Tab,
+        label: "Wortstudien",
+        description: "Wortbedeutungen",
+        icon: Languages,
+        color: "violet",
+        gradient: "from-violet-500 to-purple-600"
+    },
+    {
         id: "groups" as Tab,
         label: "Gruppen",
         description: "Gruppenverwaltung & Import",
@@ -111,6 +127,8 @@ export default function SetupPage() {
         switch (activeTab) {
             case "lessons": return <LessonsTab />;
             case "facts": return <InfosTab />;
+            case "word_studies": return <InfosTab mode="word_study" />;
+            case "quotes": return <InfosTab mode="quote" />;
             case "measures": return <MeasuresTab />;
             case "questions": return <QuestionsTab />;
             case "user": return <UserTab />;
