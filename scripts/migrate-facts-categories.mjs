@@ -31,21 +31,35 @@ async function main() {
             needsUpdate = true;
         }
 
-        // 2. Add 'fact_kind' field (select)
-        if (!fields.find(f => f.name === 'fact_kind')) {
+        // 2. Add or update 'fact_kind' field (select)
+        const factKindField = fields.find(f => f.name === 'fact_kind');
+        const allowedValues = ['info', 'word_study', 'quote', 'text_study'];
+
+        if (!factKindField) {
             console.log("Adding 'fact_kind' field...");
             fields.push({
                 name: 'fact_kind',
                 type: 'select',
                 required: false,
                 system: false,
-                values: ['info', 'word_study', 'quote'], // PB v0.23+ uses top-level values
+                values: allowedValues,
                 options: {
-                    values: ['info', 'word_study', 'quote'], // PB <v0.23 uses options.values
+                    values: allowedValues,
                     maxSelect: 1
                 }
             });
             needsUpdate = true;
+        } else {
+            // Check if text_study is missing
+            const currentValues = factKindField.values || factKindField.options?.values || [];
+            if (!currentValues.includes('text_study')) {
+                console.log("Updating 'fact_kind' field values to include 'text_study'...");
+                factKindField.values = allowedValues;
+                if (factKindField.options) {
+                    factKindField.options.values = allowedValues;
+                }
+                needsUpdate = true;
+            }
         }
 
         if (needsUpdate) {
