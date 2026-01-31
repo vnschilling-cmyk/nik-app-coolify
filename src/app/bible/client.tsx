@@ -9,7 +9,9 @@ import clsx from "clsx";
 import { LinkedLesson } from "@/lib/bible";
 import { Search } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import AnalysisModal from "@/components/features/AnalysisModal";
+import { Sparkles as SparklesIcon } from "lucide-react";
 
 interface BookSummary {
     id: string;
@@ -30,14 +32,39 @@ interface BiblePageClientProps {
 
 export default function BiblePageClient({ verses, lessons, book, chapter, allBooks }: BiblePageClientProps) {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const searchQuery = searchParams.get('q') || undefined;
 
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [selectorMode, setSelectorMode] = useState<'books' | 'chapters'>('books');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
+    const [analysisConfig, setAnalysisConfig] = useState<{
+        isOpen: boolean;
+        type: 'chapter' | 'verse';
+        verse?: number
+    }>({ isOpen: false, type: 'chapter' });
 
-    // Save last read position to localStorage
+    // 1. Redirection to last read position
+    useEffect(() => {
+        const hasParams = searchParams.has('book') || searchParams.has('chapter');
+        if (!hasParams && typeof window !== 'undefined') {
+            const saved = localStorage.getItem('lastReadPosition');
+            if (saved) {
+                try {
+                    const { bookShortName, chapter: savedChapter } = JSON.parse(saved);
+                    // Avoid infinite loop if we are already at the target (though Gen 1 is the default fallback)
+                    if (bookShortName && savedChapter && (bookShortName !== 'Gen' || savedChapter !== 1)) {
+                        router.replace(`/bible?book=${bookShortName}&chapter=${savedChapter}`);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse lastReadPosition", e);
+                }
+            }
+        }
+    }, []);
+
+    // 2. Save last read position to localStorage
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('lastReadPosition', JSON.stringify({
@@ -116,8 +143,16 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
 
                 <div className="flex items-center gap-1 shrink-0">
                     <button
+                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter' })}
+                        className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors"
+                        title="Kapitel-Analyse durch KI"
+                    >
+                        <SparklesIcon size={20} />
+                    </button>
+                    <button
                         onClick={() => setIsSearchOpen(true)}
                         className="p-2 text-zinc-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors"
+                        title="Suche öffnen"
                     >
                         <Search size={20} />
                     </button>
@@ -127,13 +162,31 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                             setIsSelectorOpen(true);
                         }}
                         className="text-sm font-medium text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Kapitel-Auswahl"
                     >
                         Kapitel
                     </button>
                 </div>
             </header>
 
-            <BibleReader verses={verses} lessons={lessons} onWordClick={handleWordClick} searchQuery={searchQuery} />
+            <BibleReader
+                verses={verses}
+                lessons={lessons}
+                onWordClick={handleWordClick}
+                onVerseClick={(v) => setAnalysisConfig({ isOpen: true, type: 'verse', verse: v })}
+                searchQuery={searchQuery}
+            />
+
+            {/* AI Analysis Modal */}
+            <AnalysisModal
+                isOpen={analysisConfig.isOpen}
+                onClose={() => setAnalysisConfig(prev => ({ ...prev, isOpen: false }))}
+                type={analysisConfig.type}
+                book={book.name}
+                chapter={chapter}
+                verse={analysisConfig.verse}
+                testament={book.testament}
+            />
 
             <div className="flex justify-between px-4 py-8 max-w-prose mx-auto gap-4">
                 {prevData ? (

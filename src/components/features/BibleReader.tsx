@@ -17,10 +17,11 @@ interface BibleReaderProps {
     verses: VerseData[];
     lessons?: LinkedLesson[];
     onWordClick: (word: string) => void;
+    onVerseClick?: (verse: number) => void;
     searchQuery?: string;
 }
 
-export default function BibleReader({ verses, lessons = [], onWordClick, searchQuery }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], onWordClick, onVerseClick, searchQuery }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -225,9 +226,13 @@ export default function BibleReader({ verses, lessons = [], onWordClick, searchQ
                                 </span>
                             )}
 
-                            <span className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block">
+                            <button
+                                onClick={() => onVerseClick?.(v.verse)}
+                                className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                                title={`Vers ${v.verse} analysieren`}
+                            >
                                 {v.verse}
-                            </span>
+                            </button>
                             {renderInteractiveText(v.text)}
                         </p>
                     </div>

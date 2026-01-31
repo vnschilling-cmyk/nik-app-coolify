@@ -1,0 +1,232 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download } from "lucide-react";
+
+interface ChapterAnalysis {
+    title?: string;
+    historicalFacts: string[];
+    mainThought: string;
+    context: string;
+}
+
+interface VerseAnalysis {
+    verse: string;
+    analysis: string;
+    insight: string;
+}
+
+interface AnalysisModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    type: 'chapter' | 'verse';
+    book: string;
+    chapter: number;
+    verse?: number;
+    testament: 'OT' | 'NT';
+}
+
+export default function AnalysisModal({ isOpen, onClose, type, book, chapter, verse, testament }: AnalysisModalProps) {
+    const [loading, setLoading] = useState(true);
+    const [analysis, setAnalysis] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchAnalysis();
+        } else {
+            // Reset state when closed
+            setAnalysis(null);
+            setError(null);
+        }
+    }, [isOpen, book, chapter, verse]);
+
+    const fetchAnalysis = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/bible-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, book, chapter, verse, testament })
+            });
+
+            if (!response.ok) throw new Error('Analyse fehlgeschlagen');
+            const data = await response.json();
+            setAnalysis(data);
+        } catch (err: any) {
+            setError(err.message || 'Ein Fehler ist aufgetreten');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col border border-zinc-200 dark:border-slate-700 animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <header className="px-6 py-4 border-b border-zinc-100 dark:border-slate-700 flex items-center justify-between bg-zinc-50/50 dark:bg-slate-800/50">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-xl text-indigo-600 dark:text-indigo-400">
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-zinc-800 dark:text-white leading-tight">
+                                {type === 'chapter' ? 'Kapitel-Analyse' : 'Vers-Analyse'}
+                            </h2>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                {book} {chapter}{verse ? `:${verse}` : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full text-zinc-400 dark:text-zinc-500 transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </header>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <div className="relative">
+                                <Sparkles size={48} className="text-indigo-500 animate-pulse" />
+                                <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-pulse" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-zinc-800 dark:text-zinc-200 font-medium">KI analysiert den Text...</p>
+                                <p className="text-sm text-zinc-500">Historische Fakten und Einblicke werden abgerufen.</p>
+                            </div>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-8">
+                            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-2xl mb-4 border border-red-100 dark:border-red-900/30">
+                                {error}
+                            </div>
+                            <button
+                                onClick={fetchAnalysis}
+                                className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors"
+                            >
+                                Erneut versuchen
+                            </button>
+                        </div>
+                    ) : analysis ? (
+                        <div className="space-y-8 pb-4">
+                            {type === 'chapter' ? (
+                                <>
+                                    {/* Title / Main Thought */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
+                                            <BookOpen size={18} />
+                                            <h3 className="text-sm font-bold uppercase tracking-wider">Hauptgedanke</h3>
+                                        </div>
+                                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20">
+                                            <p className="text-zinc-700 dark:text-zinc-200 leading-relaxed italic">
+                                                „{analysis.mainThought}“
+                                            </p>
+                                        </div>
+                                    </section>
+
+                                    {/* Historical Facts */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-4 text-amber-600 dark:text-amber-400">
+                                            <History size={18} />
+                                            <h3 className="text-sm font-bold uppercase tracking-wider">Historische Fakten</h3>
+                                        </div>
+                                        <ul className="grid gap-3">
+                                            {analysis.historicalFacts.map((fact: string, i: number) => (
+                                                <li key={i} className="flex gap-3 bg-zinc-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-zinc-100 dark:border-slate-700 shadow-sm transition-all hover:bg-zinc-100 dark:hover:bg-slate-700">
+                                                    <span className="text-indigo-500 font-bold shrink-0">{i + 1}.</span>
+                                                    <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{fact}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </section>
+
+                                    {/* Context */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400">
+                                            <Info size={18} />
+                                            <h3 className="text-sm font-bold uppercase tracking-wider">Kontext</h3>
+                                        </div>
+                                        <div className="bg-zinc-50 dark:bg-slate-700/20 p-5 rounded-2xl border border-zinc-100 dark:border-slate-700 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                            {analysis.context}
+                                        </div>
+                                    </section>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Verse Analysis */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
+                                            <BookOpen size={18} />
+                                            <h3 className="text-sm font-bold uppercase tracking-wider">Analyse</h3>
+                                        </div>
+                                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                                            {analysis.analysis}
+                                        </div>
+                                    </section>
+
+                                    {/* Insight */}
+                                    <section>
+                                        <div className="flex items-center gap-2 mb-3 text-amber-600 dark:text-amber-400">
+                                            <Lightbulb size={18} />
+                                            <h3 className="text-sm font-bold uppercase tracking-wider">Einblick & Anwendung</h3>
+                                        </div>
+                                        <div className="bg-amber-50/30 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100/50 dark:border-amber-900/20 text-zinc-700 dark:text-zinc-300 leading-relaxed italic border-l-4 border-l-amber-400">
+                                            {analysis.insight}
+                                        </div>
+                                    </section>
+                                </>
+                            )}
+                        </div>
+                    ) : null}
+                </div>
+
+                {/* Footer Buttons */}
+                <footer className="px-6 py-4 border-t border-zinc-100 dark:border-slate-700 flex items-center gap-3 bg-zinc-50/30 dark:bg-slate-800/30">
+                    <button
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        <Share2 size={16} />
+                        Teilen
+                    </button>
+                    <button
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-bold hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        <Download size={16} />
+                        Speichern
+                    </button>
+                </footer>
+            </div>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #e2e8f0;
+                    border-radius: 10px;
+                }
+                .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #334155;
+                }
+            `}</style>
+        </div>
+    );
+}
