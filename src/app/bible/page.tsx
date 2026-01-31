@@ -1,4 +1,4 @@
-import { getBookByShortName, getVerses, getBooks, getLessonsForChapter } from "@/lib/bible";
+import { getBookByShortName, getVerses, getBooks, getLessonsForChapter, getTextStudiesForChapter } from "@/lib/bible";
 import BiblePageClient from "./client";
 import Link from "next/link";
 
@@ -59,15 +59,17 @@ export default async function BiblePage({ searchParams }: BiblePageProps) {
     }
 
     // Use targetBook from here on
-    const [verses, lessons] = await Promise.all([
+    const [verses, lessons, textStudies] = await Promise.all([
         getVerses(targetBook.id, chapterParam),
-        getLessonsForChapter(targetBook.id, chapterParam)
+        getLessonsForChapter(targetBook.id, chapterParam),
+        getTextStudiesForChapter(targetBook.id, chapterParam)
     ]);
 
     return (
         <BiblePageClient
             verses={verses}
             lessons={lessons}
+            textStudies={textStudies}
             book={targetBook}
             chapter={chapterParam}
             allBooks={allBooks}

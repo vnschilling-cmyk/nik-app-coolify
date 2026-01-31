@@ -1,6 +1,6 @@
 "use client";
 
-import { Bold, Italic, Underline, List, ListOrdered, Type, Maximize2, Minimize2 } from "lucide-react";
+import { Bold, Italic, Underline, List, ListOrdered, Type, Maximize2, Minimize2, AlignLeft, AlignCenter, AlignRight, AlignJustify } from "lucide-react";
 import { useRef, useState } from "react";
 import clsx from "clsx";
 
@@ -90,6 +90,11 @@ export default function RichTextEditor({ value, onChange, placeholder, label, ex
                     <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 mx-1" />
                     <ToolbarButton icon={<List size={16} />} onClick={() => insertList("bullet")} tooltip="Liste" />
                     <ToolbarButton icon={<ListOrdered size={16} />} onClick={() => insertList("number")} tooltip="Nummerierte Liste" />
+                    <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 mx-1" />
+                    <ToolbarButton icon={<AlignLeft size={16} />} onClick={() => insertFormat("[left]", "[/left]")} tooltip="Linksbündig" />
+                    <ToolbarButton icon={<AlignCenter size={16} />} onClick={() => insertFormat("[center]", "[/center]")} tooltip="Zentriert" />
+                    <ToolbarButton icon={<AlignRight size={16} />} onClick={() => insertFormat("[right]", "[/right]")} tooltip="Rechtsbündig" />
+                    <ToolbarButton icon={<AlignJustify size={16} />} onClick={() => insertFormat("[justify]", "[/justify]")} tooltip="Blocksatz" />
                     <div className="flex-1" />
                     <ToolbarButton
                         icon={isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}

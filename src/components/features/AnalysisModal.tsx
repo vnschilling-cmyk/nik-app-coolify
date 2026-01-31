@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download, Check } from "lucide-react";
+import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download, Check, Users, User } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
 import clsx from "clsx";
+
+import RichTextDisplay from "@/components/ui/RichTextDisplay";
 
 interface ChapterAnalysis {
     title?: string;
@@ -22,28 +24,39 @@ interface AnalysisModalProps {
     isOpen: boolean;
     onClose: () => void;
     type: 'chapter' | 'verse';
+    category?: 'KI' | 'Andere' | 'Eigene';
     book: string;
     chapter: number;
     verse?: number;
     testament: 'OT' | 'NT';
+    existingAnalyses?: any[];
 }
 
-export default function AnalysisModal({ isOpen, onClose, type, book, chapter, verse, testament }: AnalysisModalProps) {
+export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', book, chapter, verse, testament, existingAnalyses }: AnalysisModalProps) {
     const [loading, setLoading] = useState(true);
-    const [analysis, setAnalysis] = useState<any>(null);
+    const [analyses, setAnalyses] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
-            fetchAnalysis();
+            if (existingAnalyses && existingAnalyses.length > 0) {
+                setAnalyses(existingAnalyses);
+                setLoading(false);
+            } else if (category === 'KI') {
+                fetchAnalysis();
+            } else {
+                setAnalyses([]);
+                setLoading(false);
+                setError(`Keine Analyse in der Kategorie "${category}" gefunden.`);
+            }
         } else {
             // Reset state when closed
-            setAnalysis(null);
+            setAnalyses([]);
             setError(null);
             setSaved(false);
         }
-    }, [isOpen, book, chapter, verse]);
+    }, [isOpen, book, chapter, verse, category, existingAnalyses]);
 
     const fetchAnalysis = async () => {
         setLoading(true);
@@ -57,7 +70,7 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
 
             if (!response.ok) throw new Error('Analyse fehlgeschlagen');
             const data = await response.json();
-            setAnalysis(data);
+            setAnalyses([data]);
         } catch (err: any) {
             setError(err.message || 'Ein Fehler ist aufgetreten');
         } finally {
@@ -66,7 +79,8 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
     };
 
     const handleSave = async () => {
-        if (!analysis || saved) return;
+        if (analyses.length === 0 || saved) return;
+        const analysis = analyses[0];
 
         setLoading(true);
         try {
@@ -121,7 +135,8 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
                 verse_start: verse || 0,
                 verse_end: verse || 0,
                 verse_ref: `${book} ${chapter}${verse ? `:${verse}` : ''}`,
-                type: "text"
+                type: "text",
+                author: "KI"
             });
 
             setSaved(true);
@@ -147,12 +162,18 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
                 {/* Header */}
                 <header className="px-6 py-4 border-b border-zinc-100 dark:border-slate-700 flex items-center justify-between bg-zinc-50/50 dark:bg-slate-800/50">
                     <div className="flex items-center gap-3">
-                        <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-xl text-indigo-600 dark:text-indigo-400">
-                            <Sparkles size={20} />
+                        <div className={clsx(
+                            "p-2 rounded-xl",
+                            category === 'KI' ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" :
+                                category === 'Andere' ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" :
+                                    "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
+                        )}>
+                            {category === 'KI' ? <Sparkles size={20} /> : category === 'Andere' ? <Users size={20} /> : <User size={20} />}
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-zinc-800 dark:text-white leading-tight">
-                                {type === 'chapter' ? 'Kapitel-Analyse' : 'Vers-Analyse'}
+                                {category === 'KI' ? (type === 'chapter' ? 'Kapitel-Analyse' : 'Vers-Analyse') :
+                                    category === 'Andere' ? 'Andere Studie' : 'Eigene Studie'}
                             </h2>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 {book} {chapter}{verse ? `:${verse}` : ''}
@@ -192,75 +213,93 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
                                 Erneut versuchen
                             </button>
                         </div>
-                    ) : analysis ? (
-                        <div className="space-y-8 pb-4">
-                            {type === 'chapter' ? (
-                                <>
-                                    {/* Title / Main Thought */}
-                                    <section>
-                                        <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
-                                            <BookOpen size={18} />
-                                            <h3 className="text-sm font-bold uppercase tracking-wider">Hauptgedanke</h3>
+                    ) : analyses.length > 0 ? (
+                        <div className="space-y-12 pb-4">
+                            {analyses.map((analysis, index) => (
+                                <div key={analysis.id || index} className={clsx(
+                                    "space-y-8",
+                                    index > 0 && "pt-8 border-t border-zinc-100 dark:border-slate-700"
+                                )}>
+                                    {analysis.author && (
+                                        <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100 dark:bg-slate-700 rounded-full w-fit">
+                                            <User size={14} className="text-zinc-500" />
+                                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">{analysis.author}</span>
                                         </div>
-                                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20">
-                                            <p className="text-zinc-700 dark:text-zinc-200 leading-relaxed italic">
-                                                „{analysis.mainThought}“
-                                            </p>
-                                        </div>
-                                    </section>
+                                    )}
 
-                                    {/* Historical Facts */}
-                                    <section>
-                                        <div className="flex items-center gap-2 mb-4 text-amber-600 dark:text-amber-400">
-                                            <History size={18} />
-                                            <h3 className="text-sm font-bold uppercase tracking-wider">Historische Fakten</h3>
+                                    {analysis.description ? (
+                                        <div className="prose prose-zinc dark:prose-invert max-w-none">
+                                            <RichTextDisplay content={analysis.description} />
                                         </div>
-                                        <ul className="grid gap-3">
-                                            {analysis.historicalFacts.map((fact: string, i: number) => (
-                                                <li key={i} className="flex gap-3 bg-zinc-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-zinc-100 dark:border-slate-700 shadow-sm transition-all hover:bg-zinc-100 dark:hover:bg-slate-700">
-                                                    <span className="text-indigo-500 font-bold shrink-0">{i + 1}.</span>
-                                                    <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{fact}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </section>
+                                    ) : type === 'chapter' ? (
+                                        <>
+                                            {/* Title / Main Thought */}
+                                            <section>
+                                                <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
+                                                    <BookOpen size={18} />
+                                                    <h3 className="text-sm font-bold uppercase tracking-wider">Hauptgedanke</h3>
+                                                </div>
+                                                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20">
+                                                    <p className="text-zinc-700 dark:text-zinc-200 leading-relaxed italic">
+                                                        „{analysis.mainThought}“
+                                                    </p>
+                                                </div>
+                                            </section>
 
-                                    {/* Context */}
-                                    <section>
-                                        <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400">
-                                            <Info size={18} />
-                                            <h3 className="text-sm font-bold uppercase tracking-wider">Kontext</h3>
-                                        </div>
-                                        <div className="bg-zinc-50 dark:bg-slate-700/20 p-5 rounded-2xl border border-zinc-100 dark:border-slate-700 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                            {analysis.context}
-                                        </div>
-                                    </section>
-                                </>
-                            ) : (
-                                <>
-                                    {/* Verse Analysis */}
-                                    <section>
-                                        <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
-                                            <BookOpen size={18} />
-                                            <h3 className="text-sm font-bold uppercase tracking-wider">Analyse</h3>
-                                        </div>
-                                        <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                                            {analysis.analysis}
-                                        </div>
-                                    </section>
+                                            {/* Historical Facts */}
+                                            <section>
+                                                <div className="flex items-center gap-2 mb-4 text-amber-600 dark:text-amber-400">
+                                                    <History size={18} />
+                                                    <h3 className="text-sm font-bold uppercase tracking-wider">Historische Fakten</h3>
+                                                </div>
+                                                <ul className="grid gap-3">
+                                                    {analysis.historicalFacts.map((fact: string, i: number) => (
+                                                        <li key={i} className="flex gap-3 bg-zinc-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-zinc-100 dark:border-slate-700 shadow-sm transition-all hover:bg-zinc-100 dark:hover:bg-slate-700">
+                                                            <span className="text-indigo-500 font-bold shrink-0">{i + 1}.</span>
+                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{fact}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </section>
 
-                                    {/* Insight */}
-                                    <section>
-                                        <div className="flex items-center gap-2 mb-3 text-amber-600 dark:text-amber-400">
-                                            <Lightbulb size={18} />
-                                            <h3 className="text-sm font-bold uppercase tracking-wider">Einblick & Anwendung</h3>
-                                        </div>
-                                        <div className="bg-amber-50/30 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100/50 dark:border-amber-900/20 text-zinc-700 dark:text-zinc-300 leading-relaxed italic border-l-4 border-l-amber-400">
-                                            {analysis.insight}
-                                        </div>
-                                    </section>
-                                </>
-                            )}
+                                            {/* Context */}
+                                            <section>
+                                                <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400">
+                                                    <Info size={18} />
+                                                    <h3 className="text-sm font-bold uppercase tracking-wider">Kontext</h3>
+                                                </div>
+                                                <div className="bg-zinc-50 dark:bg-slate-700/20 p-5 rounded-2xl border border-zinc-100 dark:border-slate-700 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                    {analysis.context}
+                                                </div>
+                                            </section>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Verse Analysis */}
+                                            <section>
+                                                <div className="flex items-center gap-2 mb-3 text-indigo-600 dark:text-indigo-400">
+                                                    <BookOpen size={18} />
+                                                    <h3 className="text-sm font-bold uppercase tracking-wider">Analyse</h3>
+                                                </div>
+                                                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/20 text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                                                    {analysis.analysis}
+                                                </div>
+                                            </section>
+
+                                            {/* Insight */}
+                                            <section>
+                                                <div className="flex items-center gap-2 mb-3 text-amber-600 dark:text-amber-400">
+                                                    <Lightbulb size={18} />
+                                                    <h3 className="text-sm font-bold uppercase tracking-wider">Einblick & Anwendung</h3>
+                                                </div>
+                                                <div className="bg-amber-50/30 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100/50 dark:border-amber-900/20 text-zinc-700 dark:text-zinc-300 leading-relaxed italic border-l-4 border-l-amber-400">
+                                                    {analysis.insight}
+                                                </div>
+                                            </section>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     ) : null}
                 </div>
@@ -274,28 +313,30 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
                         <Share2 size={16} />
                         Teilen
                     </button>
-                    <button
-                        onClick={handleSave}
-                        className={clsx(
-                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50",
-                            saved
-                                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                : "bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-slate-600"
-                        )}
-                        disabled={loading || saved}
-                    >
-                        {saved ? (
-                            <>
-                                <Check size={16} />
-                                Gespeichert
-                            </>
-                        ) : (
-                            <>
-                                <Download size={16} />
-                                Speichern
-                            </>
-                        )}
-                    </button>
+                    {(!existingAnalyses || existingAnalyses.length === 0) && (
+                        <button
+                            onClick={handleSave}
+                            className={clsx(
+                                "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50",
+                                saved
+                                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                                    : "bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-slate-600"
+                            )}
+                            disabled={loading || saved}
+                        >
+                            {saved ? (
+                                <>
+                                    <Check size={16} />
+                                    Gespeichert
+                                </>
+                            ) : (
+                                <>
+                                    <Download size={16} />
+                                    Speichern
+                                </>
+                            )}
+                        </button>
+                    )}
                 </footer>
             </div>
 

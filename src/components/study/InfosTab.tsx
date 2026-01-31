@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles, User } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import clsx from "clsx";
 
@@ -36,6 +36,7 @@ interface Fact {
     lesson_id: string;
     file?: string;
     url?: string;
+    author?: string;
     collectionId?: string;
 }
 
@@ -85,7 +86,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         chapter: 1,
         verse_start: 1,
         verse_end: 1,
-        lesson_id: ""
+        lesson_id: "",
+        author: ""
     });
 
     // File upload state
@@ -199,6 +201,11 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
             return book.name;
         }
 
+        // Check for whole chapter
+        if (formData.verse_start === 0 && formData.verse_end === 0) {
+            return `${book.name} ${formData.chapter}`;
+        }
+
         const verseRange = formData.verse_start === formData.verse_end
             ? `${formData.verse_start}`
             : `${formData.verse_start}-${formData.verse_end}`;
@@ -220,6 +227,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         }
         data.append('url', formData.url);
         data.append('lesson_id', formData.lesson_id || "");
+        data.append('author', formData.author || "");
 
         if (selectedFile) {
             data.append('file', selectedFile);
@@ -275,7 +283,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
             chapter: 1,
             verse_start: 1,
             verse_end: 1,
-            lesson_id: ""
+            lesson_id: "",
+            author: ""
         });
         setSelectedFile(null);
         setShowForm(false);
@@ -295,7 +304,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
             chapter: fact.chapter,
             verse_start: fact.verse_start ?? 1,
             verse_end: fact.verse_end ?? 1,
-            lesson_id: fact.lesson_id || ""
+            lesson_id: fact.lesson_id || "",
+            author: fact.author || ""
         });
         setEditingId(fact.id);
         setShowForm(true);
@@ -714,6 +724,18 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                 />
                             </div>
 
+                            {/* Author Field */}
+                            <div>
+                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Verfasser / Quelle</label>
+                                <input
+                                    type="text"
+                                    value={formData.author}
+                                    onChange={e => setFormData({ ...formData, author: e.target.value })}
+                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    placeholder="z.B. Martin Luther, KI, etc."
+                                />
+                            </div>
+
                             {/* Description (Rich Text) */}
                             <div>
                                 <RichTextEditor
@@ -759,24 +781,47 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
                                     {selectedBook && (
                                         <>
-                                            <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-slate-700 rounded-lg">
-                                                <input
-                                                    type="checkbox"
-                                                    id="wholeBook"
-                                                    checked={formData.chapter === 0}
-                                                    onChange={e => {
-                                                        setFormData({
-                                                            ...formData,
-                                                            chapter: e.target.checked ? 0 : 1,
-                                                            verse_start: e.target.checked ? 0 : 1,
-                                                            verse_end: e.target.checked ? 0 : 1
-                                                        });
-                                                    }}
-                                                    className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                                                />
-                                                <label htmlFor="wholeBook" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer">
-                                                    Ganzes Buch (ohne Kapitel/Verse)
-                                                </label>
+                                            <div className="flex flex-wrap gap-4 p-3 bg-zinc-50 dark:bg-slate-700 rounded-lg">
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="wholeBook"
+                                                        checked={formData.chapter === 0}
+                                                        onChange={e => {
+                                                            setFormData({
+                                                                ...formData,
+                                                                chapter: e.target.checked ? 0 : 1,
+                                                                verse_start: e.target.checked ? 0 : 1,
+                                                                verse_end: e.target.checked ? 0 : 1
+                                                            });
+                                                        }}
+                                                        className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                    <label htmlFor="wholeBook" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer">
+                                                        Ganzes Buch
+                                                    </label>
+                                                </div>
+
+                                                {formData.chapter !== 0 && (
+                                                    <div className="flex items-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="wholeChapter"
+                                                            checked={formData.verse_start === 0}
+                                                            onChange={e => {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    verse_start: e.target.checked ? 0 : 1,
+                                                                    verse_end: e.target.checked ? 0 : 1
+                                                                });
+                                                            }}
+                                                            className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                        />
+                                                        <label htmlFor="wholeChapter" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer">
+                                                            Ganzes Kapitel
+                                                        </label>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {formData.chapter !== 0 && (
@@ -793,37 +838,41 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                                        <select
-                                                            value={formData.verse_start}
-                                                            onChange={e => {
-                                                                const newVal = parseInt(e.target.value) || 1;
-                                                                setFormData({
-                                                                    ...formData,
-                                                                    verse_start: newVal,
-                                                                    verse_end: Math.max(newVal, formData.verse_end)
-                                                                });
-                                                            }}
-                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                        >
-                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                <option key={num} value={num}>{num}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                                        <select
-                                                            value={formData.verse_end}
-                                                            onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
-                                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                                        >
-                                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                                <option key={num} value={num}>{num}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                    {formData.verse_start !== 0 && (
+                                                        <>
+                                                            <div>
+                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                                <select
+                                                                    value={formData.verse_start}
+                                                                    onChange={e => {
+                                                                        const newVal = parseInt(e.target.value) || 1;
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            verse_start: newVal,
+                                                                            verse_end: Math.max(newVal, formData.verse_end)
+                                                                        });
+                                                                    }}
+                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                >
+                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                        <option key={num} value={num}>{num}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                                <select
+                                                                    value={formData.verse_end}
+                                                                    onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
+                                                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                                >
+                                                                    {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                                        <option key={num} value={num}>{num}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
                                         </>
@@ -1113,6 +1162,12 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                                                         {fact.category && (
                                                                                             <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
                                                                                                 {fact.category}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {fact.author && (
+                                                                                            <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
+                                                                                                <User size={10} />
+                                                                                                {fact.author}
                                                                                             </span>
                                                                                         )}
                                                                                         {fact.verse_ref && (

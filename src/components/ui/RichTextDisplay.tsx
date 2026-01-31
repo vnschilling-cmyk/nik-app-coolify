@@ -8,6 +8,18 @@ interface RichTextDisplayProps {
 export default function RichTextDisplay({ content, className = "" }: RichTextDisplayProps) {
     if (!content) return null;
 
+    // Detect if content is a pre-formatted HTML block (from AI or manual HTML)
+    const isHtmlBlock = /^\s*<(div|p|section|article|header|footer|table|ul|ol|blockquote)(\s|>)/i.test(content);
+
+    if (isHtmlBlock) {
+        return (
+            <div
+                className={`prose prose-sm prose-zinc dark:prose-invert max-w-none ${className}`}
+                dangerouslySetInnerHTML={{ __html: content }}
+            />
+        );
+    }
+
     // Helper to process text
     const processText = (text: string) => {
         return text
@@ -19,6 +31,11 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
             // Italic
             .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            // Alignment tags
+            .replace(/\[left\](.*?)\[\/left\]/g, '<span style="display: block; text-align: left">$1</span>')
+            .replace(/\[center\](.*?)\[\/center\]/g, '<span style="display: block; text-align: center">$1</span>')
+            .replace(/\[right\](.*?)\[\/right\]/g, '<span style="display: block; text-align: right">$1</span>')
+            .replace(/\[justify\](.*?)\[\/justify\]/g, '<span style="display: block; text-align: justify">$1</span>')
             // Links (basic)
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
     };

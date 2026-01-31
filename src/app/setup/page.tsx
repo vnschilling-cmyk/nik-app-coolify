@@ -114,8 +114,8 @@ const mainTiles = [
         label: "Illustrationen",
         description: "Bsp. & Geschichten",
         icon: Palette,
-        color: "orange",
-        gradient: "from-orange-400 to-amber-500"
+        color: "rose",
+        gradient: "from-rose-400 to-pink-500"
     },
     {
         id: "user" as Tab,

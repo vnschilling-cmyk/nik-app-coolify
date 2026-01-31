@@ -11,7 +11,7 @@ import { Search } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import AnalysisModal from "@/components/features/AnalysisModal";
-import { Sparkles as SparklesIcon } from "lucide-react";
+import { Sparkles as SparklesIcon, Users, User } from "lucide-react";
 
 interface BookSummary {
     id: string;
@@ -25,12 +25,13 @@ interface BookSummary {
 interface BiblePageClientProps {
     verses: VerseData[];
     lessons: LinkedLesson[];
+    textStudies: any[];
     book: BookSummary;
     chapter: number;
     allBooks: BookSummary[];
 }
 
-export default function BiblePageClient({ verses, lessons, book, chapter, allBooks }: BiblePageClientProps) {
+export default function BiblePageClient({ verses, lessons, textStudies, book, chapter, allBooks }: BiblePageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const searchQuery = searchParams.get('q') || undefined;
@@ -42,6 +43,7 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
     const [analysisConfig, setAnalysisConfig] = useState<{
         isOpen: boolean;
         type: 'chapter' | 'verse';
+        category?: 'KI' | 'Andere' | 'Eigene';
         verse?: number
     }>({ isOpen: false, type: 'chapter' });
 
@@ -141,17 +143,49 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                     {book.name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
                 </h1>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0">
                     <button
-                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter' })}
-                        className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors"
-                        title="Kapitel-Analyse durch KI"
+                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'KI' })}
+                        className={clsx(
+                            "p-2 rounded-xl transition-all active:scale-95",
+                            textStudies.some(s => s.category === 'KI' && s.verse_start === 0)
+                                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+                                : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                        )}
+                        title="KI-Analyse"
                     >
                         <SparklesIcon size={20} />
                     </button>
                     <button
+                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Andere' })}
+                        className={clsx(
+                            "p-2 rounded-xl transition-all active:scale-95",
+                            textStudies.some(s => s.category === 'Andere' && s.verse_start === 0)
+                                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                                : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                        )}
+                        title="Andere Studien"
+                    >
+                        <Users size={20} />
+                    </button>
+                    <button
+                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Eigene' })}
+                        className={clsx(
+                            "p-2 rounded-xl transition-all active:scale-95",
+                            textStudies.some(s => s.category === 'Eigene' && s.verse_start === 0)
+                                ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
+                                : "text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                        )}
+                        title="Eigene Studien"
+                    >
+                        <User size={20} />
+                    </button>
+
+                    <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1" />
+
+                    <button
                         onClick={() => setIsSearchOpen(true)}
-                        className="p-2 text-zinc-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors"
+                        className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                         title="Suche öffnen"
                     >
                         <Search size={20} />
@@ -182,10 +216,15 @@ export default function BiblePageClient({ verses, lessons, book, chapter, allBoo
                 isOpen={analysisConfig.isOpen}
                 onClose={() => setAnalysisConfig(prev => ({ ...prev, isOpen: false }))}
                 type={analysisConfig.type}
+                category={analysisConfig.category}
                 book={book.name}
                 chapter={chapter}
                 verse={analysisConfig.verse}
                 testament={book.testament}
+                existingAnalyses={textStudies.filter(s =>
+                    s.category === (analysisConfig.category || 'KI') &&
+                    (analysisConfig.type === 'chapter' ? s.verse_start === 0 : s.verse_start === analysisConfig.verse)
+                )}
             />
 
             <div className="flex justify-between px-4 py-8 max-w-prose mx-auto gap-4">

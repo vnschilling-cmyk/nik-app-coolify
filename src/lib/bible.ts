@@ -135,6 +135,17 @@ export async function getLessonsForChapter(bookId: string, chapter: number): Pro
     }
 }
 
+export async function getTextStudiesForChapter(bookId: string, chapter: number): Promise<any[]> {
+    try {
+        return await pb.collection('facts').getFullList({
+            filter: `book_id="${bookId}" && chapter=${chapter} && fact_kind="text_study"`,
+        });
+    } catch (e) {
+        console.error(`Failed to fetch text studies:`, e);
+        return [];
+    }
+}
+
 export interface SearchResult extends BibleVerse {
     bookName: string;
     bookShort: string;
