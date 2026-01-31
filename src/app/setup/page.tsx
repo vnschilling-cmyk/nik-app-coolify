@@ -10,10 +10,10 @@ import DesignTab from "@/components/setup/DesignTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
 import GroupsTab from "@/components/setup/GroupsTab";
-import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote } from "lucide-react";
+import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies";
 
 // 1. Content Management Sub-Tiles
 const contentTiles = [
@@ -102,6 +102,14 @@ const mainTiles = [
         gradient: "from-amber-400 to-orange-500"
     },
     {
+        id: "text_studies" as Tab,
+        label: "Textstudien",
+        description: "Textanalysen",
+        icon: FileText,
+        color: "teal",
+        gradient: "from-teal-500 to-emerald-600"
+    },
+    {
         id: "user" as Tab,
         label: "Benutzer",
         description: "Profil, Design & Einstellungen",
@@ -121,6 +129,7 @@ export default function SetupPage() {
             case "facts": return <InfosTab />;
             case "word_studies": return <InfosTab mode="word_study" />;
             case "quotes": return <InfosTab mode="quote" />;
+            case "text_studies": return <InfosTab mode="text_study" />;
             case "measures": return <MeasuresTab />;
             case "questions": return <QuestionsTab />;
             case "user": return <UserTab />;

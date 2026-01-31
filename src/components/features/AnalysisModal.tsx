@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download } from "lucide-react";
+import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download, Check } from "lucide-react";
+import { pb } from "@/lib/pocketbase";
+import clsx from "clsx";
 
 interface ChapterAnalysis {
     title?: string;
@@ -30,6 +32,7 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
     const [loading, setLoading] = useState(true);
     const [analysis, setAnalysis] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [saved, setSaved] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -38,6 +41,7 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
             // Reset state when closed
             setAnalysis(null);
             setError(null);
+            setSaved(false);
         }
     }, [isOpen, book, chapter, verse]);
 
@@ -56,6 +60,74 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
             setAnalysis(data);
         } catch (err: any) {
             setError(err.message || 'Ein Fehler ist aufgetreten');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!analysis || saved) return;
+
+        setLoading(true);
+        try {
+            // 1. Get book ID
+            const bookRecord = await pb.collection('bible_books').getFirstListItem(`name="${book}"`);
+            if (!bookRecord) throw new Error("Buch-ID konnte nicht ermittelt werden.");
+
+            // 2. Format content
+            let content = "";
+            if (type === 'chapter') {
+                content = `
+                    <div class="space-y-4">
+                        <section>
+                            <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Hauptgedanke</p>
+                            <p class="italic text-zinc-700 dark:text-zinc-200">„${analysis.mainThought}“</p>
+                        </section>
+                        <section>
+                            <p class="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Historische Fakten</p>
+                            <ul class="list-disc pl-5 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                ${analysis.historicalFacts.map((f: string) => `<li>${f}</li>`).join('')}
+                            </ul>
+                        </section>
+                        <section>
+                            <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Kontext</p>
+                            <p class="text-sm text-zinc-600 dark:text-zinc-300">${analysis.context}</p>
+                        </section>
+                    </div>
+                `.trim();
+            } else {
+                content = `
+                    <div class="space-y-4">
+                        <section>
+                            <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Analyse</p>
+                            <p class="text-zinc-700 dark:text-zinc-200">${analysis.analysis}</p>
+                        </section>
+                        <section>
+                            <p class="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Einblick & Anwendung</p>
+                            <p class="italic text-sm text-zinc-600 dark:text-zinc-300 border-l-4 border-amber-200 dark:border-amber-900/40 pl-4">${analysis.insight}</p>
+                        </section>
+                    </div>
+                `.trim();
+            }
+
+            // 3. Create record
+            await pb.collection('facts').create({
+                title: type === 'chapter' ? `${book} ${chapter}` : `${book} ${chapter}:${verse}`,
+                description: content,
+                category: "KI",
+                fact_kind: "text_study",
+                book_id: bookRecord.id,
+                chapter: chapter,
+                verse_start: verse || 0,
+                verse_end: verse || 0,
+                verse_ref: `${book} ${chapter}${verse ? `:${verse}` : ''}`,
+                type: "text"
+            });
+
+            setSaved(true);
+        } catch (err: any) {
+            console.error("Save error:", err);
+            setError(err.message || "Fehler beim Speichern");
         } finally {
             setLoading(false);
         }
@@ -203,11 +275,26 @@ export default function AnalysisModal({ isOpen, onClose, type, book, chapter, ve
                         Teilen
                     </button>
                     <button
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-bold hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
-                        disabled={loading}
+                        onClick={handleSave}
+                        className={clsx(
+                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50",
+                            saved
+                                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                                : "bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-slate-600"
+                        )}
+                        disabled={loading || saved}
                     >
-                        <Download size={16} />
-                        Speichern
+                        {saved ? (
+                            <>
+                                <Check size={16} />
+                                Gespeichert
+                            </>
+                        ) : (
+                            <>
+                                <Download size={16} />
+                                Speichern
+                            </>
+                        )}
                     </button>
                 </footer>
             </div>

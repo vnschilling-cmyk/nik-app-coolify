@@ -48,7 +48,7 @@ const CATEGORIES = [
 ];
 
 interface InfosTabProps {
-    mode?: 'info' | 'word_study' | 'quote';
+    mode?: 'info' | 'word_study' | 'quote' | 'text_study';
 }
 
 export default function InfosTab({ mode = 'info' }: InfosTabProps) {
@@ -60,6 +60,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [activeWordStudyTab, setActiveWordStudyTab] = useState<'general' | 'lessons'>('general');
+    const [activeTextStudyTab, setActiveTextStudyTab] = useState<'KI' | 'Andere' | 'Eigene'>('KI');
 
     const toggleGroup = (group: string) => {
         const newSet = new Set(expandedGroups);
@@ -264,7 +265,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         setFormData({
             title: "",
             description: "",
-            category: mode === 'word_study' ? "Wortstudie" : mode === 'quote' ? "Zitat" : "Allgemein",
+            category: mode === 'word_study' ? "Wortstudie" : mode === 'quote' ? "Zitat" : mode === 'text_study' ? "KI" : "Allgemein",
             type: "text",
             word: "",
             url: "",
@@ -613,6 +614,22 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                 </div>
                             )}
 
+                            {/* Category selector for Text Study */}
+                            {mode === 'text_study' && (
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie</label>
+                                    <select
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    >
+                                        <option value="KI">KI</option>
+                                        <option value="Andere">Andere</option>
+                                        <option value="Eigene">Eigene</option>
+                                    </select>
+                                </div>
+                            )}
+
                             {/* Word field for word studies */}
                             {mode === 'word_study' && (
                                 <div>
@@ -848,312 +865,343 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             </button>
                         </form>
                     </div>
-                </div>
-            )}
+                </div >
+            )
+            }
 
             {/* List */}
-            {facts.length === 0 ? (
-                <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
-                    <p className="text-4xl mb-2">
-                        {mode === 'word_study' ? "📝" : mode === 'quote' ? "💬" : "💡"}
-                    </p>
-                    <p>Noch keine {mode === 'word_study' ? 'Wortstudien' : mode === 'quote' ? 'Zitate' : 'Infos'} vorhanden.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {/* Word Study Tabs */}
-                    {mode === 'word_study' && (
-                        <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
-                            <button
-                                onClick={() => setActiveWordStudyTab('general')}
-                                className={clsx(
-                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
-                                    activeWordStudyTab === 'general'
-                                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                                )}
-                            >
-                                Allgemein
-                            </button>
-                            <button
-                                onClick={() => setActiveWordStudyTab('lessons')}
-                                className={clsx(
-                                    "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
-                                    activeWordStudyTab === 'lessons'
-                                        ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                                )}
-                            >
-                                Textbezogen
-                            </button>
-                        </div>
-                    )}
+            {
+                facts.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
+                        <p className="text-4xl mb-2">
+                            {mode === 'word_study' ? "📝" : mode === 'quote' ? "💬" : "💡"}
+                        </p>
+                        <p>Noch keine {mode === 'word_study' ? 'Wortstudien' : mode === 'quote' ? 'Zitate' : 'Infos'} vorhanden.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {/* Word Study Tabs */}
+                        {mode === 'word_study' && (
+                            <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
+                                <button
+                                    onClick={() => setActiveWordStudyTab('general')}
+                                    className={clsx(
+                                        "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                                        activeWordStudyTab === 'general'
+                                            ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                            : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                    )}
+                                >
+                                    Allgemein
+                                </button>
+                                <button
+                                    onClick={() => setActiveWordStudyTab('lessons')}
+                                    className={clsx(
+                                        "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                                        activeWordStudyTab === 'lessons'
+                                            ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                            : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                    )}
+                                >
+                                    Textbezogen
+                                </button>
+                            </div>
+                        )}
 
-                    {(() => {
-                        // Filter by selected tab if in word study mode
-                        const filteredFacts = mode === 'word_study'
-                            ? facts.filter(f => activeWordStudyTab === 'lessons' ? !!f.lesson_id : !f.lesson_id)
-                            : facts;
+                        {/* Text Study Tabs */}
+                        {mode === 'text_study' && (
+                            <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
+                                {[
+                                    { id: 'KI', label: 'KI' },
+                                    { id: 'Andere', label: 'Andere' },
+                                    { id: 'Eigene', label: 'Eigene' }
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTextStudyTab(tab.id as any)}
+                                        className={clsx(
+                                            "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                                            activeTextStudyTab === tab.id
+                                                ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                                : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                        )}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
-                        if (filteredFacts.length === 0) {
-                            return (
-                                <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
-                                    <p className="text-sm">Keine Einträge in dieser Kategorie.</p>
-                                </div>
-                            );
-                        }
+                        {(() => {
+                            // Filter by selected tab if in word study mode
+                            const filteredFacts = mode === 'word_study'
+                                ? facts.filter(f => activeWordStudyTab === 'lessons' ? !!f.lesson_id : !f.lesson_id)
+                                : mode === 'text_study'
+                                    ? facts.filter(f => f.category === activeTextStudyTab)
+                                    : facts;
 
-                        // 1. Group by Book (or "Allgemein" / "Ohne Buch")
-                        type BookGroup = {
-                            id: string;
-                            title: string;
-                            order: number;
-                            factCount: number;
-                            subgroups: Map<string, Fact[]>; // lesson_title -> facts
-                        };
+                            if (filteredFacts.length === 0) {
+                                return (
+                                    <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
+                                        <p className="text-sm">Keine Einträge in dieser Kategorie.</p>
+                                    </div>
+                                );
+                            }
 
-                        const bookGroups = new Map<string, BookGroup>();
+                            // 1. Group by Book (or "Allgemein" / "Ohne Buch")
+                            type BookGroup = {
+                                id: string;
+                                title: string;
+                                order: number;
+                                factCount: number;
+                                subgroups: Map<string, Fact[]>; // lesson_title -> facts
+                            };
 
-                        filteredFacts.forEach(fact => {
-                            let bookId = "general";
-                            let bookTitle = "Allgemeine Infos";
-                            let bookOrder = 9999;
-                            let subgroupTitle = "Allgemeine Infos";
+                            const bookGroups = new Map<string, BookGroup>();
 
-                            // Determine Book & Subgroup
-                            if (mode === 'word_study' && activeWordStudyTab === 'general' && fact.word) {
-                                // Alphabetical grouping for General Word Studies
-                                const firstChar = fact.word.trim().charAt(0).toUpperCase();
-                                bookId = `alpha-${firstChar}`;
-                                bookTitle = firstChar;
-                                bookOrder = firstChar.charCodeAt(0);
-                                subgroupTitle = ""; // Signal flat list (no nested toggle)
-                            } else if (fact.lesson_id) {
-                                const lesson = lessons.find(l => l.id === fact.lesson_id);
-                                if (lesson && lesson.book_id) {
-                                    const book = books.find(b => b.id === lesson.book_id);
+                            filteredFacts.forEach(fact => {
+                                let bookId = "general";
+                                let bookTitle = "Allgemeine Infos";
+                                let bookOrder = 9999;
+                                let subgroupTitle = "Allgemeine Infos";
+
+                                // Determine Book & Subgroup
+                                if (mode === 'word_study' && activeWordStudyTab === 'general' && fact.word) {
+                                    // Alphabetical grouping for General Word Studies
+                                    const firstChar = fact.word.trim().charAt(0).toUpperCase();
+                                    bookId = `alpha-${firstChar}`;
+                                    bookTitle = firstChar;
+                                    bookOrder = firstChar.charCodeAt(0);
+                                    subgroupTitle = ""; // Signal flat list (no nested toggle)
+                                } else if (fact.lesson_id) {
+                                    const lesson = lessons.find(l => l.id === fact.lesson_id);
+                                    if (lesson && lesson.book_id) {
+                                        const book = books.find(b => b.id === lesson.book_id);
+                                        if (book) {
+                                            bookId = book.id;
+                                            bookTitle = book.name;
+                                            bookOrder = book.order || 0;
+                                            subgroupTitle = lesson.title;
+                                        }
+                                    } else if (lesson) {
+                                        // Lesson without book (Thema)
+                                        bookId = "thema";
+                                        bookTitle = "Thematische Lektionen";
+                                        bookOrder = 5000;
+                                        subgroupTitle = lesson.title;
+                                    }
+                                } else if (fact.book_id) {
+                                    // General fact with Bible ref
+                                    const book = books.find(b => b.id === fact.book_id);
                                     if (book) {
                                         bookId = book.id;
                                         bookTitle = book.name;
                                         bookOrder = book.order || 0;
-                                        subgroupTitle = lesson.title;
+                                        subgroupTitle = mode === 'text_study' ? "" : "Allgemeine Infos zum Buch";
                                     }
-                                } else if (lesson) {
-                                    // Lesson without book (Thema)
-                                    bookId = "thema";
-                                    bookTitle = "Thematische Lektionen";
-                                    bookOrder = 5000;
-                                    subgroupTitle = lesson.title;
                                 }
-                            } else if (fact.book_id) {
-                                // General fact with Bible ref
-                                const book = books.find(b => b.id === fact.book_id);
-                                if (book) {
-                                    bookId = book.id;
-                                    bookTitle = book.name;
-                                    bookOrder = book.order || 0;
-                                    subgroupTitle = "Allgemeine Infos zum Buch";
+
+                                // Initialize Book Group
+                                if (!bookGroups.has(bookId)) {
+                                    bookGroups.set(bookId, {
+                                        id: bookId,
+                                        title: bookTitle,
+                                        order: bookOrder,
+                                        factCount: 0,
+                                        subgroups: new Map()
+                                    });
                                 }
-                            }
 
-                            // Initialize Book Group
-                            if (!bookGroups.has(bookId)) {
-                                bookGroups.set(bookId, {
-                                    id: bookId,
-                                    title: bookTitle,
-                                    order: bookOrder,
-                                    factCount: 0,
-                                    subgroups: new Map()
-                                });
-                            }
+                                const group = bookGroups.get(bookId)!;
+                                group.factCount++;
 
-                            const group = bookGroups.get(bookId)!;
-                            group.factCount++;
-
-                            // Add to Subgroup
-                            if (!group.subgroups.has(subgroupTitle)) {
-                                group.subgroups.set(subgroupTitle, []);
-                            }
-                            group.subgroups.get(subgroupTitle)?.push(fact);
-                        });
-
-                        // Sort Book Groups
-                        const sortedBookGroups = Array.from(bookGroups.values()).sort((a, b) => a.order - b.order);
-
-                        return sortedBookGroups.map(bookGroup => {
-                            const isBookSection = bookGroup.id !== "general" && bookGroup.id !== "thema";
-                            const isExpanded = expandedGroups.has(bookGroup.id);
-
-                            // Sort subgroups
-                            const sortedSubgroups = Array.from(bookGroup.subgroups.entries()).sort((a, b) => {
-                                if (a[0] === "Allgemeine Infos zum Buch") return 1;
-                                if (b[0] === "Allgemeine Infos zum Buch") return -1;
-                                return a[0].localeCompare(b[0]);
+                                // Add to Subgroup
+                                if (!group.subgroups.has(subgroupTitle)) {
+                                    group.subgroups.set(subgroupTitle, []);
+                                }
+                                group.subgroups.get(subgroupTitle)?.push(fact);
                             });
 
-                            return (
-                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
-                                    <button
-                                        onClick={() => toggleGroup(bookGroup.id)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <h3 className={`text-sm font-bold uppercase tracking-wider ${isBookSection
-                                                ? "text-indigo-600 dark:text-indigo-400"
-                                                : "text-zinc-600 dark:text-zinc-400"
-                                                }`}>
-                                                {bookGroup.title}
-                                            </h3>
-                                            <span className="text-zinc-400 text-xs font-normal">({bookGroup.factCount})</span>
-                                        </div>
-                                        {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
-                                    </button>
+                            // Sort Book Groups
+                            const sortedBookGroups = Array.from(bookGroups.values()).sort((a, b) => a.order - b.order);
 
-                                    {isExpanded && (
-                                        <div className="p-3 pt-0 space-y-4 border-t border-zinc-200 dark:border-zinc-800">
-                                            {sortedSubgroups.map(([subgroupTitle, groupFacts], idx) => {
-                                                const isLast = idx === sortedSubgroups.length - 1;
-                                                // Unique key for collapsing logic (combine bookId and subgroupTitle)
-                                                const collapseKey = `${bookGroup.id}-${subgroupTitle}`;
-                                                const isSubExpanded = expandedGroups.has(collapseKey) || !subgroupTitle; // Always expanded if no title (flat list)
+                            return sortedBookGroups.map(bookGroup => {
+                                const isBookSection = bookGroup.id !== "general" && bookGroup.id !== "thema";
+                                const isExpanded = expandedGroups.has(bookGroup.id);
 
-                                                return (
-                                                    <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-slate-700 pb-4" : ""}>
-                                                        {subgroupTitle && (
-                                                            <button
-                                                                onClick={() => toggleGroup(collapseKey)}
-                                                                className="w-full flex items-center justify-between py-2 group"
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors text-left">
-                                                                        {subgroupTitle}
-                                                                    </h4>
-                                                                    <span className="text-zinc-400 text-[10px] font-normal">({groupFacts.length})</span>
-                                                                </div>
-                                                                {isSubExpanded ?
-                                                                    <ChevronDown size={16} className="text-zinc-300 group-hover:text-zinc-500" /> :
-                                                                    <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
-                                                                }
-                                                            </button>
-                                                        )}
+                                // Sort subgroups
+                                const sortedSubgroups = Array.from(bookGroup.subgroups.entries()).sort((a, b) => {
+                                    if (a[0] === "Allgemeine Infos zum Buch") return 1;
+                                    if (b[0] === "Allgemeine Infos zum Buch") return -1;
+                                    return a[0].localeCompare(b[0]);
+                                });
 
-                                                        {isSubExpanded && (
-                                                            <div className="space-y-2 mt-1">
-                                                                {groupFacts.map(fact => {
-                                                                    const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
-                                                                    const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
+                                return (
+                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
+                                        <button
+                                            onClick={() => toggleGroup(bookGroup.id)}
+                                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <h3 className={`text-sm font-bold uppercase tracking-wider ${isBookSection
+                                                    ? "text-indigo-600 dark:text-indigo-400"
+                                                    : "text-zinc-600 dark:text-zinc-400"
+                                                    }`}>
+                                                    {bookGroup.title}
+                                                </h3>
+                                                <span className="text-zinc-400 text-xs font-normal">({bookGroup.factCount})</span>
+                                            </div>
+                                            {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
+                                        </button>
 
-                                                                    const colorClass = fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
-                                                                        fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
-                                                                            fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
-                                                                                fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
-                                                                                    'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+                                        {isExpanded && (
+                                            <div className="p-3 pt-0 space-y-4 border-t border-zinc-200 dark:border-zinc-800">
+                                                {sortedSubgroups.map(([subgroupTitle, groupFacts], idx) => {
+                                                    const isLast = idx === sortedSubgroups.length - 1;
+                                                    // Unique key for collapsing logic (combine bookId and subgroupTitle)
+                                                    const collapseKey = `${bookGroup.id}-${subgroupTitle}`;
+                                                    const isSubExpanded = expandedGroups.has(collapseKey) || !subgroupTitle; // Always expanded if no title (flat list)
 
-                                                                    return (
-                                                                        <div key={fact.id} className="bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="flex flex-wrap gap-2 mb-1">
-                                                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
-                                                                                        <TypeIcon size={10} />
-                                                                                        {TypeLabel}
-                                                                                    </span>
-                                                                                    {fact.word && (
-                                                                                        <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
-                                                                                            Wort: {fact.word}
+                                                    return (
+                                                        <div key={subgroupTitle} className={!isLast ? "border-b border-zinc-200 dark:border-slate-700 pb-4" : ""}>
+                                                            {subgroupTitle && (
+                                                                <button
+                                                                    onClick={() => toggleGroup(collapseKey)}
+                                                                    className="w-full flex items-center justify-between py-2 group"
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors text-left">
+                                                                            {subgroupTitle}
+                                                                        </h4>
+                                                                        <span className="text-zinc-400 text-[10px] font-normal">({groupFacts.length})</span>
+                                                                    </div>
+                                                                    {isSubExpanded ?
+                                                                        <ChevronDown size={16} className="text-zinc-300 group-hover:text-zinc-500" /> :
+                                                                        <ChevronRight size={16} className="text-zinc-300 group-hover:text-zinc-500" />
+                                                                    }
+                                                                </button>
+                                                            )}
+
+                                                            {isSubExpanded && (
+                                                                <div className="space-y-2 mt-1">
+                                                                    {groupFacts.map(fact => {
+                                                                        const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
+                                                                        const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
+
+                                                                        const colorClass = fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                                            fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                                                                                fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
+                                                                                    fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                                                                        'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+
+                                                                        return (
+                                                                            <div key={fact.id} className="bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex flex-wrap gap-2 mb-1">
+                                                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
+                                                                                            <TypeIcon size={10} />
+                                                                                            {TypeLabel}
                                                                                         </span>
-                                                                                    )}
-                                                                                    {fact.category && (
-                                                                                        <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
-                                                                                            {fact.category}
-                                                                                        </span>
-                                                                                    )}
-                                                                                    {fact.verse_ref && (
-                                                                                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                                                                                            <BookOpen size={10} /> {fact.verse_ref}
-                                                                                        </span>
+                                                                                        {fact.word && (
+                                                                                            <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                                                Wort: {fact.word}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {fact.category && (
+                                                                                            <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                                                {fact.category}
+                                                                                            </span>
+                                                                                        )}
+                                                                                        {fact.verse_ref && (
+                                                                                            <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                                                                                <BookOpen size={10} /> {fact.verse_ref}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
+                                                                                    {fact.description && (
+                                                                                        <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
+                                                                                            {fact.description.replace(/<[^>]*>?/gm, ' ')}
+                                                                                        </div>
                                                                                     )}
                                                                                 </div>
-                                                                                <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
-                                                                                {fact.description && (
-                                                                                    <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
-                                                                                        {fact.description.replace(/<[^>]*>?/gm, ' ')}
-                                                                                    </div>
-                                                                                )}
+                                                                                <div className="flex gap-1 shrink-0">
+                                                                                    <button
+                                                                                        onClick={() => handleEdit(fact)}
+                                                                                        className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                                                        title="Bearbeiten"
+                                                                                    >
+                                                                                        <Edit size={14} />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => handleDelete(fact.id)}
+                                                                                        className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                                                        title="Löschen"
+                                                                                    >
+                                                                                        <Trash2 size={14} />
+                                                                                    </button>
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex gap-1 shrink-0">
-                                                                                <button
-                                                                                    onClick={() => handleEdit(fact)}
-                                                                                    className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                                                                                    title="Bearbeiten"
-                                                                                >
-                                                                                    <Edit size={14} />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handleDelete(fact.id)}
-                                                                                    className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                                                    title="Löschen"
-                                                                                >
-                                                                                    <Trash2 size={14} />
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </section>
-                            );
-                        });
-                    })()}
-                </div>
-            )}
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </section>
+                                );
+                            });
+                        })()}
+                    </div>
+                )
+            }
 
             {/* Word Selection Modal */}
-            {wordSelectorOpen && (
-                <div className="fixed inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">Wort aus Bibeltext wählen</h3>
-                            <button onClick={() => setWordSelectorOpen(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
-                        </div>
+            {
+                wordSelectorOpen && (
+                    <div className="fixed inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg">Wort aus Bibeltext wählen</h3>
+                                <button onClick={() => setWordSelectorOpen(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                            </div>
 
-                        <div className="bg-zinc-50 dark:bg-slate-700/50 rounded-xl p-4 border border-zinc-200 dark:border-slate-600 max-h-[60vh] overflow-y-auto">
-                            {wordSelectorLoading ? (
-                                <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>
-                            ) : wordSelectorText ? (
-                                <div className="flex flex-wrap gap-x-1 gap-y-2 leading-relaxed text-lg">
-                                    {wordSelectorText.split(/(\s+)/g).map((chunk, i) => {
-                                        if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
-                                        const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
-                                        if (!clean) return <span key={i}>{chunk}</span>;
+                            <div className="bg-zinc-50 dark:bg-slate-700/50 rounded-xl p-4 border border-zinc-200 dark:border-slate-600 max-h-[60vh] overflow-y-auto">
+                                {wordSelectorLoading ? (
+                                    <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full" /></div>
+                                ) : wordSelectorText ? (
+                                    <div className="flex flex-wrap gap-x-1 gap-y-2 leading-relaxed text-lg">
+                                        {wordSelectorText.split(/(\s+)/g).map((chunk, i) => {
+                                            if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
+                                            const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
+                                            if (!clean) return <span key={i}>{chunk}</span>;
 
-                                        return (
-                                            <span
-                                                key={i}
-                                                onClick={() => {
-                                                    setFormData({ ...formData, word: clean, title: `Wortstudie: ${clean}` });
-                                                    setWordSelectorOpen(false);
-                                                }}
-                                                className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-300 rounded px-1 transition-colors border-b border-transparent hover:border-indigo-400"
-                                            >
-                                                {chunk}
-                                            </span>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="text-center text-zinc-500 italic">Kein Text verfügbar.</p>
-                            )}
+                                            return (
+                                                <span
+                                                    key={i}
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, word: clean, title: `Wortstudie: ${clean}` });
+                                                        setWordSelectorOpen(false);
+                                                    }}
+                                                    className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-300 rounded px-1 transition-colors border-b border-transparent hover:border-indigo-400"
+                                                >
+                                                    {chunk}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-zinc-500 italic">Kein Text verfügbar.</p>
+                                )}
+                            </div>
+                            <p className="text-xs text-zinc-400 mt-4 text-center">Klicke auf ein Wort, um es als Ziel für die Wortstudie zu übernehmen.</p>
                         </div>
-                        <p className="text-xs text-zinc-400 mt-4 text-center">Klicke auf ein Wort, um es als Ziel für die Wortstudie zu übernehmen.</p>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
