@@ -41,21 +41,44 @@ export default function LessonsTab() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // ... existing useEffect logic ...
         loadData();
     }, []);
 
     const loadData = async () => {
         try {
-            // ... existing fetch logic ...
-            const records = await pb.collection('lessons').getFullList<Lesson>({
-                sort: '-start_date',
+            const lessonsRes = await pb.collection('lessons').getFullList<Lesson>({
+                sort: 'order,title',
             });
-            const bibleBooks = await pb.collection('bible_books').getFullList<BibleBook>({
+            const bibleBooksRes = await pb.collection('bible_books').getFullList({
                 sort: 'order',
             });
 
-            // New: Fetch existing categories from facts to populate the dropdown dynamically
+            const mappedBooks = bibleBooksRes.map(r => ({
+                id: r.id,
+                name: r.name,
+                short_name: r.short_name,
+                chapters: Number(r.chapter_count || r.chapters || 50),
+                order: r.order || 0
+            }));
+
+            const mappedLessons = lessonsRes.map(r => ({
+                id: r.id,
+                title: r.title,
+                content: r.content || "",
+                category: r.category || "",
+                order: r.order || 0,
+                verse_ref: r.verse_ref || "",
+                book_id: r.book_id || "",
+                chapter_start: r.chapter_start ?? 1,
+                chapter_end: r.chapter_end ?? 1,
+                verse_start: r.verse_start ?? 1,
+                verse_end: r.verse_end ?? 10,
+                has_bible_ref: r.book_id ? true : false,
+                start_date: r.start_date || "",
+                active: r.active ?? true
+            }));
+
+            // Fetch existing categories from facts to populate the dropdown dynamically
             const allFacts = await pb.collection('facts').getFullList({
                 fields: 'category',
             });
@@ -67,9 +90,8 @@ export default function LessonsTab() {
             ["Geschichte", "Hintergrund", "Kultur", "Archäologie", "Geographie", "Sprache", "Anwendung"].forEach(c => uniqueCategories.add(c));
 
             setFactCategories(Array.from(uniqueCategories).sort());
-
-            setLessons(records);
-            setBooks(bibleBooks);
+            setLessons(mappedLessons);
+            setBooks(mappedBooks);
         } catch (error) {
             console.error("Error loading data:", error);
         } finally {
@@ -173,54 +195,7 @@ export default function LessonsTab() {
         }
     };
 
-    useEffect(() => {
-        loadBooks();
-        loadLessons();
-    }, []);
 
-    const loadBooks = async () => {
-        try {
-            const records = await pb.collection('bible_books').getFullList({ sort: 'order' });
-            setBooks(records.map(r => ({
-                id: r.id,
-                name: r.name,
-                short_name: r.short_name,
-                chapters: r.chapter_count || 50,
-                order: r.order || 0
-            })));
-        } catch (e) {
-            console.error("Failed to load books:", e);
-        }
-    };
-
-    const loadLessons = async () => {
-        try {
-            const records = await pb.collection('lessons').getFullList({ sort: 'order,title' });
-            setLessons(records.map(r => ({
-                id: r.id,
-                title: r.title,
-                content: r.content || "",
-                category: r.category || "",
-                order: r.order || 0,
-                verse_ref: r.verse_ref || "",
-                book_id: r.book_id || "",
-                chapter_start: r.chapter_start ?? 1,
-                chapter_end: r.chapter_end ?? 1,
-                verse_start: r.verse_start ?? 1,
-                verse_end: r.verse_end ?? 10,
-                has_bible_ref: r.book_id ? true : false,
-                start_date: r.start_date || "",
-                active: r.active ?? true
-            })));
-        } catch (e: any) {
-            if (e.isAbort) return;
-            console.error("Failed to load lessons:", e);
-            const message = e instanceof Error ? e.message : "Unbekannter Fehler";
-            alert("Fehler beim Laden der Lektionen: " + message);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getSelectedBook = () => books.find(b => b.id === formData.book_id);
 
@@ -278,7 +253,7 @@ export default function LessonsTab() {
                 await pb.collection('lessons').create(data);
             }
             resetForm();
-            loadLessons();
+            loadData();
         } catch (e: any) {
             alert("Fehler: " + e.message);
         }
@@ -380,7 +355,7 @@ export default function LessonsTab() {
         if (!confirm("Lektion wirklich löschen?")) return;
         try {
             await pb.collection('lessons').delete(id);
-            loadLessons();
+            loadData();
         } catch (e: any) {
             alert("Fehler: " + e.message);
         }
@@ -679,7 +654,7 @@ export default function LessonsTab() {
                                                             }}
                                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                                         >
-                                                            {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(num => (
+                                                            {Array.from({ length: selectedBook?.chapters || 50 }, (_, i) => i + 1).map(num => (
                                                                 <option key={num} value={num}>{num}</option>
                                                             ))}
                                                         </select>

@@ -276,8 +276,7 @@ body {
   width: 148mm;
   height: 210mm;
   /* Strict A5 height */
-  padding: 15mm 15mm 7mm 15mm;
-  /* Ultra-tight bottom padding */
+  padding: 15mm;
   margin: 10px auto;
   background: white;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -302,6 +301,12 @@ body {
 /* Reset Tailwind Typography inside Workbook for precision pagination */
 .workbook-content .prose,
 .workbook-content .prose p,
+.workbook-content .prose h1,
+.workbook-content .prose h2,
+.workbook-content .prose h3,
+.workbook-content .prose h4,
+.workbook-content .prose h5,
+.workbook-content .prose h6,
 .workbook-content .prose ul,
 .workbook-content .prose ol,
 .workbook-content .prose li,

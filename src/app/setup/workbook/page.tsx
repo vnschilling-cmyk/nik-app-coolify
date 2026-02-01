@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchWorkbookData, WorkbookLesson } from "@/lib/workbook";
-import { ChevronLeft, Printer, Eye, Settings as SettingsIcon, GripVertical, Check, X, RefreshCw, Maximize2, Minimize2, Type, ChevronRight, BookOpen, Plus, Minus, Image as ImageIcon, Video, Link2, MapPin, Youtube, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, WholeWord, ChevronsLeftRight, Info, MessageSquare, Star, PenLine } from "lucide-react";
+import { ChevronLeft, Printer, Eye, Settings as SettingsIcon, GripVertical, Check, X, RefreshCw, Maximize2, Minimize2, Type, ChevronRight, BookOpen, Plus, Minus, Image as ImageIcon, Video, Link2, MapPin, Youtube, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, WholeWord, ChevronsLeftRight, Info, MessageSquare, Star, PenLine, Copy } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 import { projectFonts, getFontFamily } from "@/lib/fonts";
@@ -17,14 +17,16 @@ const MarkdownRenderer = ({ content, className, style, headerStyles }: { content
         font-size: ${headerStyles.sectionTitle}pt;
         font-family: ${getFontFamily(headerStyles.sectionTitleFont)};
         text-transform: uppercase;
+        letter-spacing: 0.025em; /* tracking-wide */
+        line-height: 1.2;
         font-weight: ${headerStyles.sectionTitleBold ? '800' : 'normal'};
         font-style: ${headerStyles.sectionTitleItalic ? 'italic' : 'normal'};
         text-decoration: ${headerStyles.sectionTitleUnderline ? 'underline' : 'none'};
         text-align: ${headerStyles.sectionTitleAlign || 'left'};
-        margin-top: ${headerStyles.sectionTitleMT || 16}px;
-        margin-bottom: ${headerStyles.sectionTitleMB || 0}px;
+        margin-top: 0px;
+        margin-bottom: 8px;
         display: block;
-    "` : 'class="font-extrabold text-[#1e293b] text-sm !mb-0 mt-4 first:mt-0"';
+    "` : 'class="font-extrabold text-[#1e293b] text-sm !mb-2 mt-0 first:mt-0"';
 
     // Very basic markdown parsing
     let html = content
@@ -32,14 +34,20 @@ const MarkdownRenderer = ({ content, className, style, headerStyles }: { content
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/__(.*?)__/g, '<u>$1</u>')
+        .replace(/\[justify\]/g, '<div style="text-align: justify">')
+        .replace(/\[\/justify\]/g, '</div>')
+        .replace(/\[center\]/g, '<div style="text-align: center">')
+        .replace(/\[\/center\]/g, '</div>')
+        .replace(/\[right\]/g, '<div style="text-align: right">')
+        .replace(/\[\/right\]/g, '</div>')
         .replace(/\n/g, '<br />')
         .replace(/^- (.*)/gm, '<li>$1</li>')
         .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
 
     return (
         <div
-            className={clsx("prose prose-sm max-w-none", className)}
-            style={style}
+            className={clsx("prose prose-sm max-w-none prose-p:my-0 prose-headings:my-0", className)}
+            style={{ ...style, lineHeight: style?.lineHeight }}
             dangerouslySetInnerHTML={{ __html: html }}
         />
     );
@@ -190,8 +198,8 @@ const SectionToolbar = ({
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className={clsx(
-                "no-print absolute top-[-20px] right-2 transition-all duration-300 z-[100] flex flex-col gap-2 p-3 !bg-white dark:!bg-[#0f172a] !bg-opacity-100 backdrop-blur-none border-2 border-indigo-600 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.5)] hover:scale-105 origin-top-right !overflow-visible pointer-events-auto",
-                isEditing && "!top-[-10px] !right-0 -translate-y-full transform-none", // Fix: Position above block instead of off-screen right
+                "no-print absolute top-[-30px] right-2 transition-all duration-300 z-[100] flex flex-col gap-2 p-3 !bg-white dark:!bg-[#0f172a] !bg-opacity-100 backdrop-blur-none border-2 border-indigo-600 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.5)] hover:scale-105 origin-top-right !overflow-visible pointer-events-auto",
+                isEditing && "!top-[-15px] !right-0 -translate-y-full transform-none", // Fix: Position above block instead of off-screen right
                 (isEditing || isHovered)
                     ? "opacity-100 visible pointer-events-auto"
                     : (isAnyEditing
@@ -442,22 +450,36 @@ export default function WorkbookPage() {
         }
 
         const savedDefaults = localStorage.getItem('workbook_creator_defaults');
-        if (savedDefaults) {
-            try {
-                const parsed = JSON.parse(savedDefaults);
-                if (parsed && typeof parsed === 'object') {
-                    setOptions(prev => ({
-                        ...prev,
-                        styles: {
-                            ...prev.styles,
-                            ...parsed
-                        }
-                    }));
+        const savedRootOptions = localStorage.getItem('workbook_creator_options');
+
+        setOptions(prev => {
+            let next = { ...prev };
+
+            if (savedDefaults) {
+                try {
+                    const parsed = JSON.parse(savedDefaults);
+                    if (parsed && typeof parsed === 'object') {
+                        next.styles = { ...next.styles, ...parsed };
+                    }
+                } catch (e) {
+                    console.error("Failed to parse saved defaults", e);
                 }
-            } catch (e) {
-                console.error("Failed to parse saved defaults", e);
             }
-        }
+
+            if (savedRootOptions) {
+                try {
+                    const parsed = JSON.parse(savedRootOptions);
+                    if (parsed && typeof parsed === 'object') {
+                        // Merge root level options but keep existing lessons/status if any
+                        next = { ...next, ...parsed };
+                    }
+                } catch (e) {
+                    console.error("Failed to parse saved root options", e);
+                }
+            }
+
+            return next;
+        });
     }, []);
 
     const getSectionKey = (lessonId: string, type: string, index: number = 0, partIndex: number = 0) => `${lessonId}-${type}-${index}-${partIndex}`;
@@ -593,7 +615,8 @@ export default function WorkbookPage() {
             titleWidth: 100,
             titleFill: 'none',
             titleMarginTop: 6,
-            titleCorrection: 0, // Added
+            titleCorrection: 0,
+            blockSpacing: 4, // Added global block spacing
 
             intro: 11, // Changed from 10
             introLH: 1.4,
@@ -778,6 +801,9 @@ export default function WorkbookPage() {
             notesHeader: 'Persönliche Notizen',
             notesLines: 5,
             notesLineSpacing: 1.5,
+            notesAdditionalPages: 0,
+            notesLinesExtra: 0,
+            notesMarginTopExtra: 4,
         },
         layoutCorrection: 0, // Manual Override for pagination sensitivity (-50 to +50)
     });
@@ -1091,7 +1117,7 @@ export default function WorkbookPage() {
     };
 
     const handleStyleChange = (property: string, value: any, section: string) => {
-        let key = `${section}${property.charAt(0).toUpperCase() + property.slice(1)}`;
+        let key = (section === 'any' || !section) ? property : `${section}${property.charAt(0).toUpperCase() + property.slice(1)}`;
         if (property === 'fontSize') {
             // Handle special cases for main sections vs sub sections
             if (['title', 'intro', 'bible', 'facts', 'questions', 'memory', 'quiz', 'notes', 'sectionTitle'].includes(section)) {
@@ -1154,195 +1180,108 @@ export default function WorkbookPage() {
     };
 
     // Pagination Logic: Dynamic Pixel-Based Calculation
+    // Pagination Constants
+    const PAGE_HEIGHT_PX = 793;
+    const MARGIN_Y_PX = 114; // Synchronized with 15mm top + 15mm bottom padding
+    const SECTION_SPACING_PX = 16;
+    const ITEM_SPACING_PX = 12;
+
+    const effectiveBuffer = 5 - options.layoutCorrection;
+    const CONTENT_HEIGHT_PX = PAGE_HEIGHT_PX - MARGIN_Y_PX - effectiveBuffer;
+    const CONTENT_WIDTH_PX = 440;
+
+    // Helper to estimate height
+    const measureContentHeight = (text: string, fontSize: number, lineHeight: number, isBold: boolean, type: string, correctionPx: number = 0, partIndex: number = 0) => {
+        if (!text) return 0;
+        const styles = options.styles as any;
+        let styleKey = type;
+        if (['intro', 'bible', 'title', 'memory', 'questions', 'quiz', 'notes', 'sectionTitle'].includes(type)) {
+            styleKey = type;
+        } else {
+            if (['text', 'image', 'video', 'link', 'map'].includes(type)) {
+                styleKey = `facts${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            }
+        }
+        const subtypeMap: any = {
+            'text': 'factsText', 'image': 'factsImage', 'video': 'factsVideo',
+            'yt': 'factsVideo', 'link': 'factsLink', 'map': 'factsMap', 'facts': 'facts'
+        };
+        if (subtypeMap[type]) styleKey = subtypeMap[type];
+        else styleKey = 'facts';
+
+        const paddingScale = styles[`${styleKey}Padding`] ?? 2;
+        const widthPercent = styles[`${styleKey}Width`] ?? 100;
+        const verticalPaddingPx = paddingScale * 0.25 * 16 * 2;
+        const horizontalPaddingPx = paddingScale * 0.25 * 16 * 2;
+        const boxWidth = CONTENT_WIDTH_PX * (widthPercent / 100);
+        const textWidth = boxWidth - horizontalPaddingPx;
+        const charWidth = fontSize * (isBold ? 0.68 : 0.58);
+        const effectiveTextWidth = Math.max(50, textWidth);
+        const charsPerLine = Math.floor(effectiveTextWidth / charWidth);
+
+        const paragraphs = text.split('\n');
+        let totalLines = 0;
+        paragraphs.forEach((p: string) => {
+            const pLen = p.length;
+            if (pLen === 0) { totalLines += 1.0; return; }
+            let lineCount = 0;
+            if (p.startsWith('###')) {
+                const headerLH = styles.sectionTitleLH || 1.2;
+                const headerFS = styles.sectionTitle || 14;
+                const headerHeightPx = (headerFS * 1.33 * headerLH) + 16;
+                totalLines += (headerHeightPx / (fontSize * 1.33 * lineHeight));
+            } else {
+                lineCount = Math.ceil(pLen / charsPerLine);
+            }
+            totalLines += lineCount;
+        });
+        const lineHeightPx = fontSize * 1.33 * lineHeight;
+        let height = (totalLines * lineHeightPx) - correctionPx;
+        height += verticalPaddingPx;
+        // Important: Match the renderer's sub-header spacing (MT 16px + FS + MB 8px approx)
+        if (type === 'facts' && partIndex === 0) height += ((styles.sectionTitleMT ?? 16) + (styles.sectionTitle || 10) * 1.33 + (styles.sectionTitleMB ?? 8));
+        return Math.max(10, height);
+    };
+
+    const splitTextForHeight = (text: string, availableHeight: number, fontSize: number, lineHeight: number, isBold: boolean, isGreedy: boolean = false, correctionPx: number = 0, type: string = 'text', partIndex: number = 0) => {
+        const targetHeight = isGreedy ? availableHeight : availableHeight - 2;
+        if (targetHeight <= 0) return { fit: '', remainder: text };
+        let low = 0, high = text.length, splitIdx = 0;
+        while (low <= high) {
+            let mid = Math.floor((low + high) / 2);
+            if (measureContentHeight(text.substring(0, mid), fontSize, lineHeight, isBold, type, correctionPx, partIndex) <= targetHeight) {
+                splitIdx = mid; low = mid + 1;
+            } else { high = mid - 1; }
+        }
+        let finalIdx = splitIdx;
+        if (finalIdx < text.length) {
+            const lastSpace = text.lastIndexOf(' ', finalIdx);
+            const lastNewline = text.lastIndexOf('\n', finalIdx);
+            const lastSentence = Math.max(text.lastIndexOf('. ', finalIdx), text.lastIndexOf('? ', finalIdx), text.lastIndexOf('! ', finalIdx));
+            let bestBreak = Math.max(lastSpace, lastNewline);
+            const currentStrategy = options.splitStrategy || 'sentence';
+            if (!isGreedy) {
+                if (currentStrategy === 'paragraph' && lastNewline !== -1) bestBreak = lastNewline;
+                else if (currentStrategy === 'sentence' && lastSentence !== -1) bestBreak = lastSentence;
+            }
+            const threshold = isGreedy ? 0.90 : (currentStrategy === 'sentence' ? 0.40 : 0.60);
+            if (bestBreak !== -1 && bestBreak > finalIdx * threshold) finalIdx = bestBreak;
+        }
+        const fitText = text.substring(0, finalIdx);
+        const orphanMatch = fitText.match(/(\s|\n)\d+\.\s*$/);
+        if (orphanMatch) finalIdx -= orphanMatch[0].length;
+        if (orphanMatch) {
+            finalIdx -= orphanMatch[0].length;
+        }
+
+        return {
+            fit: text.substring(0, finalIdx).trim(),
+            remainder: text.substring(finalIdx).trim()
+        };
+    };
+
     const getWorkbookPages = () => {
         const pages: { lesson: WorkbookLesson, sections: any[], pageNum: number }[] = [];
-        // A5 Dimensions at 96 DPI
-        const PAGE_HEIGHT_PX = 793;
-        const MARGIN_Y_PX = 60; // Optimized safety for footer area (Reduced from 90 to fit more content)
-        // Base buffer 60px + Correction (Negative correction = More buffer = Less text)
-        // Correction goes from -100 to +100.
-        // If user wants MORE text (slider right, +100), we REDUCE the buffer.
-        // If user wants LESS text (slider left, -100), we INCREASE the buffer.
-        const effectiveBuffer = 5 - options.layoutCorrection;
-        const CONTENT_HEIGHT_PX = PAGE_HEIGHT_PX - MARGIN_Y_PX - effectiveBuffer;
-        const CONTENT_WIDTH_PX = 440;
-
-        const SECTION_SPACING_PX = 16;
-        const ITEM_SPACING_PX = 12;
-
-        // Helper to estimate height
-        const measureContentHeight = (text: string, fontSize: number, lineHeight: number, isBold: boolean, type: string, correctionPx: number = 0, partIndex: number = 0) => {
-            if (!text) return 0;
-
-            // Resolve Padding and Width from Styles
-            const styles = options.styles as any;
-
-            let styleKey = type;
-            // Map known main types
-            if (['intro', 'bible', 'title', 'memory', 'questions', 'quiz', 'notes', 'sectionTitle'].includes(type)) {
-                styleKey = type;
-            } else {
-                // Handle Fact Subtypes
-                if (['text', 'image', 'video', 'link', 'map'].includes(type)) {
-                    styleKey = `facts${type.charAt(0).toUpperCase() + type.slice(1)}`;
-                }
-            }
-            const subtypeMap: any = {
-                'text': 'factsText',
-                'image': 'factsImage',
-                'video': 'factsVideo',
-                'yt': 'factsVideo',
-                'link': 'factsLink',
-                'map': 'factsMap',
-                'facts': 'facts' // Fallback to base
-            };
-            if (subtypeMap[type]) styleKey = subtypeMap[type];
-            else styleKey = 'facts'; // Default
-
-            const paddingScale = styles[`${styleKey}Padding`] ?? 2;
-            const widthPercent = styles[`${styleKey}Width`] ?? 100;
-
-            // Padding Calculation
-            const verticalPaddingPx = paddingScale * 8; // Top + Bottom
-            const horizontalPaddingPx = paddingScale * 8; // Left + Right
-
-            // Effective Width for Text
-            const boxWidth = CONTENT_WIDTH_PX * (widthPercent / 100);
-            const textWidth = boxWidth - horizontalPaddingPx;
-
-            // Refined Char Width calibrated for Inter font (0.55 / 0.65 bold)
-            const charWidth = fontSize * (isBold ? 0.65 : 0.55);
-            // Safety to avoid division by zero
-            const effectiveTextWidth = Math.max(50, textWidth);
-            const charsPerLine = Math.floor(effectiveTextWidth / charWidth);
-
-            // Basic line counting (soft wraps)
-            // We split by newlines first to respect hard breaks
-            const paragraphs = text.split('\n');
-            let totalLines = 0;
-
-            paragraphs.forEach((p: string) => {
-                const pLen = p.length;
-                if (pLen === 0) {
-                    totalLines += 1.1; // Standard empty line gap
-                    return;
-                }
-                let lineCount = 0;
-
-                if (p.startsWith('#')) {
-                    // Header: minimal penalty (0.2 lines)
-                    lineCount = 0.2 + Math.ceil(pLen * 1.2 / charsPerLine);
-                } else if (p.match(/^(\-|\*|\d+\.)\s/)) {
-                    // List Item: minimal penalty (0.2 lines)
-                    lineCount = 0.2 + Math.ceil(pLen / charsPerLine);
-                } else if (pLen === 0) {
-                    lineCount = 1; // Empty line
-                } else {
-                    lineCount = Math.ceil(pLen / charsPerLine);
-                }
-                totalLines += lineCount;
-            });
-
-            // Height = lines * line-height-px
-            // 1pt = 1.33px roughly
-            const lineHeightPx = fontSize * 1.33 * lineHeight;
-
-            // Apply Correction
-            let height = (totalLines * lineHeightPx) - correctionPx;
-
-            // Add dynamic padding
-            height += verticalPaddingPx;
-
-            // Include title height for facts if it's the first part
-            if (type === 'facts' && partIndex === 0) {
-                height += 24; // Title approx height
-            }
-
-            // Safety floor
-            return Math.max(10, height);
-        };
-
-        const splitTextForHeight = (text: string, availableHeight: number, fontSize: number, lineHeight: number, isBold: boolean, isGreedy: boolean = false, correctionPx: number = 0, type: string = 'text', partIndex: number = 0) => {
-            // Must match measureContentHeight logic to prevent overflow
-            // Factor 1.05 and basic line height
-            const lineHeightPx = fontSize * 1.33 * lineHeight;
-
-            // NEW: Iterative search for the exact split point
-            // This replaces the fragile maxChars heuristic with actual height measurements.
-
-            // Available height logic: use 100% if greedy (manual), otherwise apply a minimal 2px safety
-            const targetHeight = isGreedy ? availableHeight : availableHeight - 2;
-
-            if (targetHeight <= 0) return { fit: '', remainder: text };
-
-            let low = 0;
-            let high = text.length;
-            let splitIdx = 0;
-
-            // Binary search for the largest index that fits
-            while (low <= high) {
-                let mid = Math.floor((low + high) / 2);
-                const testFit = text.substring(0, mid);
-                const measuredH = measureContentHeight(testFit, fontSize, lineHeight, isBold, type, correctionPx, partIndex);
-
-                if (measuredH <= targetHeight) {
-                    splitIdx = mid;
-                    low = mid + 1;
-                } else {
-                    high = mid - 1;
-                }
-            }
-
-            // Now we have the absolute character limit. We must find the last safe break before it.
-            let finalIdx = splitIdx;
-
-            if (finalIdx < text.length) {
-                // Find last space, newline or sentence end
-                const lastSpace = text.lastIndexOf(' ', finalIdx);
-                const lastNewline = text.lastIndexOf('\n', finalIdx);
-
-                // Better Sentence Detection: Find [.!?] followed by space/newline
-                const sentenceRegex = /[.!?](\s|\n)/g;
-                let lastSentence = -1;
-                let match;
-                while ((match = sentenceRegex.exec(text.substring(0, finalIdx + 1))) !== null) {
-                    lastSentence = match.index + 1;
-                }
-
-                let bestBreak = Math.max(lastSpace, lastNewline);
-
-                // Strategy-based refinement
-                const currentStrategy = options.splitStrategy || 'sentence';
-                if (!isGreedy) {
-                    if (currentStrategy === 'paragraph' && lastNewline !== -1) {
-                        bestBreak = lastNewline;
-                    } else if (currentStrategy === 'sentence' && lastSentence !== -1) {
-                        bestBreak = lastSentence;
-                    }
-                }
-
-                // If we found a break that isn't too far back, use it
-                // threshold: percentage of available characters we MUST fill.
-                // Sentence threshold is lower (0.4) because we are willing to leave more gap to keep sentence whole.
-                const threshold = isGreedy ? 0.90 : (currentStrategy === 'sentence' ? 0.40 : 0.60);
-
-                if (bestBreak !== -1 && bestBreak > finalIdx * threshold) {
-                    finalIdx = bestBreak;
-                }
-            }
-
-            // Orphan Protection (e.g. " 1.")
-            const fitText = text.substring(0, finalIdx);
-            const orphanMatch = fitText.match(/(\s|\n)\d+\.\s*$/);
-            if (orphanMatch) {
-                finalIdx -= orphanMatch[0].length;
-            }
-
-            return {
-                fit: text.substring(0, finalIdx).trim(),
-                remainder: text.substring(finalIdx).trim()
-            };
-        };
 
         lessons.forEach((lesson) => {
             let currentPageSections: any[] = [];
@@ -1401,16 +1340,28 @@ export default function WorkbookPage() {
                         const localCorrection = sectionLayouts[sKey] || 0;
                         const manualHeight = sectionHeights[sKey];
 
-                        const estimatedH = measureContentHeight(remainingText, fs, lh, bold, measureType, options.layoutCorrection + localCorrection);
+                        // Resolve Spacing for this type
+                        // We use the global blockSpacing as the primary gap between blocks
+                        // mt is only used for the very first block of a lesson/section
+                        const isSubsequent = (index > 0 || currentPartIndex > 0);
+                        const blockS = 16;
+                        const specificMt = ((options.styles as any)[`${type}MarginTop`] ?? (options.styles as any)[`${type}MT`] ?? 4) * 4;
+
                         const isStartOfPage = currentHeight === 0;
-                        const spacing = isStartOfPage ? 0 : SECTION_SPACING_PX;
+                        const spacing = isStartOfPage ? 0 : (isSubsequent ? blockS : specificMt);
+
+                        const estimatedH = measureContentHeight(remainingText, fs, lh, bold, measureType, options.layoutCorrection + localCorrection, currentPartIndex);
                         const remainingPageSpace = CONTENT_HEIGHT_PX - currentHeight;
 
-                        // PRE-CHECK: If even the minimum block (title + first line) doesn't fit, push page immediately
-                        // This prevents titles from overlapping with footers.
+                        // Consumption on page includes content + spacing + bottom margin (which we now also treat as blockS)
+                        // Actually, to avoid double-counting blockS, we treat the gap as 'spacing' (gap BEFORE block)
+                        // And we ensure the renderer's MB corresponds to this.
+
+                        // PRE-CHECK: If even the minimum block doesn't fit, push page immediately
                         let minNeededHeight = spacing;
                         if (currentPartIndex === 0 && meta && meta.originalTitle) {
-                            minNeededHeight += 24; // Title approx height
+                            // Unified title height (approx 24px + 8px MB)
+                            minNeededHeight += 32;
                         }
                         minNeededHeight += lh * fs * 1.33; // At least one line of text
 
@@ -1464,7 +1415,16 @@ export default function WorkbookPage() {
                         // Case 1: Applies on current page
                         else if (estimatedH + spacing <= remainingPageSpace) {
                             currentHeight += (estimatedH + spacing);
-                            currentPageSections.push({ type, content: remainingText, fieldName, ...meta, partIndex: currentPartIndex, maxPossibleHeight: absoluteMaxHeight });
+                            currentPageSections.push({
+                                type,
+                                content: remainingText,
+                                fieldName,
+                                ...meta,
+                                fIdx: meta.fIdx, // Ensure indices are passed for downstream use
+                                qIdx: meta.qIdx,
+                                partIndex: currentPartIndex,
+                                maxPossibleHeight: absoluteMaxHeight
+                            });
                             remainingText = '';
                             currentPartIndex++;
                         }
@@ -1633,43 +1593,42 @@ export default function WorkbookPage() {
 
                 const lineGapPx = notesLineSpacing * 16;
                 const singleLineHeight = lineGapPx + 1; // +1 for border
-                // Header only on first part
-                const headerHeight = measureContentHeight(notesHeader, options.styles.notes, options.styles.notesLH, options.styles.notesBold, 'notes');
+
+                // Header Height Estimation - Must use sectionTitle styles
+                const headerHeight = measureContentHeight(notesHeader, options.styles.sectionTitle, options.styles.sectionTitleLH, options.styles.sectionTitleBold, 'sectionTitle');
 
                 let partIndex = 0;
 
                 // Loop until all lines are placed
                 while (remainingLines > 0) {
-                    const isFirstPart = partIndex === 0;
-                    const currentHeaderH = isFirstPart ? headerHeight : 0;
+                    // Header on EVERY part (User requirement)
+                    const currentHeaderH = headerHeight;
 
-                    // Space needed for Header + at least 1 line (if possible, otherwise just header)
-                    // If we can't fit header + 1 line, we should probably push page.
-
-                    let availableHeight = CONTENT_HEIGHT_PX - currentHeight - SECTION_SPACING_PX;
+                    const mt = options.styles.notesMarginTop ?? 16;
+                    let availableHeight = CONTENT_HEIGHT_PX - currentHeight - mt;
 
                     // Check if we need to wrap to new page immediately
-                    // Case: Not enough space for Header + 1st Line (on first part) or 1st Line (on later parts)
-                    const minNeeded = currentHeaderH + singleLineHeight;
+                    // Case: Not enough space for Header + 1st Line + Padding (16px pt-4)
+                    const minNeeded = currentHeaderH + singleLineHeight + 16;
 
                     if (availableHeight < minNeeded) {
                         pushPage();
-                        availableHeight = CONTENT_HEIGHT_PX - SECTION_SPACING_PX;
+                        availableHeight = CONTENT_HEIGHT_PX - mt;
                     }
 
                     // Calculate how many lines fit
-                    // available = header + lines * lineH
-                    const spaceForLines = availableHeight - currentHeaderH;
+                    // available = header + gap (16) + lines * lineH
+                    const spaceForLines = availableHeight - currentHeaderH - 16;
                     let linesThisPage = Math.floor(spaceForLines / singleLineHeight);
 
                     // Clamp to remaining
                     if (linesThisPage > remainingLines) linesThisPage = remainingLines;
-                    if (linesThisPage < 0) linesThisPage = 0; // Should not happen due to pushPage logic
+                    if (linesThisPage < 0) linesThisPage = 0;
 
                     // Add section
                     currentPageSections.push({
                         type: 'notes',
-                        content: notesHeader, // Only rendered if partIndex === 0
+                        content: notesHeader,
                         fieldName: 'notes',
                         notesLines: linesThisPage,
                         notesLineSpacing,
@@ -1677,8 +1636,8 @@ export default function WorkbookPage() {
                     });
 
                     // Update tracking
-                    const blockHeight = currentHeaderH + (linesThisPage * singleLineHeight);
-                    currentHeight += blockHeight + SECTION_SPACING_PX;
+                    const blockHeight = currentHeaderH + 16 + (linesThisPage * singleLineHeight);
+                    currentHeight += blockHeight + mt;
                     remainingLines -= linesThisPage;
                     partIndex++;
 
@@ -1686,6 +1645,35 @@ export default function WorkbookPage() {
                     if (remainingLines > 0) {
                         pushPage();
                     }
+                }
+
+                // 7b. Additional Full Pages
+                const additionalPages = options.styles.notesAdditionalPages || 0;
+                for (let i = 0; i < additionalPages; i++) {
+                    pushPage();
+                    const mtExtra = (options.styles.notesMarginTopExtra ?? 4) * 4; // 4px per unit
+                    let availableHeight = CONTENT_HEIGHT_PX - mtExtra;
+
+                    const currentHeaderH = headerHeight;
+                    const spaceForLines = availableHeight - currentHeaderH - 16;
+
+                    // Use notesLinesExtra if > 0, otherwise fill page
+                    const maxLinesOnPage = Math.floor(spaceForLines / singleLineHeight);
+                    let linesThisPage = (options.styles.notesLinesExtra > 0)
+                        ? Math.min(options.styles.notesLinesExtra, maxLinesOnPage)
+                        : maxLinesOnPage;
+
+                    currentPageSections.push({
+                        type: 'notes',
+                        content: notesHeader,
+                        fieldName: 'notes',
+                        notesLines: linesThisPage,
+                        notesLineSpacing,
+                        partIndex: partIndex + i + 1
+                    });
+
+                    // Set height to max to ensure this page is treated as full
+                    currentHeight = CONTENT_HEIGHT_PX;
                 }
             }
 
@@ -1863,6 +1851,7 @@ export default function WorkbookPage() {
                             </div>
                         </div>
 
+
                         <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest px-1">Sichtbarkeit & Formatierung</h3>
                         {[
                             { id: 'title', label: 'Titel', toggleKey: null },
@@ -1910,6 +1899,21 @@ export default function WorkbookPage() {
                                                                     map: newValue
                                                                 };
                                                             }
+
+                                                            // Persistence
+                                                            if (saveAsDefault) {
+                                                                try {
+                                                                    const currentOptions = JSON.parse(localStorage.getItem('workbook_creator_options') || '{}');
+                                                                    currentOptions[section.toggleKey!] = newValue;
+                                                                    if (section.id === 'infos') {
+                                                                        currentOptions.mediaFilters = next.mediaFilters;
+                                                                    }
+                                                                    localStorage.setItem('workbook_creator_options', JSON.stringify(currentOptions));
+                                                                } catch (e) {
+                                                                    console.error("Failed to save default options", e);
+                                                                }
+                                                            }
+
                                                             return next;
                                                         });
                                                     }}
@@ -2055,19 +2059,64 @@ export default function WorkbookPage() {
                                                             <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
                                                                 <button onClick={() => handleStyleChange('Lines', Math.max(1, (options.styles.notesLines || 5) - 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
                                                                 <span className="text-[10px] font-bold w-4 text-center">{options.styles.notesLines || 5}</span>
-                                                                <button onClick={() => handleStyleChange('Lines', Math.min(20, (options.styles.notesLines || 5) + 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                                <button onClick={() => handleStyleChange('Lines', Math.min(100, (options.styles.notesLines || 5) + 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
                                                             </div>
                                                         </div>
-
                                                         {/* Line Spacing */}
                                                         <div className="flex justify-between items-center gap-2">
                                                             <span className="text-[10px] font-medium text-zinc-500 flex items-center gap-1"><ChevronsLeftRight size={10} className="rotate-90" /> Linienabstand</span>
                                                             <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
-                                                                <button onClick={() => handleStyleChange('LineSpacing', Math.max(1, (options.styles.notesLineSpacing || 1.5) - 0.1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
+                                                                <button onClick={() => handleStyleChange('LineSpacing', Math.max(0.5, (options.styles.notesLineSpacing || 1.5) - 0.1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
                                                                 <span className="text-[10px] font-bold w-6 text-center">{(options.styles.notesLineSpacing || 1.5).toFixed(1)}</span>
-                                                                <button onClick={() => handleStyleChange('LineSpacing', Math.min(3, (options.styles.notesLineSpacing || 1.5) + 0.1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                                <button onClick={() => handleStyleChange('LineSpacing', Math.min(4, (options.styles.notesLineSpacing || 1.5) + 0.1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
                                                             </div>
                                                         </div>
+
+                                                        {/* Additional Pages */}
+                                                        <div className="flex justify-between items-center gap-2">
+                                                            <span className="text-[10px] font-medium text-zinc-500 flex items-center gap-1"><Copy size={10} /> Zusätzliche volle Seiten</span>
+                                                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
+                                                                <button onClick={() => handleStyleChange('AdditionalPages', Math.max(0, (options.styles.notesAdditionalPages || 0) - 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
+                                                                <span className="text-[10px] font-bold w-4 text-center">{options.styles.notesAdditionalPages || 0}</span>
+                                                                <button onClick={() => handleStyleChange('AdditionalPages', Math.min(10, (options.styles.notesAdditionalPages || 0) + 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Extra Pages Controls */}
+                                                        {options.styles.notesAdditionalPages > 0 && (
+                                                            <div className="space-y-3 pl-4 border-l-2 border-indigo-100 dark:border-slate-800 ml-1">
+                                                                <div className="flex justify-between items-center gap-2">
+                                                                    <span className="text-[10px] font-medium text-zinc-500 flex items-center gap-1"><AlignJustify size={10} /> Linien (Folgeseiten)</span>
+                                                                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
+                                                                        <button onClick={() => handleStyleChange('LinesExtra', Math.max(0, (options.styles.notesLinesExtra || 0) - 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
+                                                                        <span className="text-[10px] font-bold min-w-4 text-center">
+                                                                            {options.styles.notesLinesExtra === 0
+                                                                                ? (() => {
+                                                                                    // Quick estimate for display
+                                                                                    const mtExtra = (options.styles.notesMarginTopExtra ?? 4) * 4;
+                                                                                    const avail = CONTENT_HEIGHT_PX - mtExtra;
+                                                                                    const lineGapPx = (options.styles.notesLineSpacing || 1.5) * 16;
+                                                                                    const singleH = lineGapPx + 1;
+                                                                                    const headerH = 24; // Approx sectionTitle height
+                                                                                    return Math.floor((avail - headerH - 16) / singleH);
+                                                                                })()
+                                                                                : options.styles.notesLinesExtra
+                                                                            }
+                                                                        </span>
+                                                                        <button onClick={() => handleStyleChange('LinesExtra', Math.min(100, (options.styles.notesLinesExtra || 0) + 1), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex justify-between items-center gap-2">
+                                                                    <span className="text-[10px] font-medium text-zinc-500 flex items-center gap-1"><ChevronsLeftRight size={10} /> Abstand Oben (F.)</span>
+                                                                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
+                                                                        <button onClick={() => handleStyleChange('MarginTopExtra', Math.max(0, (options.styles.notesMarginTopExtra || 0) - 4), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
+                                                                        <span className="text-[10px] font-bold w-6 text-center">{options.styles.notesMarginTopExtra || 0}</span>
+                                                                        <button onClick={() => handleStyleChange('MarginTopExtra', Math.min(400, (options.styles.notesMarginTopExtra || 0) + 4), 'notes')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-[9px] text-zinc-400 italic">0 = Seite komplett füllen</p>
+                                                            </div>
+                                                        )}
 
                                                         {renderStyleControls('notes', true)}
                                                     </div>
@@ -2149,7 +2198,7 @@ export default function WorkbookPage() {
                     isFullscreen ? "p-0 bg-zinc-200 dark:bg-slate-900" : "p-4 md:p-8 lg:px-20 xl:px-40 bg-zinc-100 dark:bg-slate-950"
                 )}>
                     {/* Spacer for top margin */}
-                    <div className={isFullscreen ? "h-10 min-h-[40px]" : "h-4"} />
+                    <div className={clsx("no-print", isFullscreen ? "h-10 min-h-[40px]" : "h-4")} />
 
                     {/* Scale Container to prevent horizontal scrollbars */}
                     <div
@@ -2179,7 +2228,8 @@ export default function WorkbookPage() {
                                             // Generate Stable Key
                                             const sectionMetaIndex = (section.fIdx !== undefined) ? section.fIdx : (section.qIdx !== undefined ? section.qIdx : (section.index !== undefined ? section.index : 0));
                                             const sectionPartIndex = section.partIndex || 0;
-                                            const stableKey = `${section.type}-${sectionMetaIndex}-${sectionPartIndex}`;
+                                            // Force re-render when global spacing changes by including it in the key or ensuring styles are used
+                                            const stableKey = `${section.type}-${sectionMetaIndex}-${sectionPartIndex}-${options.styles.blockSpacing}`;
                                             const borderClass = (p: string) => (options.styles as any)[`${p}Border`] ? `border-2 border-${(options.styles as any)[`${p}BorderColor`]}` : ((p === 'intro' && !options.styles.introBorder) ? 'border-l-2 border-indigo-100' : 'border-transparent');
                                             const shadowClass = (p: string) => (options.styles as any)[`${p}Shadow`] !== 'none' ? `shadow-${(options.styles as any)[`${p}Shadow`]}` : '';
                                             const radiusClass = (p: string) => {
@@ -2191,16 +2241,26 @@ export default function WorkbookPage() {
                                             };
                                             const fillClass = (p: string) => (options.styles as any)[`${p}Fill`] && (options.styles as any)[`${p}Fill`] !== 'none' ? (options.styles as any)[`${p}Fill`] : '';
                                             const commonClasses = (p: string) => `${borderClass(p)} ${shadowClass(p)} ${radiusClass(p)} ${fillClass(p)}`;
-                                            const getContainerStyle = (p: string) => ({
-                                                width: `${(options.styles as any)[`${p}Width`] ?? 100}%`,
-                                                padding: `${((options.styles as any)[`${p}Padding`] ?? 2) * 0.25}rem`,
-                                                marginTop: `${((options.styles as any)[`${p}MarginTop`] ?? 4) * 0.25}rem`,
-                                                marginLeft: 'auto',
-                                                marginRight: 'auto'
-                                            });
+                                            const isSubsequent = sIdx > 0 && page.sections[sIdx - 1].type === section.type;
+                                            const isFollowedBySame = sIdx < page.sections.length - 1 && page.sections[sIdx + 1].type === section.type;
+
+                                            const getContainerStyle = (p: string, sub = false) => {
+                                                const padUnits = ((options.styles as any)[`${p}Padding`] ?? 2);
+                                                const mtUnits = (p === 'notes' && sectionPartIndex > 0) ? (options.styles.notesMarginTopExtra ?? 4) :
+                                                    (sub ? 4 : ((options.styles as any)[`${p}MarginTop`] ?? 4));
+
+                                                return {
+                                                    width: `${(options.styles as any)[`${p}Width`] ?? 100}%`,
+                                                    padding: `${padUnits * 0.25}rem`,
+                                                    marginTop: `${mtUnits * 0.25}rem`,
+                                                    marginBottom: 0,
+                                                    marginLeft: 'auto',
+                                                    marginRight: 'auto'
+                                                };
+                                            };
 
                                             if (section.type === 'title') return (
-                                                <div key={stableKey} className={`mb-6 relative group z-[50] hover:z-[100] !overflow-visible ${commonClasses('title')}`} style={getContainerStyle('title')}>
+                                                <div key={stableKey} className={`relative group z-[50] hover:z-[100] !overflow-visible ${commonClasses('title')}`} style={getContainerStyle('title')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'title')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'title')}
@@ -2243,7 +2303,7 @@ export default function WorkbookPage() {
                                             );
 
                                             if (section.type === 'intro') return (
-                                                <div key={stableKey} className={`mb-4 relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('intro')}`} style={getContainerStyle('intro')}>
+                                                <div key={stableKey} className={`relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('intro')}`} style={getContainerStyle('intro')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'intro')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'intro')}
@@ -2288,7 +2348,7 @@ export default function WorkbookPage() {
                                             );
 
                                             if (section.type === 'bible') return (
-                                                <div key={stableKey} className={`mb-4 relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('bible')}`} style={getContainerStyle('bible')}>
+                                                <div key={stableKey} className={`relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('bible')}`} style={getContainerStyle('bible')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'bible')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'bible')}
@@ -2354,9 +2414,10 @@ export default function WorkbookPage() {
 
                                                 return (
                                                     <div key={stableKey}
-                                                        className={`mb-4 fact-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses(fKey)}`}
+                                                        className={`fact-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses(fKey)}`}
                                                         style={{
-                                                            ...getContainerStyle(fKey),
+                                                            ...getContainerStyle(fKey, isSubsequent),
+                                                            paddingBottom: section.manualHeight ? '24px' : (getContainerStyle(fKey, isSubsequent).padding),
                                                             height: section.manualHeight ? `${section.manualHeight}px` : undefined,
                                                             overflow: section.manualHeight ? 'hidden' : 'visible'
                                                         }}
@@ -2420,8 +2481,9 @@ export default function WorkbookPage() {
                                                         )}
                                                         {section.isFact && section.originalTitle && section.partIndex === 0 && !section.isUnified && (
                                                             <div className="uppercase tracking-wide font-bold" style={{
-                                                                marginTop: `${options.styles.sectionTitleMT || 16}px`, // Increased MT for sub-headers
-                                                                marginBottom: `${options.styles.sectionTitleMB || 0}px`,
+                                                                // If it's a subsequent fact item, we set header margin to 0 to respect the absolute blockSpacing
+                                                                marginTop: isSubsequent ? 0 : `${options.styles.sectionTitleMT || 16}px`,
+                                                                marginBottom: `${options.styles.sectionTitleMB ?? 0}px`,
                                                                 fontSize: `${options.styles.sectionTitle}pt`,
                                                                 lineHeight: options.styles.sectionTitleLH,
                                                                 fontFamily: getFontFamily(options.styles.sectionTitleFont),
@@ -2435,7 +2497,7 @@ export default function WorkbookPage() {
                                                             </div>
                                                         )}
                                                         <InlineEditor
-                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx ? editingField.tempValue : (section.isUnified ? section.content : section.content.replace(/^### .*?(\n\n|\n|$)/, ''))}
+                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx ? editingField.tempValue : (section.isUnified ? section.content : section.content.replace(/^### .*?(\n+|$)/, '').replace(/^\s*\*\*[^*]+\*\*(\n*)/, ''))}
                                                             isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx}
                                                             isEditing={editingField?.field || null}
                                                             onEditToggle={(active) => setEditingField(active ? { lessonId: page.lesson.id, field: 'facts', index: section.fIdx, tempValue: section.content } : null)}
@@ -2508,103 +2570,105 @@ export default function WorkbookPage() {
                                                 );
                                             }
 
-                                            if (section.type === 'question') return (
-                                                <div
-                                                    key={stableKey}
-                                                    className={`mb-4 question-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('questions')}`}
-                                                    style={getContainerStyle('questions')}
-                                                >
-                                                    <SectionToolbar
-                                                        onScale={(val) => handleStyleChange('fontSize', val, 'questions')}
-                                                        onLineHeight={(val) => handleStyleChange('lineHeight', val, 'questions')}
-                                                        fontSize={options.styles.questions}
-                                                        lineHeight={options.styles.questionsLH}
-                                                        isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx}
-                                                        isAnyEditing={!!editingField}
-                                                        onSave={handleSaveEdit}
-                                                        onCancel={handleCancelEdit}
-                                                        bold={options.styles.questionsBold}
-                                                        italic={options.styles.questionsItalic}
-                                                        underline={options.styles.questionsUnderline}
-                                                        align={options.styles.questionsAlign as 'left' | 'center' | 'right' | 'justify'}
-                                                        hyphens={options.styles.questionsHyphens}
-                                                        onToggleStyle={(s) => handleStyleToggle(s, 'questions')}
-                                                        onChangeStyle={(s, v) => handleStyleChange(s, v, 'questions')}
-                                                        type="question"
-                                                        layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'question', section.qIdx, section.partIndex)] || 0}
-                                                        onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'question', section.qIdx, section.partIndex)]: val }))}
-                                                        answerLines={options.answerLines}
-                                                        onAnswerLines={(val) => setOptions(prev => ({ ...prev, answerLines: val }))}
-                                                        answerLineSpacing={options.styles.answerLineSpacing}
-                                                        onAnswerLineSpacing={(val) => setOptions(prev => ({ ...prev, styles: { ...prev.styles, answerLineSpacing: val } }))}
-                                                        hasPageBreak={sectionPageBreaks[getSectionKey(page.lesson.id, 'question', section.qIdx)]}
-                                                        onTogglePageBreak={() => togglePageBreak(getSectionKey(page.lesson.id, 'question', section.qIdx))}
-                                                    />
+                                            if (section.type === 'question') {
+                                                return (
+                                                    <div
+                                                        key={stableKey}
+                                                        className={`question-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('questions')}`}
+                                                        style={getContainerStyle('questions', isSubsequent)}
+                                                    >
+                                                        <SectionToolbar
+                                                            onScale={(val) => handleStyleChange('fontSize', val, 'questions')}
+                                                            onLineHeight={(val) => handleStyleChange('lineHeight', val, 'questions')}
+                                                            fontSize={options.styles.questions}
+                                                            lineHeight={options.styles.questionsLH}
+                                                            isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx}
+                                                            isAnyEditing={!!editingField}
+                                                            onSave={handleSaveEdit}
+                                                            onCancel={handleCancelEdit}
+                                                            bold={options.styles.questionsBold}
+                                                            italic={options.styles.questionsItalic}
+                                                            underline={options.styles.questionsUnderline}
+                                                            align={options.styles.questionsAlign as 'left' | 'center' | 'right' | 'justify'}
+                                                            hyphens={options.styles.questionsHyphens}
+                                                            onToggleStyle={(s) => handleStyleToggle(s, 'questions')}
+                                                            onChangeStyle={(s, v) => handleStyleChange(s, v, 'questions')}
+                                                            type="question"
+                                                            layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'question', section.qIdx, section.partIndex)] || 0}
+                                                            onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'question', section.qIdx, section.partIndex)]: val }))}
+                                                            answerLines={options.answerLines}
+                                                            onAnswerLines={(val) => setOptions(prev => ({ ...prev, answerLines: val }))}
+                                                            answerLineSpacing={options.styles.answerLineSpacing}
+                                                            onAnswerLineSpacing={(val) => setOptions(prev => ({ ...prev, styles: { ...prev.styles, answerLineSpacing: val } }))}
+                                                            hasPageBreak={sectionPageBreaks[getSectionKey(page.lesson.id, 'question', section.qIdx)]}
+                                                            onTogglePageBreak={() => togglePageBreak(getSectionKey(page.lesson.id, 'question', section.qIdx))}
+                                                        />
 
-                                                    {/* Questions Header - Only above first question */}
-                                                    {(options.styles.questionsHeader && section.qIdx === 0 && section.partIndex === 0) && (
-                                                        <InlineEditor
-                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'questionsHeader' && editingField?.index === section.qIdx ? editingField.tempValue : (options.styles.questionsHeader || 'Fragen')}
-                                                            isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'questionsHeader' && editingField?.index === section.qIdx}
-                                                            isEditing={editingField?.field || null}
-                                                            onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
-                                                            onEditToggle={(isEditing) => {
-                                                                if (isEditing) {
-                                                                    setEditingField({ lessonId: page.lesson.id, field: 'questionsHeader', index: section.qIdx, tempValue: options.styles.questionsHeader || 'Fragen' });
-                                                                } else {
-                                                                    if (editingField?.tempValue !== undefined) {
-                                                                        handleStyleChange('Header', editingField.tempValue, 'questions');
+                                                        {/* Questions Header - Only above first question */}
+                                                        {(options.styles.questionsHeader && section.qIdx === 0 && section.partIndex === 0) && (
+                                                            <InlineEditor
+                                                                value={editingField?.lessonId === page.lesson.id && editingField?.field === 'questionsHeader' && editingField?.index === section.qIdx ? editingField.tempValue : (options.styles.questionsHeader || 'Fragen')}
+                                                                isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'questionsHeader' && editingField?.index === section.qIdx}
+                                                                isEditing={editingField?.field || null}
+                                                                onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
+                                                                onEditToggle={(isEditing) => {
+                                                                    if (isEditing) {
+                                                                        setEditingField({ lessonId: page.lesson.id, field: 'questionsHeader', index: section.qIdx, tempValue: options.styles.questionsHeader || 'Fragen' });
+                                                                    } else {
+                                                                        if (editingField?.tempValue !== undefined) {
+                                                                            handleStyleChange('Header', editingField.tempValue, 'questions');
+                                                                        }
+                                                                        handleCancelEdit();
                                                                     }
-                                                                    handleCancelEdit();
-                                                                }
-                                                            }}
-                                                            className="uppercase tracking-wide flex items-center gap-2"
-                                                            style={{
-                                                                marginTop: `${options.styles.sectionTitleMT || 0}px`,
-                                                                marginBottom: `${options.styles.sectionTitleMB || 8}px`,
-                                                                fontSize: `${options.styles.sectionTitle}pt`,
-                                                                lineHeight: options.styles.sectionTitleLH,
-                                                                fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
-                                                                fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
-                                                                textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
-                                                                textAlign: options.styles.sectionTitleAlign as any,
-                                                                fontFamily: getFontFamily(options.styles.sectionTitleFont),
-                                                                color: options.styles.sectionTitleColor || '#6366f1'
-                                                            }}
-                                                        >
-                                                            <MessageSquare size={14} className="shrink-0" />
-                                                            <span>{options.styles.questionsHeader || 'Fragen'}</span>
-                                                        </InlineEditor>
-                                                    )}
+                                                                }}
+                                                                className="uppercase tracking-wide flex items-center gap-2"
+                                                                style={{
+                                                                    marginTop: `${options.styles.sectionTitleMT || 0}px`,
+                                                                    marginBottom: `${options.styles.sectionTitleMB || 8}px`,
+                                                                    fontSize: `${options.styles.sectionTitle}pt`,
+                                                                    lineHeight: options.styles.sectionTitleLH,
+                                                                    fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
+                                                                    fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
+                                                                    textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
+                                                                    textAlign: options.styles.sectionTitleAlign as any,
+                                                                    fontFamily: getFontFamily(options.styles.sectionTitleFont),
+                                                                    color: options.styles.sectionTitleColor || '#6366f1'
+                                                                }}
+                                                            >
+                                                                <MessageSquare size={14} className="shrink-0" />
+                                                                <span>{options.styles.questionsHeader || 'Fragen'}</span>
+                                                            </InlineEditor>
+                                                        )}
 
-                                                    <InlineEditor
-                                                        value={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx ? editingField.tempValue : section.content}
-                                                        isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx}
-                                                        isEditing={editingField?.field || null}
-                                                        onEditToggle={(active) => setEditingField(active ? { lessonId: page.lesson.id, field: 'questions', index: section.qIdx, tempValue: section.content } : null)}
-                                                        onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
-                                                        multiline
-                                                        className="question-text"
-                                                        style={{
-                                                            fontSize: `${options.styles.questions}pt`,
-                                                            lineHeight: options.styles.questionsLH,
-                                                            fontWeight: options.styles.questionsBold ? 'bold' : 'normal',
-                                                            fontStyle: options.styles.questionsItalic ? 'italic' : 'normal',
-                                                            textDecoration: options.styles.questionsUnderline ? 'underline' : 'none',
-                                                            textAlign: options.styles.questionsAlign,
-                                                            hyphens: options.styles.questionsHyphens ? 'auto' : 'manual',
-                                                            fontFamily: getFontFamily(options.styles.questionsFont)
-                                                        }}
-                                                    />
-                                                    {options.lineForAnswers && (
-                                                        <div className="mt-4 flex flex-col pt-[0.2em]" style={{ gap: `${options.styles.answerLineSpacing || 1.5}rem` }}>
-                                                            {Array.from({ length: options.answerLines }).map((_, i) => (
-                                                                <div key={i} className="border-b border-zinc-200 dark:border-slate-700 h-[1px] w-full" />
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
+                                                        <InlineEditor
+                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx ? editingField.tempValue : section.content}
+                                                            isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'questions' && editingField?.index === section.qIdx}
+                                                            isEditing={editingField?.field || null}
+                                                            onEditToggle={(active) => setEditingField(active ? { lessonId: page.lesson.id, field: 'questions', index: section.qIdx, tempValue: section.content } : null)}
+                                                            onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
+                                                            multiline
+                                                            className="question-text"
+                                                            style={{
+                                                                fontSize: `${options.styles.questions}pt`,
+                                                                lineHeight: options.styles.questionsLH,
+                                                                fontWeight: options.styles.questionsBold ? 'bold' : 'normal',
+                                                                fontStyle: options.styles.questionsItalic ? 'italic' : 'normal',
+                                                                textDecoration: options.styles.questionsUnderline ? 'underline' : 'none',
+                                                                textAlign: options.styles.questionsAlign,
+                                                                hyphens: options.styles.questionsHyphens ? 'auto' : 'manual',
+                                                                fontFamily: getFontFamily(options.styles.questionsFont)
+                                                            }}
+                                                        />
+                                                        {options.lineForAnswers && (
+                                                            <div className="mt-4 flex flex-col pt-[0.2em]" style={{ gap: `${options.styles.answerLineSpacing || 1.5}rem` }}>
+                                                                {Array.from({ length: options.answerLines }).map((_, i) => (
+                                                                    <div key={i} className="border-b border-zinc-200 dark:border-slate-700 h-[1px] w-full" />
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
 
                                             if (section.type === 'quiz') return (
                                                 <div key={stableKey} className="mb-6" style={{ fontSize: `${options.styles.quiz}pt`, ...getContainerStyle('quiz') }}>
@@ -2640,109 +2704,113 @@ export default function WorkbookPage() {
                                                 </div>
                                             );
 
-                                            if (section.type === 'memory') return (
-                                                <div key={stableKey} className={`mb-4 relative group z-[20] !overflow-visible ${commonClasses('memory')}`} style={getContainerStyle('memory')}>
-                                                    <SectionToolbar
-                                                        onScale={(val) => handleStyleChange('fontSize', val, 'memory')}
-                                                        onLineHeight={(val) => handleStyleChange('lineHeight', val, 'memory')}
-                                                        fontSize={options.styles.memory}
-                                                        lineHeight={options.styles.memoryLH}
-                                                        isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses' && editingField?.index === section.index}
-                                                        isAnyEditing={!!editingField}
-                                                        onSave={handleSaveEdit}
-                                                        onCancel={handleCancelEdit}
-                                                        bold={options.styles.memoryBold}
-                                                        italic={options.styles.memoryItalic}
-                                                        underline={options.styles.memoryUnderline}
-                                                        align={options.styles.memoryAlign as 'left' | 'center' | 'right' | 'justify'}
-                                                        hyphens={options.styles.memoryHyphens}
-                                                        onToggleStyle={(s) => handleStyleToggle(s, 'memory')}
-                                                        onChangeStyle={(s, v) => handleStyleChange(s, v, 'memory')}
-                                                        type="memory"
-                                                        layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'memory', section.index, section.partIndex)] || 0}
-                                                        onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'memory', section.index, section.partIndex)]: val }))}
-                                                    />
-                                                    <div className="uppercase tracking-wide flex items-center gap-2" style={{
-                                                        marginTop: `${options.styles.sectionTitleMT || 0}px`,
-                                                        marginBottom: `${options.styles.sectionTitleMB || 8}px`,
-                                                        fontSize: `${options.styles.sectionTitle}pt`,
-                                                        lineHeight: options.styles.sectionTitleLH,
-                                                        fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
-                                                        fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
-                                                        textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
-                                                        textAlign: options.styles.sectionTitleAlign as any,
-                                                        fontFamily: getFontFamily(options.styles.sectionTitleFont),
-                                                        color: options.styles.sectionTitleColor || '#6366f1'
-                                                    }}>
-                                                        <Star size={14} className="shrink-0" />
-                                                        <span>Lernvers</span>
+                                            if (section.type === 'memory') {
+                                                const isConsecutiveMemory = section.index > 0 || section.partIndex > 0;
+                                                return (
+                                                    <div key={stableKey} className={`relative group z-[20] !overflow-visible ${commonClasses('memory')}`} style={getContainerStyle('memory', isConsecutiveMemory)}>
+                                                        <SectionToolbar
+                                                            onScale={(val) => handleStyleChange('fontSize', val, 'memory')}
+                                                            onLineHeight={(val) => handleStyleChange('lineHeight', val, 'memory')}
+                                                            fontSize={options.styles.memory}
+                                                            lineHeight={options.styles.memoryLH}
+                                                            isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses' && editingField?.index === section.index}
+                                                            isAnyEditing={!!editingField}
+                                                            onSave={handleSaveEdit}
+                                                            onCancel={handleCancelEdit}
+                                                            bold={options.styles.memoryBold}
+                                                            italic={options.styles.memoryItalic}
+                                                            underline={options.styles.memoryUnderline}
+                                                            align={options.styles.memoryAlign as 'left' | 'center' | 'right' | 'justify'}
+                                                            hyphens={options.styles.memoryHyphens}
+                                                            onToggleStyle={(s) => handleStyleToggle(s, 'memory')}
+                                                            onChangeStyle={(s, v) => handleStyleChange(s, v, 'memory')}
+                                                            type="memory"
+                                                            layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'memory', section.index, section.partIndex)] || 0}
+                                                            onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'memory', section.index, section.partIndex)]: val }))}
+                                                        />
+                                                        <div className="uppercase tracking-wide flex items-center gap-2" style={{
+                                                            marginTop: `${options.styles.sectionTitleMT || 0}px`,
+                                                            marginBottom: `${options.styles.sectionTitleMB || 8}px`,
+                                                            fontSize: `${options.styles.sectionTitle}pt`,
+                                                            lineHeight: options.styles.sectionTitleLH,
+                                                            fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
+                                                            fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
+                                                            textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
+                                                            textAlign: options.styles.sectionTitleAlign as any,
+                                                            fontFamily: getFontFamily(options.styles.sectionTitleFont),
+                                                            color: options.styles.sectionTitleColor || '#6366f1'
+                                                        }}>
+                                                            <Star size={14} className="shrink-0" />
+                                                            <span>Lernvers</span>
+                                                        </div>
+                                                        <InlineEditor
+                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses' ? editingField.tempValue : section.content}
+                                                            isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses'}
+                                                            isEditing={editingField?.field || null}
+                                                            onChange={(val) => setEditingField({
+                                                                lessonId: page.lesson.id,
+                                                                field: 'memoryVerses',
+                                                                index: section.index, // Ensure index is passed for array updates
+                                                                tempValue: val
+                                                            })}
+                                                            onEditToggle={(isEditing) => {
+                                                                if (isEditing) {
+                                                                    setEditingField({
+                                                                        lessonId: page.lesson.id,
+                                                                        field: 'memoryVerses',
+                                                                        index: section.index,
+                                                                        tempValue: section.content
+                                                                    });
+                                                                } else {
+                                                                    // Handle cancel by clearing state
+                                                                    handleCancelEdit();
+                                                                }
+                                                            }}
+                                                            markdown={true}
+                                                            multiline
+                                                            className="font-serif italic text-lg text-center px-8"
+                                                            style={{
+                                                                fontSize: `${options.styles.memory}pt`,
+                                                                lineHeight: options.styles.memoryLH,
+                                                                fontWeight: options.styles.memoryBold ? 'bold' : 'normal',
+                                                                fontStyle: options.styles.memoryItalic ? 'italic' : 'normal',
+                                                                textDecoration: options.styles.memoryUnderline ? 'underline' : 'none',
+                                                                textAlign: options.styles.memoryAlign,
+                                                                hyphens: options.styles.memoryHyphens ? 'auto' : 'manual',
+                                                                fontFamily: getFontFamily(options.styles.memoryFont)
+                                                            }}
+                                                        />
                                                     </div>
-                                                    <InlineEditor
-                                                        value={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses' ? editingField.tempValue : section.content}
-                                                        isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses'}
-                                                        isEditing={editingField?.field || null}
-                                                        onChange={(val) => setEditingField({
-                                                            lessonId: page.lesson.id,
-                                                            field: 'memoryVerses',
-                                                            index: section.index, // Ensure index is passed for array updates
-                                                            tempValue: val
-                                                        })}
-                                                        onEditToggle={(isEditing) => {
-                                                            if (isEditing) {
-                                                                setEditingField({
-                                                                    lessonId: page.lesson.id,
-                                                                    field: 'memoryVerses',
-                                                                    index: section.index,
-                                                                    tempValue: section.content
-                                                                });
-                                                            } else {
-                                                                // Handle cancel by clearing state
-                                                                handleCancelEdit();
-                                                            }
-                                                        }}
-                                                        markdown={true}
-                                                        multiline
-                                                        className="font-serif italic text-lg text-center px-8"
-                                                        style={{
-                                                            fontSize: `${options.styles.memory}pt`,
-                                                            lineHeight: options.styles.memoryLH,
-                                                            fontWeight: options.styles.memoryBold ? 'bold' : 'normal',
-                                                            fontStyle: options.styles.memoryItalic ? 'italic' : 'normal',
-                                                            textDecoration: options.styles.memoryUnderline ? 'underline' : 'none',
-                                                            textAlign: options.styles.memoryAlign,
-                                                            hyphens: options.styles.memoryHyphens ? 'auto' : 'manual',
-                                                            fontFamily: getFontFamily(options.styles.memoryFont)
-                                                        }}
-                                                    />
-                                                </div>
-                                            );
+                                                );
+                                            }
 
                                             // Render Notes Section
-                                            if (section.type === 'notes') return (
-                                                <div key={stableKey} className={`mb-4 relative group z-[20] !overflow-visible ${commonClasses('notes')}`} style={getContainerStyle('notes')}>
-                                                    <SectionToolbar
-                                                        onScale={(val) => handleStyleChange('fontSize', val, 'notes')}
-                                                        onLineHeight={(val) => handleStyleChange('lineHeight', val, 'notes')}
-                                                        fontSize={options.styles.notes}
-                                                        lineHeight={options.styles.notesLH}
-                                                        isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'notesHeader'}
-                                                        isAnyEditing={!!editingField}
-                                                        onSave={handleSaveEdit}
-                                                        onCancel={handleCancelEdit}
-                                                        bold={options.styles.notesBold}
-                                                        italic={options.styles.notesItalic}
-                                                        underline={options.styles.notesUnderline}
-                                                        align={options.styles.notesAlign as 'left' | 'center' | 'right' | 'justify'}
-                                                        hyphens={false}
-                                                        onToggleStyle={(s) => handleStyleToggle(s, 'notes')}
-                                                        onChangeStyle={(s, v) => handleStyleChange(s, v, 'notes')}
-                                                        type="notes"
-                                                        layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'notes', 0, section.partIndex)] || 0}
-                                                        onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'notes', 0, section.partIndex)]: val }))}
-                                                    />
+                                            if (section.type === 'notes') {
+                                                const isConsecutiveNotes = (section.index || 0) > 0 || (section.partIndex || 0) > 0;
+                                                return (
+                                                    <div key={stableKey} className={`relative group z-[20] !overflow-visible ${commonClasses('notes')}`} style={getContainerStyle('notes', isConsecutiveNotes)}>
+                                                        <SectionToolbar
+                                                            onScale={(val) => handleStyleChange('fontSize', val, 'notes')}
+                                                            onLineHeight={(val) => handleStyleChange('lineHeight', val, 'notes')}
+                                                            fontSize={options.styles.notes}
+                                                            lineHeight={options.styles.notesLH}
+                                                            isEditing={editingField?.lessonId === page.lesson.id && editingField?.field === 'notesHeader'}
+                                                            isAnyEditing={!!editingField}
+                                                            onSave={handleSaveEdit}
+                                                            onCancel={handleCancelEdit}
+                                                            bold={options.styles.notesBold}
+                                                            italic={options.styles.notesItalic}
+                                                            underline={options.styles.notesUnderline}
+                                                            align={options.styles.notesAlign as 'left' | 'center' | 'right' | 'justify'}
+                                                            hyphens={false}
+                                                            onToggleStyle={(s) => handleStyleToggle(s, 'notes')}
+                                                            onChangeStyle={(s, v) => handleStyleChange(s, v, 'notes')}
+                                                            type="notes"
+                                                            layoutCorrection={sectionLayouts[getSectionKey(page.lesson.id, 'notes', 0, section.partIndex)] || 0}
+                                                            onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'notes', 0, section.partIndex)]: val }))}
+                                                        />
 
-                                                    {/* Notes Header - Only on first part */}
-                                                    {section.partIndex === 0 && (
+                                                        {/* Notes Header - Always repeat on every part */}
                                                         <InlineEditor
                                                             value={editingField?.lessonId === page.lesson.id && editingField?.field === 'notesHeader' ? editingField.tempValue : (options.styles.notesHeader || 'Persönliche Notizen')}
                                                             isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'notesHeader'}
@@ -2760,7 +2828,7 @@ export default function WorkbookPage() {
                                                             }}
                                                             className="uppercase tracking-wide flex items-center gap-2"
                                                             style={{
-                                                                marginTop: `${options.styles.sectionTitleMT || 0}px`,
+                                                                marginTop: `${(section.index === 0 && (section.partIndex || 0) === 0) ? (options.styles.sectionTitleMT ?? 0) : (options.styles.sectionTitleMT ?? 8)}px`,
                                                                 marginBottom: `${options.styles.sectionTitleMB || 8}px`,
                                                                 fontSize: `${options.styles.sectionTitle}pt`,
                                                                 lineHeight: options.styles.sectionTitleLH,
@@ -2775,16 +2843,16 @@ export default function WorkbookPage() {
                                                             <PenLine size={14} className="shrink-0" />
                                                             <span>{options.styles.notesHeader || 'Persönliche Notizen'}</span>
                                                         </InlineEditor>
-                                                    )}
 
-                                                    {/* Note Lines */}
-                                                    <div className="flex flex-col pt-4" style={{ gap: `${section.notesLineSpacing || 1.5}rem` }}>
-                                                        {Array.from({ length: section.notesLines || 5 }).map((_, i) => (
-                                                            <div key={i} className="border-b border-zinc-300 dark:border-slate-600 h-[1px] w-full" />
-                                                        ))}
+                                                        {/* Note Lines */}
+                                                        <div className="flex flex-col pt-4" style={{ gap: `${section.notesLineSpacing || 1.5}rem` }}>
+                                                            {Array.from({ length: section.notesLines || 5 }).map((_, i) => (
+                                                                <div key={i} className="border-b border-zinc-300 dark:border-slate-600 h-[1px] w-full" />
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            );
+                                                );
+                                            }
 
                                             return null;
                                         })}
