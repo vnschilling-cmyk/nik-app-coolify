@@ -15,84 +15,11 @@ import { useAuth } from "@/hooks/useAuth";
 
 type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations";
 
-// 1. Content Management Sub-Tiles
-const contentTiles = [
-    {
-        id: "lessons" as Tab,
-        label: "Lektionen",
-        description: "Lektionen verwalten",
-        icon: BookOpen,
-        color: "indigo",
-        gradient: "from-indigo-500 to-purple-600"
-    },
-    {
-        id: "facts" as Tab,
-        label: "Infos",
-        description: "Fakten & Hintergrund",
-        icon: Lightbulb,
-        color: "amber",
-        gradient: "from-amber-400 to-orange-500"
-    },
-    {
-        id: "quotes" as Tab,
-        label: "Zitate",
-        description: "Zitate pflegen",
-        icon: Quote,
-        color: "rose",
-        gradient: "from-rose-500 to-pink-600"
-    },
-    {
-        id: "questions" as Tab,
-        label: "Fragen",
-        description: "Quizfragen bearbeiten",
-        icon: HelpCircle,
-        color: "emerald",
-        gradient: "from-emerald-500 to-green-600"
-    },
-    {
-        id: "memory_verses" as Tab,
-        label: "Lernverse",
-        description: "Verse verknüpfen & Vorschläge",
-        icon: Brain,
-        color: "blue",
-        gradient: "from-blue-500 to-cyan-600"
-    },
-    {
-        id: "learning_tests" as Tab,
-        label: "Lerntests",
-        description: "Tests erstellen & verwalten",
-        icon: GraduationCap,
-        color: "fuchsia",
-        gradient: "from-fuchsia-500 to-purple-600"
-    },
-];
+// 1. Content Management Sub-Tiles (Not used in Setup anymore, but preserved type for consistency if needed)
+const contentTiles: any[] = [];
 
-// 2. Main Menu Tiles
+// 2. Main Menu Tiles for Setup
 const mainTiles = [
-    {
-        id: "content_management" as Tab,
-        label: "Lektionen",
-        description: "Lektionen, Fragen & Tests",
-        icon: Library,
-        color: "sky",
-        gradient: "from-sky-500 to-blue-600"
-    },
-    {
-        id: "measures" as Tab,
-        label: "Einheiten",
-        description: "Antike Maße & Gewichte",
-        icon: Ruler,
-        color: "cyan",
-        gradient: "from-cyan-500 to-teal-600"
-    },
-    {
-        id: "word_studies" as Tab,
-        label: "Wortstudien",
-        description: "Wortbedeutungen",
-        icon: Languages,
-        color: "violet",
-        gradient: "from-violet-500 to-purple-600"
-    },
     {
         id: "groups" as Tab,
         label: "Gruppen",
@@ -100,22 +27,6 @@ const mainTiles = [
         icon: Users,
         color: "amber",
         gradient: "from-amber-400 to-orange-500"
-    },
-    {
-        id: "text_studies" as Tab,
-        label: "Textstudien",
-        description: "Textanalysen",
-        icon: FileText,
-        color: "teal",
-        gradient: "from-teal-500 to-emerald-600"
-    },
-    {
-        id: "illustrations" as Tab,
-        label: "Illustrationen",
-        description: "Bsp. & Geschichten",
-        icon: Palette,
-        color: "rose",
-        gradient: "from-rose-400 to-pink-500"
     },
     {
         id: "user" as Tab,
@@ -133,61 +44,45 @@ export default function SetupPage() {
 
     const getTabContent = () => {
         switch (activeTab) {
-            case "lessons": return <LessonsTab />;
-            case "facts": return <InfosTab />;
-            case "word_studies": return <InfosTab mode="word_study" />;
-            case "quotes": return <InfosTab mode="quote" />;
-            case "text_studies": return <InfosTab mode="text_study" />;
-            case "illustrations": return <InfosTab mode="illustration" />;
-            case "measures": return <MeasuresTab />;
-            case "questions": return <QuestionsTab />;
             case "user": return <UserTab />;
             case "design": return <DesignTab />;
-            case "memory_verses": return <MemoryVersesTab />;
-            case "learning_tests": return <LearningTestsTab />;
             case "groups": return <GroupsTab />;
             default: return null;
         }
     };
 
-    const activeTile = contentTiles.find(t => t.id === activeTab) || mainTiles.find(t => t.id === activeTab);
-    const isSubMenu = activeTab === "content_management";
+    const activeTile = mainTiles.find(t => t.id === activeTab);
+    const isSubMenu = false;
 
     const handleBack = () => {
-        // If currently in a content tile, go back to content management
-        if (contentTiles.some(t => t.id === activeTab)) {
-            setActiveTab("content_management");
-        } else {
-            // Otherwise (Main menu or already in content management) go to root
-            setActiveTab(null);
-        }
+        setActiveTab(null);
     };
 
     const renderGrid = (tiles: any[]) => (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6">
             {tiles.map(tile => {
                 const Icon = tile.icon;
                 return (
                     <button
                         key={tile.id}
                         onClick={() => setActiveTab(tile.id)}
-                        className="relative group bg-white dark:bg-slate-700 rounded-2xl border border-zinc-200 dark:border-slate-600 p-4 text-left transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-transparent overflow-hidden flex flex-col justify-start h-full"
+                        className="relative group bg-white dark:bg-slate-800 rounded-3xl border border-zinc-100 dark:border-slate-700 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
                     >
                         {/* Gradient Background on Hover */}
-                        <div className={`absolute inset-0 bg-gradient-to-br ${tile.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+                        <div className={`absolute inset-0 bg-gradient-to-br ${tile.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300`} />
 
                         {/* Icon Container */}
-                        <div className={`relative w-12 h-12 rounded-xl bg-gradient-to-br ${tile.gradient} flex items-center justify-center mb-4 shadow-lg`}>
+                        <div className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${tile.gradient} flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/10 group-hover:scale-110 transition-transform duration-300`}>
                             <Icon className="w-6 h-6 text-white" />
                         </div>
 
                         {/* Title */}
-                        <h3 className="relative font-heading font-bold text-zinc-900 dark:text-white mb-1">
+                        <h3 className="relative font-heading font-black text-zinc-900 dark:text-white mb-1.5 leading-tight tracking-tight uppercase text-sm sm:text-base">
                             {tile.label}
                         </h3>
 
                         {/* Description */}
-                        <p className="relative text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                        <p className="relative text-[10px] sm:text-xs font-medium text-zinc-400 dark:text-zinc-500 line-clamp-2 leading-relaxed">
                             {tile.description}
                         </p>
                     </button>
@@ -199,95 +94,53 @@ export default function SetupPage() {
     // Show Main Menu (Root)
     if (!activeTab) {
         return (
-            <div className="min-h-screen pb-24">
-                {/* Header */}
-                <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-zinc-100 dark:bg-slate-700 rounded-lg">
-                            <Settings className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
+            <div className="min-h-[100dvh] pb-32 bg-zinc-50 dark:bg-slate-900">
+                {/* Modern Header with Safe Area Support */}
+                <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 border-b border-zinc-100 dark:border-slate-800">
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl shadow-sm">
+                            <Settings className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-heading font-bold">Einstellungen</h1>
-                            <p className="text-sm text-zinc-500">Wähle einen Bereich</p>
+                            <h1 className="text-2xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">Einstellungen</h1>
+                            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">System konfigurieren</p>
                         </div>
                     </div>
                 </header>
 
-                {/* Main Grid */}
-                < div className="p-4" >
-                    {
-                        renderGrid(mainTiles.filter(tile => {
-                            if (user?.is_admin) return true;
-                            // Hide Lektionen and Gruppen for non-admins
-                            return !["content_management", "groups"].includes(tile.id);
-                        }))
-                    }
-                </div >
-            </div >
-        );
-    }
-
-    // Show Content Management Sub-Menu
-    if (isSubMenu) {
-        return (
-            <div className="min-h-screen pb-24">
-                <header className="sticky top-0 z-40 bg-background/80 dark:bg-slate-800/90 backdrop-blur-xl px-4 py-4">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleBack}
-                            className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
-                            title="Zurück"
-                        >
-                            <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                        </button>
-                        <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${activeTile?.gradient} flex items-center justify-center`}>
-                                <Library className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-heading font-bold">Lektionen</h1>
-                                <p className="text-xs text-zinc-500">Inhalte bearbeiten</p>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <div className="p-4">
-                    {renderGrid(contentTiles)}
+                <div className="p-6">
+                    {renderGrid(mainTiles)}
                 </div>
             </div>
         );
     }
 
-    // Show Active Tab Content
     return (
-        <div className="min-h-screen pb-24">
-            {/* Header with Back Button */}
-            <header className="sticky top-0 z-40 bg-background">
-                <div className="flex items-center gap-3 px-4 py-4">
+        <div className="min-h-[100dvh] pb-24 bg-zinc-50 dark:bg-slate-900">
+            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl pt-[calc(1rem+env(safe-area-inset-top))] border-b border-zinc-100 dark:border-slate-800 shadow-sm transition-all">
+                <div className="flex items-center gap-3 px-4 py-3">
                     <button
                         onClick={handleBack}
-                        className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                        className="p-2.5 rounded-xl bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-400 active:scale-90 transition-all"
                         title="Zurück"
                     >
-                        <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                        <ChevronLeft className="w-6 h-6 transition-transform group-active:-translate-x-1" />
                     </button>
                     <div className="flex items-center gap-3">
                         {activeTile && (
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center`}>
-                                <activeTile.icon className="w-4 h-4 text-white" />
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110`}>
+                                <activeTile.icon className="w-5 h-5 text-white" />
                             </div>
                         )}
                         <div>
-                            <h1 className="text-lg font-heading font-bold">{activeTile?.label}</h1>
-                            <p className="text-xs text-zinc-500">{activeTile?.description}</p>
+                            <h1 className="text-lg font-heading font-black tracking-tight text-zinc-900 dark:text-white uppercase">{activeTile?.label}</h1>
+                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{activeTile?.description}</p>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Tab Content */}
-            <div className="p-4">
+            <div className="w-full">
                 {getTabContent()}
             </div>
         </div>

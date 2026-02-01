@@ -5,9 +5,14 @@
 :root {
   --background: #fafafa;
   --foreground: #171717;
-  --primary: #4f46e5;
-  --primary-light: #818cf8;
-  --accent: #f59e0b;
+  --primary: #0095a9;
+  /* Petrol */
+  --primary-dark: #143473;
+  /* Dark Blue */
+  --accent: #96124b;
+  /* Bordeaux */
+  --neutral: #55565a;
+  /* Gray */
 
   /* Font Variables Defaults */
   --font-details: var(--font-montserrat);
@@ -107,13 +112,14 @@ h6 {
 
 /* Dark Mode overrides via class to match Tailwind config */
 .dark {
-  /* Significantly lighter dark mode - no blacks, friendly Slate 800/900 base */
-  --background: #1e293b;
-  /* Slate 800 */
+  /* Use the new Dark Blue as deep background */
+  --background: #0f172a;
+  /* Even deeper slate/blue */
+  --background-alt: #143473;
+  /* Our branding Dark Blue */
   --foreground: #f8fafc;
-  /* Slate 50 */
-  --primary: #818cf8;
-  --primary-light: #a5b4fc;
+  --primary: #0095a9;
+  --primary-light: #38bdf8;
 }
 
 * {
