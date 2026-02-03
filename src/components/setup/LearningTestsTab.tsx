@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil } from "lucide-react";
+import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil, RefreshCw } from "lucide-react";
+import clsx from "clsx";
 
 interface Question {
     question: string;
@@ -20,8 +21,12 @@ interface Quiz {
 interface Lesson {
     id: string;
     title: string;
+    category: string;
     content: string;
-    book_id?: string;
+    book_id: string;
+    chapter_start: number;
+    verse_start: number;
+    verse_end: number;
 }
 
 export default function LearningTestsTab() {
@@ -67,7 +72,16 @@ export default function LearningTestsTab() {
                 lesson_id: q.lesson_id,
                 questions: q.questions
             })));
-            setLessons(lessonRes.map(l => ({ id: l.id, title: l.title, content: l.content || "", book_id: l.book_id })));
+            setLessons(lessonRes.map(r => ({
+                id: r.id,
+                title: r.title || "(Ohne Titel)",
+                category: r.category || "Allgemein",
+                content: r.content || "",
+                book_id: r.book_id || "",
+                chapter_start: r.chapter_start ?? 1,
+                verse_start: r.verse_start ?? 1,
+                verse_end: r.verse_end ?? 10
+            })));
             setBooks(bookRes.map(b => ({ id: b.id, name: b.name, order: b.order })));
         } catch (e) {
             console.error(e);
@@ -93,7 +107,22 @@ export default function LearningTestsTab() {
             const lesson = lessons.find(l => l.id === selectedLessonId);
             if (!lesson) return;
 
-            if (!lesson.content || lesson.content.trim().length === 0) {
+            const [lessonFacts, lessonQuestions] = await Promise.all([
+                pb.collection('facts').getFullList({
+                    filter: `lesson_id="${selectedLessonId}"`,
+                    sort: 'order'
+                }),
+                pb.collection('questions').getFullList({
+                    filter: `lesson_id="${selectedLessonId}"`,
+                    sort: 'order'
+                })
+            ]);
+
+            const hasBriefDescription = lesson.content && lesson.content.trim().length > 0;
+            const hasFacts = lessonFacts.length > 0;
+            const hasQuestions = lessonQuestions.length > 0;
+
+            if (!hasBriefDescription && !hasFacts && !hasQuestions) {
                 alert("Fehler: Diese Lektion hat keinen Inhalt. Es können keine Fragen generiert werden.");
                 setGenerating(false);
                 return;
@@ -102,13 +131,39 @@ export default function LearningTestsTab() {
             const res = await fetch('/api/generate-quiz', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: lesson.content, count: aiCount })
+                body: JSON.stringify({
+                    text: lesson.content,
+                    count: aiCount,
+                    lessonQuestions: lessonQuestions.map(q => ({
+                        question: q.question,
+                        answer: q.answer
+                    })),
+                    lessonInfos: lessonFacts.map(f => ({
+                        title: f.title,
+                        description: f.description
+                    }))
+                })
             });
             const data = await res.json();
-
             if (data.error) throw new Error(data.error);
 
-            setCurrentQuestions(data.questions);
+            const shuffledQuestions = data.questions.map((q: Question) => {
+                const optionsWithCorrect = q.options.map((opt, i) => ({
+                    text: opt,
+                    isCorrect: i === q.correct_index
+                }));
+                for (let i = optionsWithCorrect.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [optionsWithCorrect[i], optionsWithCorrect[j]] = [optionsWithCorrect[j], optionsWithCorrect[i]];
+                }
+                return {
+                    question: q.question,
+                    options: optionsWithCorrect.map(o => o.text),
+                    correct_index: optionsWithCorrect.findIndex(o => o.isCorrect)
+                };
+            });
+
+            setCurrentQuestions(shuffledQuestions);
             setQuizTitle(`Test: ${lesson.title}`);
         } catch (e: any) {
             alert("Fehler: " + e.message);
@@ -185,6 +240,22 @@ export default function LearningTestsTab() {
         setCurrentQuestions(newQs);
     };
 
+    const shuffleOptions = (qIdx: number) => {
+        const newQs = [...currentQuestions];
+        const q = newQs[qIdx];
+        const optionsWithCorrect = q.options.map((opt, i) => ({
+            text: opt,
+            isCorrect: i === q.correct_index
+        }));
+        for (let i = optionsWithCorrect.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [optionsWithCorrect[i], optionsWithCorrect[j]] = [optionsWithCorrect[j], optionsWithCorrect[i]];
+        }
+        q.options = optionsWithCorrect.map(o => o.text);
+        q.correct_index = optionsWithCorrect.findIndex(o => o.isCorrect);
+        setCurrentQuestions(newQs);
+    };
+
     const addEmptyQuestion = () => {
         setCurrentQuestions([...currentQuestions, {
             question: "",
@@ -198,7 +269,7 @@ export default function LearningTestsTab() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="px-4 pb-20 space-y-6 text-zinc-900 dark:text-zinc-100">
             <div className="flex justify-start items-center mb-6">
                 {!isCreating && (
                     <button
@@ -211,96 +282,102 @@ export default function LearningTestsTab() {
                 )}
             </div>
 
-            {isCreating ? (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
-                    <div className="flex justify-end mb-4">
-                        <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
+            {isCreating && (
+                <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-6 shadow-2xl animate-fadeIn mb-8 text-zinc-900 dark:text-zinc-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            {editingId ? "Test bearbeiten" : "Neuer Test"}
+                        </h2>
+                        <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600 transition-colors" title="Schließen">
                             <X size={24} />
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Lektion *</label>
-                            <div className="flex flex-col gap-2">
-                                <select
-                                    value={selectedLessonId}
-                                    onChange={e => {
-                                        const newId = e.target.value;
-                                        setSelectedLessonId(newId);
-                                        if (autoTitle) {
-                                            const lesson = lessons.find(l => l.id === newId);
-                                            if (lesson) setQuizTitle(`Test: ${lesson.title}`);
-                                        }
-                                    }}
-                                    className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
-                                >
-                                    <option value="">Bitte wählen...</option>
-                                    {lessons.map(l => (
-                                        <option key={l.id} value={l.id}>{l.title}</option>
-                                    ))}
-                                </select>
-                                <div className="flex items-center gap-2" title="Titel automatisch setzen">
-                                    <input
-                                        type="checkbox"
-                                        id="autoTitle"
-                                        checked={autoTitle}
-                                        onChange={e => {
-                                            const checked = e.target.checked;
-                                            setAutoTitle(checked);
-                                            if (checked && selectedLessonId) {
-                                                const lesson = lessons.find(l => l.id === selectedLessonId);
-                                                if (lesson) setQuizTitle(`Test: ${lesson.title}`);
-                                            }
-                                        }}
-                                        className="w-5 h-5 rounded border-zinc-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                    />
-                                    <label htmlFor="autoTitle" className="text-sm font-bold text-zinc-600 dark:text-zinc-400 select-none cursor-pointer whitespace-nowrap">
-                                        Test-Titel automatisch generieren
-                                    </label>
-                                </div>
-                            </div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Lektion *</label>
+                            <select
+                                value={selectedLessonId}
+                                onChange={e => {
+                                    const newId = e.target.value;
+                                    setSelectedLessonId(newId);
+                                    if (autoTitle) {
+                                        const lesson = lessons.find(l => l.id === newId);
+                                        if (lesson) setQuizTitle(`Test: ${lesson.title}`);
+                                    }
+                                }}
+                                className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-zinc-900 dark:text-white"
+                                title="Lektion auswählen"
+                            >
+                                <option value="">Lektion wählen...</option>
+                                {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                            </select>
                         </div>
-                        {!autoTitle && (
-                            <div className="animate-fadeIn">
-                                <label className="block text-sm font-medium mb-1">Titel *</label>
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Test-Titel *</label>
+                            <div className="flex flex-col gap-2">
                                 <input
                                     type="text"
                                     value={quizTitle}
-                                    onChange={e => setQuizTitle(e.target.value)}
-                                    className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
-                                    placeholder="z.B. Test zu 1. Petrus 1"
+                                    onChange={e => { setQuizTitle(e.target.value); setAutoTitle(false); }}
+                                    placeholder="Titel des Tests..."
+                                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none text-zinc-900 dark:text-white"
+                                    title="Test-Titel"
                                 />
+                                <label className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={autoTitle}
+                                        onChange={e => setAutoTitle(e.target.checked)}
+                                        className="rounded border-zinc-300 dark:border-white/10"
+                                    />
+                                    <span>Titel automatisch generieren</span>
+                                </label>
                             </div>
-                        )}
+                        </div>
                     </div>
 
-                    <div className="flex gap-4 mb-4">
+                    <div className="flex gap-4 mb-6 pt-4 border-t border-zinc-100 dark:border-white/5">
                         <button
+                            type="button"
                             onClick={() => setMode("manual")}
-                            className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
+                            className={clsx(
+                                "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all text-sm font-medium",
+                                mode === "manual"
+                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                                    : "bg-white/5 opacity-50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
                             title="Manuell erstellen"
                         >
-                            <Pencil size={24} />
+                            <Pencil size={18} />
+                            <span>Manuell</span>
                         </button>
                         <button
+                            type="button"
                             onClick={() => setMode("ai")}
-                            className={`flex-1 py-2.5 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
-                            title="Vorschläge generieren"
+                            className={clsx(
+                                "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all text-sm font-medium",
+                                mode === "ai"
+                                    ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30"
+                                    : "bg-white/5 opacity-50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
+                            title="KI Generierung"
                         >
-                            <Sparkles size={24} />
+                            <Sparkles size={18} />
+                            <span>KI</span>
                         </button>
                     </div>
 
                     {mode === "ai" && (
-                        <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-800 mb-4">
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-100 dark:border-white/10 mb-6">
                             <div className="flex items-end gap-4">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium mb-1 text-purple-900 dark:text-purple-200">Anzahl Fragen</label>
+                                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-2">Anzahl Fragen</label>
                                     <select
                                         value={aiCount}
                                         onChange={e => setAiCount(Number(e.target.value))}
-                                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-slate-700"
+                                        className="w-full p-2 rounded-xl border border-purple-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-purple-500/20 outline-none text-zinc-900 dark:text-white"
+                                        title="Anzahl Fragen auswählen"
                                     >
                                         <option value="3">3 Fragen</option>
                                         <option value="5">5 Fragen</option>
@@ -308,9 +385,10 @@ export default function LearningTestsTab() {
                                     </select>
                                 </div>
                                 <button
+                                    type="button"
                                     onClick={handleGenerateAI}
                                     disabled={generating || !selectedLessonId}
-                                    className="px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed h-10 w-10 flex items-center justify-center shrink-0"
+                                    className="p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed h-10 w-10 flex items-center justify-center shrink-0"
                                     title="Vorschläge generieren"
                                 >
                                     {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Sparkles size={20} />}
@@ -321,31 +399,56 @@ export default function LearningTestsTab() {
 
                     <div className="space-y-4 mb-8">
                         {currentQuestions.map((q, qIdx) => (
-                            <div key={qIdx} className="border border-zinc-200 dark:border-slate-700 rounded-xl p-4 bg-zinc-50 dark:bg-slate-700/50">
+                            <div key={qIdx} className="border border-zinc-200 dark:border-slate-700 rounded-xl p-4 bg-zinc-50 dark:bg-slate-800/50">
                                 <div className="flex justify-between mb-3">
-                                    <span className="font-bold text-sm text-zinc-500">Frage {qIdx + 1}</span>
-                                    <button onClick={() => removeQuestion(qIdx)} className="text-red-400 hover:text-red-500"><Trash2 size={16} /></button>
+                                    <span className="font-bold text-xs text-zinc-500 dark:text-zinc-400">Frage {qIdx + 1}</span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => shuffleOptions(qIdx)}
+                                            className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                                            title="Antworten zufällig mischen"
+                                        >
+                                            <RefreshCw size={16} />
+                                        </button>
+                                        <button type="button" onClick={() => removeQuestion(qIdx)} className="text-red-400 hover:text-red-500 transition-colors" title="Diese Frage löschen">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <input
-                                    className="w-full mb-3 p-2 rounded font-medium dark:bg-slate-700 border dark:border-slate-600"
+                                    className="w-full mb-3 p-2 rounded-lg font-medium bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all text-zinc-900 dark:text-white"
                                     value={q.question}
                                     onChange={e => updateQuestion(qIdx, 'question', e.target.value)}
-                                    placeholder="Die Frage..."
+                                    placeholder="Frage eingeben..."
+                                    title={`Frage ${qIdx + 1}`}
                                 />
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {q.options.map((opt, oIdx) => (
                                         <div key={oIdx} className="flex items-center gap-2">
                                             <button
+                                                type="button"
                                                 onClick={() => updateQuestion(qIdx, 'correct_index', oIdx)}
-                                                className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ${q.correct_index === oIdx ? "bg-emerald-500 border-emerald-500 text-white" : "border-zinc-300 dark:border-slate-600"}`}
+                                                className={clsx(
+                                                    "w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all",
+                                                    q.correct_index === oIdx ? "bg-emerald-500 border-emerald-500 text-white" : "border-zinc-300 dark:border-slate-600 hover:border-emerald-300"
+                                                )}
+                                                title={`Als richtige Antwort markieren (Option ${oIdx + 1})`}
                                             >
                                                 {q.correct_index === oIdx && <Check size={14} />}
                                             </button>
                                             <input
-                                                className={`flex-1 p-1.5 text-sm rounded border ${q.correct_index === oIdx ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" : "dark:bg-slate-700 dark:border-slate-600"}`}
+                                                className={clsx(
+                                                    "flex-1 p-2 text-sm rounded-lg border transition-all cursor-pointer outline-none",
+                                                    q.correct_index === oIdx
+                                                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-900 dark:text-emerald-100"
+                                                        : "bg-white dark:bg-slate-900 border-zinc-200 dark:border-slate-700 hover:border-zinc-400 text-zinc-800 dark:text-zinc-200"
+                                                )}
                                                 value={opt}
+                                                onClick={() => updateQuestion(qIdx, 'correct_index', oIdx)}
                                                 onChange={e => updateOption(qIdx, oIdx, e.target.value)}
-                                                placeholder={`Antwort ${oIdx + 1}`}
+                                                placeholder={`Option ${oIdx + 1}`}
+                                                title={`Antwort-Option ${oIdx + 1}`}
                                             />
                                         </div>
                                     ))}
@@ -354,31 +457,43 @@ export default function LearningTestsTab() {
                         ))}
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 pt-6 border-t border-zinc-100 dark:border-white/5">
                         <button
+                            type="button"
                             onClick={addEmptyQuestion}
-                            className="flex-1 py-2.5 bg-zinc-100 dark:bg-slate-700/50 border border-zinc-200 dark:border-slate-600 rounded-lg text-zinc-500 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                            className="flex-1 py-3 bg-zinc-100 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-zinc-500 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
                             title="Frage hinzufügen"
                         >
                             <Plus size={24} />
+                            <span className="ml-2 font-medium">Frage hinzufügen</span>
                         </button>
                         <button
+                            type="button"
                             onClick={handleSaveQuiz}
                             disabled={currentQuestions.length === 0 || !quizTitle}
-                            className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
+                            className="flex-1 py-3 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95 font-bold"
                             title={editingId ? "Änderungen speichern" : "Test Speichern"}
                         >
                             <Save size={24} />
+                            <span className="ml-2">{editingId ? "Änderungen speichern" : "Test speichern"}</span>
                         </button>
                     </div>
-
                 </div>
-            ) : (
+            )}
+
+            {!isCreating && (
                 <div className="space-y-4">
                     {loading ? (
-                        <p className="text-center py-10 text-zinc-500">Lade Tests...</p>
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                            <p className="text-zinc-500 font-medium">Lade Tests...</p>
+                        </div>
                     ) : quizzes.length === 0 ? (
-                        <p className="text-center py-10 text-zinc-500">Noch keine Tests erstellt.</p>
+                        <div className="text-center py-20 bg-zinc-50 dark:bg-slate-800/20 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                            <GraduationCap size={48} className="mx-auto text-zinc-300 mb-4" />
+                            <p className="text-zinc-500 font-medium">Noch keine Tests erstellt.</p>
+                            <button onClick={() => setIsCreating(true)} className="mt-4 text-indigo-600 font-bold hover:underline">Ersten Test erstellen</button>
+                        </div>
                     ) : (
                         (() => {
                             const testsByBook = new Map<string, {
@@ -420,64 +535,84 @@ export default function LearningTestsTab() {
                             return sortedBooks.map(bookGroup => {
                                 const isExpanded = expandedGroups.has(bookGroup.id);
                                 const totalTests = Array.from(bookGroup.lessons.values()).flat().length;
+                                const sortedLessons = Array.from(bookGroup.lessons.entries())
+                                    .map(([lessonId, quizzes]) => ({
+                                        lesson: lessons.find(l => l.id === lessonId),
+                                        quizzes: quizzes.sort((a, b) => a.title.localeCompare(b.title))
+                                    }))
+                                    .filter(item => item.lesson)
+                                    .sort((a, b) => (a.lesson?.title || "").localeCompare(b.lesson?.title || ""));
 
                                 return (
-                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-800/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
+                                    <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-800/40 rounded-3xl overflow-hidden border border-zinc-100 dark:border-white/5 shadow-sm transition-all">
                                         <button
                                             onClick={() => toggleGroup(bookGroup.id)}
-                                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                            className="w-full flex items-center justify-between p-5 hover:bg-zinc-100 dark:hover:bg-slate-800/50 transition-colors"
+                                            title={isExpanded ? "Zuklappen" : "Aufklappen"}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <h3 className={`text-sm font-bold uppercase tracking-wider ${bookGroup.id !== 'general' ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-600"}`}>
+                                            <div className="flex items-center gap-3">
+                                                <h3 className={clsx("text-sm font-bold uppercase tracking-widest", bookGroup.id !== 'general' ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-500")}>
                                                     {bookGroup.title}
                                                 </h3>
-                                                <span className="text-zinc-400 text-xs font-normal">({totalTests})</span>
+                                                <span className="bg-white dark:bg-white/10 text-zinc-500 dark:text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm">
+                                                    {totalTests}
+                                                </span>
                                             </div>
                                             {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="border-t border-zinc-200 dark:border-slate-700">
-                                                {Array.from(bookGroup.lessons.entries()).map(([lessonId, lessonQuizzes]) => {
-                                                    const lesson = lessons.find(l => l.id === lessonId);
+                                            <div className="divide-y divide-zinc-100 dark:divide-white/5 bg-white/30 dark:bg-black/10">
+                                                {sortedLessons.map(({ lesson, quizzes: lessonQuizzes }) => {
+                                                    const lessonId = lesson!.id;
                                                     const lessonKey = `${bookGroup.id}-${lessonId}`;
                                                     const isLessonExpanded = expandedGroups.has(lessonKey);
 
                                                     return (
-                                                        <div key={lessonId} className="border-b border-zinc-200 dark:border-slate-700 last:border-0">
+                                                        <div key={lessonId}>
                                                             <button
                                                                 onClick={() => toggleGroup(lessonKey)}
-                                                                className="w-full flex items-center justify-between p-3 pl-6 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+                                                                className="w-full flex items-center justify-between p-4 pl-8 hover:bg-white dark:hover:bg-slate-800/50 transition-all"
+                                                                title={isLessonExpanded ? "Lektion zuklappen" : "Lektion aufklappen"}
                                                             >
-                                                                <div className="flex items-center gap-2">
-                                                                    <GraduationCap size={16} className="text-fuchsia-600 dark:text-fuchsia-400" />
-                                                                    <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                                                                        {lesson?.title}
-                                                                    </span>
-                                                                    <span className="text-zinc-400 text-xs">({lessonQuizzes.length})</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center shadow-sm">
+                                                                        <GraduationCap size={20} className="text-purple-600 dark:text-purple-400" />
+                                                                    </div>
+                                                                    <div className="flex flex-col items-start">
+                                                                        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                                                                            {lesson?.title}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-bold">{lessonQuizzes.length} {lessonQuizzes.length === 1 ? 'Test' : 'Tests'}</span>
+                                                                    </div>
                                                                 </div>
-                                                                {isLessonExpanded ? <ChevronDown size={16} className="text-zinc-400" /> : <ChevronRight size={16} className="text-zinc-400" />}
+                                                                {isLessonExpanded ? <ChevronDown size={18} className="text-zinc-400" /> : <ChevronRight size={18} className="text-zinc-400" />}
                                                             </button>
 
                                                             {isLessonExpanded && (
-                                                                <div className="p-3 pl-8 space-y-2 bg-white dark:bg-slate-800">
+                                                                <div className="p-4 pl-12 gap-3 grid grid-cols-1 sm:grid-cols-2 bg-zinc-50/50 dark:bg-black/20">
                                                                     {lessonQuizzes.map(quiz => (
-                                                                        <div key={quiz.id} className="border border-zinc-100 dark:border-slate-700 rounded-lg p-3 flex justify-between items-center group hover:border-fuchsia-300 dark:hover:border-fuchsia-700 transition-colors bg-zinc-50 dark:bg-slate-700/30">
-                                                                            <div>
-                                                                                <h4 className="font-medium text-sm text-zinc-800 dark:text-zinc-200">{quiz.title}</h4>
-                                                                                <p className="text-[10px] text-zinc-500">{quiz.questions.length} Fragen</p>
+                                                                        <div key={quiz.id} className="bg-white dark:bg-slate-800/80 border border-zinc-100 dark:border-white/5 rounded-2xl p-4 flex justify-between items-center group hover:shadow-lg hover:shadow-purple-500/5 transition-all">
+                                                                            <div className="flex items-center gap-4">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+                                                                                <div>
+                                                                                    <h4 className="font-bold text-sm text-zinc-800 dark:text-zinc-100">{quiz.title}</h4>
+                                                                                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tight">{quiz.questions.length} Fragen</p>
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <div className="flex gap-2">
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={(e) => { e.stopPropagation(); handleEdit(quiz); }}
-                                                                                    className="p-1.5 text-zinc-400 hover:text-indigo-500 transition-colors"
+                                                                                    className="p-2 text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-white/5 rounded-xl transition-all"
                                                                                     title="Bearbeiten"
                                                                                 >
-                                                                                    <Sparkles size={16} />
+                                                                                    <Pencil size={16} />
                                                                                 </button>
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={(e) => { e.stopPropagation(); handleDelete(quiz.id); }}
-                                                                                    className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                                                                                    className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-white/5 rounded-xl transition-all"
                                                                                     title="Löschen"
                                                                                 >
                                                                                     <Trash2 size={16} />

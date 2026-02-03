@@ -123,7 +123,7 @@ export default function GroupsTab() {
     );
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
             {view === "root" && renderRootView()}
 
             {view === "list" && (

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
+import NextImage from "next/image";
 import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Scroll, Brain, Languages, Quote } from "lucide-react";
 
 interface Lesson {
@@ -147,13 +148,19 @@ export default function StudyPage() {
         <div className="min-h-screen pb-24">
             {/* Header */}
             <header className="sticky top-0 z-40 bg-background px-4 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                        <GraduationCap className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <GraduationCap className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold">Bibelstudium</h1>
+                            <p className="text-sm text-zinc-500">Wähle eine Lektion zum Lesen</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold">Bibelstudium</h1>
-                        <p className="text-sm text-zinc-500">Wähle eine Lektion zum Lesen</p>
+                    <div className="relative w-10 h-10">
+                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                     </div>
                 </div>
             </header>
@@ -192,14 +199,9 @@ export default function StudyPage() {
                             groups.get(key)?.push(lesson);
                         });
 
-                        // Sort lessons within groups by start_date
+                        // Sort lessons within groups by title
                         groups.forEach((groupLessons) => {
-                            groupLessons.sort((a, b) => {
-                                if (a.start_date && b.start_date) {
-                                    return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
-                                }
-                                return (a.id > b.id) ? 1 : -1;
-                            });
+                            groupLessons.sort((a, b) => a.title.localeCompare(b.title, 'de', { numeric: true }));
                         });
 
                         // Convert to array and sort groups
@@ -220,7 +222,7 @@ export default function StudyPage() {
                             const isCollapsed = collapsedGroups.has(groupTitle);
 
                             return (
-                                <section key={groupTitle} className="bg-slate-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-600">
+                                <section key={groupTitle} className="bg-slate-50 dark:bg-slate-400/5 dark:backdrop-blur-sm rounded-xl overflow-hidden border border-zinc-200 dark:border-white/5">
                                     <button
                                         onClick={() => toggleGroup(groupTitle)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -304,7 +306,7 @@ export default function StudyPage() {
 
                                                 if (isInactive) {
                                                     return (
-                                                        <div key={lesson.id} className="w-full text-left bg-zinc-100 dark:bg-slate-700/50 border border-zinc-200 dark:border-slate-600 rounded-lg p-3 flex items-center gap-3 opacity-60 cursor-not-allowed">
+                                                        <div key={lesson.id} className="w-full text-left bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-lg p-3 flex items-center gap-3 opacity-60 cursor-not-allowed">
                                                             {content}
                                                         </div>
                                                     );
@@ -314,7 +316,7 @@ export default function StudyPage() {
                                                     <Link
                                                         key={lesson.id}
                                                         href={`/study/${lesson.id}`}
-                                                        className="w-full text-left bg-white dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg p-3 flex items-center gap-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors group"
+                                                        className="w-full text-left bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md border border-zinc-200 dark:border-white/10 rounded-lg p-3 flex items-center gap-3 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors group"
                                                     >
                                                         {content}
                                                     </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NextImage from "next/image";
 import LessonsTab from "@/components/study/LessonsTab";
 import InfosTab from "@/components/study/InfosTab";
 import QuestionsTab from "@/components/setup/QuestionsTab";
@@ -55,8 +56,8 @@ const mainTiles = [
         label: "Lektionen",
         description: "Lektionen, Fragen & Tests",
         icon: Library,
-        color: "blue",
-        gradient: "from-[#143473] to-[#0095a9]"
+        color: "sky",
+        gradient: "from-sky-500 to-blue-600"
     },
     {
         id: "word_studies" as Tab,
@@ -64,7 +65,7 @@ const mainTiles = [
         description: "Wortbedeutungen",
         icon: Languages,
         color: "violet",
-        gradient: "from-[#143473] to-[#96124b]"
+        gradient: "from-violet-500 to-purple-600"
     },
     {
         id: "text_studies" as Tab,
@@ -72,39 +73,39 @@ const mainTiles = [
         description: "Bibeltext-Auslegungen",
         icon: FileText,
         color: "teal",
-        gradient: "from-[#0095a9] to-[#143473]"
+        gradient: "from-teal-500 to-emerald-600"
     },
     {
         id: "facts" as Tab,
         label: "Infos",
         description: "Fakten & Hintergrund",
         icon: Lightbulb,
-        color: "bordeaux",
-        gradient: "from-[#96124b] to-[#0095a9]"
+        color: "amber",
+        gradient: "from-amber-400 to-orange-500"
     },
     {
         id: "quotes" as Tab,
         label: "Zitate",
         description: "Zitate pflegen",
         icon: Quote,
-        color: "bordeaux",
-        gradient: "from-[#96124b] to-[#143473]"
+        color: "rose",
+        gradient: "from-rose-500 to-pink-600"
     },
     {
         id: "illustrations" as Tab,
         label: "Illustrationen",
         description: "Bsp. & Geschichten",
         icon: Palette,
-        color: "petrol",
-        gradient: "from-[#0095a9] to-[#55565a]"
+        color: "rose",
+        gradient: "from-rose-400 to-pink-500"
     },
     {
         id: "measures" as Tab,
         label: "Einheiten",
         description: "Antike Maße & Gewichte",
         icon: Ruler,
-        color: "gray",
-        gradient: "from-[#55565a] to-[#143473]"
+        color: "cyan",
+        gradient: "from-cyan-500 to-teal-600"
     },
 ];
 
@@ -147,7 +148,7 @@ export default function LibraryPage() {
                     <button
                         key={tile.id}
                         onClick={() => setActiveTab(tile.id)}
-                        className="relative group bg-white dark:bg-slate-800 rounded-3xl border border-zinc-100 dark:border-slate-700 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
+                        className="relative group bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
                     >
                         {/* Gradient Background on Hover */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${tile.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300`} />
@@ -175,20 +176,26 @@ export default function LibraryPage() {
     if (!activeTab) {
         return (
             <div className="min-h-[100dvh] pb-32">
-                {/* Modern Header with Safe Area Support */}
-                <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 border-b border-zinc-100 dark:border-slate-800">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl shadow-sm">
-                            <Library className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                {/* Header Section */}
+                <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                                <Library className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold">Bibliothek</h1>
+                                <p className="text-sm text-zinc-500">Inhalte verwalten</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">Bibliothek</h1>
-                            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Inhalte verwalten</p>
+                        <div className="relative w-10 h-10">
+                            <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                            <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                         </div>
                     </div>
                 </header>
 
-                <div className="p-6">
+                <div className="p-4">
                     {renderGrid(mainTiles)}
                 </div>
             </div>
@@ -198,23 +205,32 @@ export default function LibraryPage() {
     if (isSubMenu) {
         return (
             <div className="min-h-[100dvh] pb-32">
-                <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-3 border-b border-zinc-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleBack}
-                            className="p-2.5 rounded-xl bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-400 hover:scale-95 active:scale-90 transition-all"
-                            title="Zurück"
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
+                <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile?.gradient} flex items-center justify-center shadow-lg shadow-indigo-500/20`}>
-                                <Library className="w-5 h-5 text-white" />
+                            <button
+                                onClick={handleBack}
+                                className="p-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 dark:backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:scale-95 active:scale-90 transition-all border border-transparent dark:border-white/5"
+                                title="Zurück"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile?.gradient} flex items-center justify-center shadow-lg shadow-indigo-500/20`}>
+                                    <Library className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="hidden sm:block">
+                                    <h1 className="text-xl font-heading font-bold text-zinc-900 dark:text-white">Lektionen</h1>
+                                    <p className="text-xs font-medium text-zinc-500">Inhalte bearbeiten</p>
+                                </div>
+                                <div className="sm:hidden">
+                                    <h1 className="text-lg font-heading font-bold text-zinc-900 dark:text-white leading-none">Lektionen</h1>
+                                </div>
                             </div>
-                            <div>
-                                <h1 className="text-xl font-heading font-bold text-zinc-900 dark:text-white">Lektionen</h1>
-                                <p className="text-xs font-medium text-zinc-500">Inhalte bearbeiten</p>
-                            </div>
+                        </div>
+                        <div className="relative w-10 h-10">
+                            <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                            <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                         </div>
                     </div>
                 </header>
@@ -227,26 +243,32 @@ export default function LibraryPage() {
     }
 
     return (
-        <div className="min-h-[100dvh] pb-24 bg-zinc-50 dark:bg-slate-900">
-            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl pt-[calc(1rem+env(safe-area-inset-top))] border-b border-zinc-100 dark:border-slate-800 shadow-sm transition-all">
-                <div className="flex items-center gap-3 px-4 py-3">
-                    <button
-                        onClick={handleBack}
-                        className="p-2.5 rounded-xl bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-400 active:scale-90 transition-all"
-                        title="Zurück"
-                    >
-                        <ChevronLeft className="w-6 h-6" />
-                    </button>
+        <div className="min-h-[100dvh] pb-24">
+            <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        {activeTile && (
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center shadow-lg`}>
-                                <activeTile.icon className="w-5 h-5 text-white" />
+                        <button
+                            onClick={handleBack}
+                            className="p-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 dark:backdrop-blur-md text-zinc-600 dark:text-zinc-300 active:scale-90 transition-all border border-transparent dark:border-white/5"
+                            title="Zurück"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+                        <div className="flex items-center gap-3">
+                            {activeTile && (
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center shadow-lg`}>
+                                    <activeTile.icon className="w-5 h-5 text-white" />
+                                </div>
+                            )}
+                            <div>
+                                <h1 className="text-lg font-heading font-black tracking-tight text-zinc-900 dark:text-white uppercase leading-none">{activeTile?.label}</h1>
+                                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{activeTile?.description}</p>
                             </div>
-                        )}
-                        <div>
-                            <h1 className="text-lg font-heading font-black tracking-tight text-zinc-900 dark:text-white uppercase">{activeTile?.label}</h1>
-                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{activeTile?.description}</p>
                         </div>
+                    </div>
+                    <div className="relative w-10 h-10">
+                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                     </div>
                 </div>
             </header>

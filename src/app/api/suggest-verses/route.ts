@@ -22,7 +22,7 @@ Die Verse sollen den Kern der Lektion biblisch untermauern.
 
 Lektion: "${title}"
 Kategorie: "${category || 'Allgemein'}"
-Inhalt/Kontext: "${(content || '').substring(0, 500)}..."
+Inhalt/Kontext: "${content || ''}"
 
 Gib mir eine JSON-Antwort mit einer Liste von Vorschlägen.
 Format:

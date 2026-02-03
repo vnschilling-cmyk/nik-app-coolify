@@ -28,7 +28,7 @@ export const fetchWorkbookData = async (lessonIds: string[]): Promise<WorkbookLe
     const [lessons, facts, questions, memoryVerses, quizzes] = await Promise.all([
         pb.collection('lessons').getFullList({ filter: idsFilter, sort: 'order' }),
         pb.collection('facts').getFullList({ filter: lessonFilter, sort: 'order' }),
-        pb.collection('questions').getFullList({ filter: lessonFilter, sort: 'order' }),
+        pb.collection('questions').getFullList({ filter: lessonFilter, sort: 'question' }),
         pb.collection('memory_verses').getFullList({ filter: lessonFilter }),
         pb.collection('quizzes').getFullList({ filter: lessonFilter }),
     ]);
@@ -48,6 +48,7 @@ export const fetchWorkbookData = async (lessonIds: string[]): Promise<WorkbookLe
             }
         }
 
+        const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
         return {
             id: l.id,
             title: l.title,
@@ -60,7 +61,7 @@ export const fetchWorkbookData = async (lessonIds: string[]): Promise<WorkbookLe
             verse_start: l.verse_start,
             verse_end: l.verse_end,
             facts: facts.filter(f => f.lesson_id === l.id),
-            questions: questions.filter(q => q.lesson_id === l.id),
+            questions: questions.filter(q => q.lesson_id === l.id).sort((a, b) => collator.compare(a.question, b.question)),
             quizzes: quizzes.filter(q => q.lesson_id === l.id),
             memoryVerses: memoryVerses.filter(mv => mv.lesson_id === l.id),
             verses

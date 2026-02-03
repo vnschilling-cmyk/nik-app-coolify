@@ -203,290 +203,296 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen pb-24">
             {/* Hero Section with Gradient */}
-            {/* Hero Section with Logo */}
-            <header className="px-6 pt-6 pb-6 bg-background overflow-hidden">
-                <div className="flex flex-col gap-2">
-                    <div className="w-full max-w-md mx-auto -my-3 flex flex-col items-center">
-                        {/* Light Mode Logo */}
-                        <Image
-                            src="/logo-light.png"
-                            alt="Nikodemos Logo"
-                            width={300}
-                            height={124}
-                            className="w-[300px] h-auto object-contain dark:hidden"
-                            priority
-                        />
-                        {/* Dark Mode Logo */}
+            {/* Header Section */}
+            <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold">Dashboard</h1>
+                            <p className="text-sm text-zinc-500">
+                                {user?.name ? `Willkommen zurück, ${user.name.split(' ')[0]}` : "Willkommen zurück"}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="relative w-10 h-10">
                         <Image
                             src="/logo-dark.png"
-                            alt="Nikodemos Logo"
-                            width={300}
-                            height={124}
-                            className="w-[300px] h-auto object-contain hidden dark:block"
-                            priority
+                            alt="tApp Logo"
+                            fill
+                            className="object-contain dark:block hidden"
+                        />
+                        <Image
+                            src="/logo-light.png"
+                            alt="tApp Logo"
+                            fill
+                            className="object-contain dark:hidden block"
                         />
                     </div>
-
                 </div>
             </header>
 
-            {/* Verse of the Day Card */}
-            <section className="px-4 mt-4 relative z-20">
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm transition-all hover:shadow-md">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                            {memoryVerse ? "Dein Lernvers" : "Vers des Tages"}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic">
-                            {memoryVerse ? (
-                                memoryVerse.verse_ref || (
-                                    <>
-                                        {memoryVerse.expand?.book_id?.name || "Bibel"}
-                                        {memoryVerse.chapter > 0 ? ` ${memoryVerse.chapter}:${memoryVerse.verse_start}${memoryVerse.verse_end > memoryVerse.verse_start ? `-${memoryVerse.verse_end}` : ""}` : ""}
-                                    </>
-                                )
-                            ) : "Matthäus 6,33"}
-                        </span>
-                    </div>
-                    <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0 text-center">
-                        „{memoryVerse ? memoryVerse.text : "Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."}"
-                    </p>
-                </div>
-            </section>
-
-
-
-
-
-            {/* Statistics Section */}
-            <section className="px-4 mt-6">
-                <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Deine Statistik</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Personal Stats */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                                {user?.name ? user.name.split(' ')[0] : "Persönlich"}
+            <div className="p-4 space-y-6">
+                {/* Verse of the Day Card */}
+                <section className="relative z-20">
+                    <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border-l-4 border-indigo-600 dark:border-indigo-400 shadow-sm transition-all hover:shadow-md dark:border-white/5">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                                {memoryVerse ? "Dein Lernvers" : "Vers des Tages"}
                             </span>
-                            <Trophy size={16} className="text-amber-500" />
+                            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 italic">
+                                {memoryVerse ? (
+                                    memoryVerse.verse_ref || (
+                                        <>
+                                            {memoryVerse.expand?.book_id?.name || "Bibel"}
+                                            {memoryVerse.chapter > 0 ? ` ${memoryVerse.chapter}:${memoryVerse.verse_start}${memoryVerse.verse_end > memoryVerse.verse_start ? `-${memoryVerse.verse_end}` : ""}` : ""}
+                                        </>
+                                    )
+                                ) : "Matthäus 6,33"}
+                            </span>
                         </div>
-                        <div className="flex items-center justify-around gap-2 px-2">
-                            <StatsRing
-                                percentage={stats.personal.last}
-                                label={stats.personal.lastGrade > 0 ? `${stats.personal.lastGrade}` : "--"}
-                                subLabel="Letzter"
-                                colorClass={stats.personal.lastGrade > 0 ? calculateGrade(stats.personal.last).color : "text-zinc-300"}
-                                size={90}
-                            />
-                            <div className="w-px h-12 bg-zinc-100 dark:bg-slate-700" />
-                            <StatsRing
-                                percentage={stats.personal.avg}
-                                label={stats.personal.avgGrade > 0 ? `${stats.personal.avgGrade}` : "--"}
-                                subLabel="Schnitt"
-                                colorClass={stats.personal.avgGrade > 0 ? calculateGrade(stats.personal.avg).color : "text-zinc-300"}
-                                size={90}
-                            />
-                        </div>
+                        <p className="memory-verse-text text-xl text-slate-700 dark:text-slate-200 mb-0 text-center">
+                            „{memoryVerse ? memoryVerse.text : "Trachtet zuerst nach dem Reich Gottes und nach seiner Gerechtigkeit, so wird euch das alles zufallen."}"
+                        </p>
                     </div>
+                </section>
 
-                    {/* Group Stats */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
-                            <TrendingUp size={16} className="text-emerald-500" />
-                        </div>
-                        <div className="flex items-center justify-around gap-2 px-2">
-                            <StatsRing
-                                percentage={82}
-                                label="Note 2"
-                                subLabel="Schnitt"
-                                colorClass="text-emerald-500"
-                                size={95}
-                            />
-                            <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
-                            <StatsRing
-                                percentage={95}
-                                label="Note 1"
-                                subLabel="Top"
-                                colorClass="text-indigo-500"
-                                size={95}
-                            />
-                        </div>
 
-                        {/* Participant Details */}
-                        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
-                            <div>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">12</p>
-                                <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
+
+
+
+                {/* Statistics Section */}
+                <section className="px-4 mt-6">
+                    <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Deine Statistik</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Personal Stats */}
+                        <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                                    {user?.name ? user.name.split(' ')[0] : "Persönlich"}
+                                </span>
+                                <Trophy size={16} className="text-amber-500" />
                             </div>
-                            <div className="border-x border-slate-100 dark:border-slate-700/50">
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">8</p>
-                                <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">14</p>
-                                <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
+                            <div className="flex items-center justify-around gap-2 px-2">
+                                <StatsRing
+                                    percentage={stats.personal.last}
+                                    label={stats.personal.lastGrade > 0 ? `${stats.personal.lastGrade}` : "--"}
+                                    subLabel="Letzter"
+                                    colorClass={stats.personal.lastGrade > 0 ? calculateGrade(stats.personal.last).color : "text-zinc-300"}
+                                    size={90}
+                                />
+                                <div className="w-px h-12 bg-zinc-100 dark:bg-slate-700" />
+                                <StatsRing
+                                    percentage={stats.personal.avg}
+                                    label={stats.personal.avgGrade > 0 ? `${stats.personal.avgGrade}` : "--"}
+                                    subLabel="Schnitt"
+                                    colorClass={stats.personal.avgGrade > 0 ? calculateGrade(stats.personal.avg).color : "text-zinc-300"}
+                                    size={90}
+                                />
                             </div>
                         </div>
 
-                        <p className="text-[9px] text-center text-zinc-500 mt-4 uppercase tracking-tighter italic">Testdaten (Echtzeit-Anbindung in Arbeit)</p>
-                    </div>
-                </div>
-            </section>
-
-            {/* Quick Actions */}
-            <section className="px-4 mt-6 space-y-3">
-                <h3 className="font-heading text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
-
-                <Link
-                    href={continueReadingLink}
-                    className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
-                >
-                    <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-heading text-lg text-slate-900 dark:text-white">Weiterlesen</p>
-                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{continueReadingLabel}</p>
-                    </div>
-                    <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
-                </Link>
-
-                <button
-                    onClick={() => setShowQuestionModal(true)}
-                    className="w-full flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
-                >
-                    <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
-                    </div>
-                    <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
-                </button>
-            </section>
-
-            {/* Install Prompt */}
-            <section className="px-4 mt-8">
-                <InstallPrompt />
-            </section>
-
-            {/* Question Modal */}
-            {showQuestionModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">Neue Frage stellen</h3>
-                            <button onClick={() => setShowQuestionModal(false)} className="text-zinc-400 hover:text-zinc-600">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <form onSubmit={handleQuestionSubmit} className="space-y-4">
-                            {/* Category Selector */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
-                                <div className="grid grid-cols-2 gap-2 mt-1">
-                                    {CATEGORIES.map(cat => {
-                                        const Icon = cat.icon;
-                                        const isSelected = questionForm.category === cat.id;
-                                        const activeClass = cat.id === "bibeltext"
-                                            ? "bg-indigo-100 text-indigo-700 border-indigo-500 ring-1 ring-indigo-500"
-                                            : "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
-                                        const inactiveClass = cat.id === "bibeltext"
-                                            ? "bg-white text-indigo-600/70 border-zinc-200 hover:bg-indigo-50"
-                                            : "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50";
-
-                                        return (
-                                            <button
-                                                key={cat.id}
-                                                type="button"
-                                                onClick={() => setQuestionForm({ ...questionForm, category: cat.id })}
-                                                className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
-                                            >
-                                                <Icon size={18} />
-                                                <span className="text-sm font-medium">{cat.label}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                        {/* Group Stats */}
+                        <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
+                                <TrendingUp size={16} className="text-emerald-500" />
                             </div>
-
-                            {/* Lesson Selector */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lektion *</label>
-                                <select
-                                    required
-                                    value={questionForm.lesson_id}
-                                    onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                >
-                                    <option value="">Lektion wählen...</option>
-                                    {lessons.map(l => (
-                                        <option key={l.id} value={l.id}>{l.title}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Verse Range (only for bibeltext) */}
-                            {questionForm.category === "bibeltext" && selectedLesson && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
-                                        <select
-                                            value={questionForm.verse_start}
-                                            onChange={e => {
-                                                const newVal = parseInt(e.target.value) || 1;
-                                                setQuestionForm({
-                                                    ...questionForm,
-                                                    verse_start: newVal,
-                                                    verse_end: Math.max(newVal, questionForm.verse_end)
-                                                });
-                                            }}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                        >
-                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                <option key={num} value={num}>{num}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
-                                        <select
-                                            value={questionForm.verse_end}
-                                            onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
-                                            className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
-                                        >
-                                            {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                <option key={num} value={num}>{num}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Question Text */}
-                            <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deine Frage *</label>
-                                <textarea
-                                    required
-                                    value={questionForm.question}
-                                    onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px]"
-                                    placeholder="Was möchtest du wissen?"
+                            <div className="flex items-center justify-around gap-2 px-2">
+                                <StatsRing
+                                    percentage={82}
+                                    label="Note 2"
+                                    subLabel="Schnitt"
+                                    colorClass="text-emerald-500"
+                                    size={95}
+                                />
+                                <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
+                                <StatsRing
+                                    percentage={95}
+                                    label="Note 1"
+                                    subLabel="Top"
+                                    colorClass="text-indigo-500"
+                                    size={95}
                                 />
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={saving || !questionForm.question.trim() || !questionForm.lesson_id}
-                                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <Save size={16} /> {saving ? "Speichern..." : "Frage absenden"}
-                            </button>
-                        </form>
+                            {/* Participant Details */}
+                            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">12</p>
+                                    <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
+                                </div>
+                                <div className="border-x border-slate-100 dark:border-slate-700/50">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">8</p>
+                                    <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">14</p>
+                                    <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
+                                </div>
+                            </div>
+
+                            <p className="text-[9px] text-center text-zinc-500 mt-4 uppercase tracking-tighter italic">Testdaten (Echtzeit-Anbindung in Arbeit)</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                </section>
+
+                {/* Quick Actions */}
+                <section className="px-4 mt-6 space-y-3">
+                    <h3 className="font-heading text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
+
+                    <Link
+                        href={continueReadingLink}
+                        className="flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
+                    >
+                        <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                            <BookOpen className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-heading text-lg text-slate-900 dark:text-white">Weiterlesen</p>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{continueReadingLabel}</p>
+                        </div>
+                        <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
+                    </Link>
+
+                    <button
+                        onClick={() => setShowQuestionModal(true)}
+                        className="w-full flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                    >
+                        <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                            <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
+                        </div>
+                        <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
+                    </button>
+                </section>
+
+                {/* Install Prompt */}
+                <section className="px-4 mt-8">
+                    <InstallPrompt />
+                </section>
+
+                {/* Question Modal */}
+                {showQuestionModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg">Neue Frage stellen</h3>
+                                <button onClick={() => setShowQuestionModal(false)} className="text-zinc-400 hover:text-zinc-600">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <form onSubmit={handleQuestionSubmit} className="space-y-4">
+                                {/* Category Selector */}
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
+                                    <div className="grid grid-cols-2 gap-2 mt-1">
+                                        {CATEGORIES.map(cat => {
+                                            const Icon = cat.icon;
+                                            const isSelected = questionForm.category === cat.id;
+                                            const activeClass = cat.id === "bibeltext"
+                                                ? "bg-indigo-100 text-indigo-700 border-indigo-500 ring-1 ring-indigo-500"
+                                                : "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
+                                            const inactiveClass = cat.id === "bibeltext"
+                                                ? "bg-white text-indigo-600/70 border-zinc-200 hover:bg-indigo-50"
+                                                : "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50";
+
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => setQuestionForm({ ...questionForm, category: cat.id })}
+                                                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                >
+                                                    <Icon size={18} />
+                                                    <span className="text-sm font-medium">{cat.label}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Lesson Selector */}
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lektion *</label>
+                                    <select
+                                        required
+                                        value={questionForm.lesson_id}
+                                        onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                    >
+                                        <option value="">Lektion wählen...</option>
+                                        {lessons.map(l => (
+                                            <option key={l.id} value={l.id}>{l.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Verse Range (only for bibeltext) */}
+                                {questionForm.category === "bibeltext" && selectedLesson && (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                            <select
+                                                value={questionForm.verse_start}
+                                                onChange={e => {
+                                                    const newVal = parseInt(e.target.value) || 1;
+                                                    setQuestionForm({
+                                                        ...questionForm,
+                                                        verse_start: newVal,
+                                                        verse_end: Math.max(newVal, questionForm.verse_end)
+                                                    });
+                                                }}
+                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            >
+                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                    <option key={num} value={num}>{num}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                            <select
+                                                value={questionForm.verse_end}
+                                                onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
+                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                            >
+                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
+                                                    <option key={num} value={num}>{num}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Question Text */}
+                                <div>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deine Frage *</label>
+                                    <textarea
+                                        required
+                                        value={questionForm.question}
+                                        onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}
+                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px]"
+                                        placeholder="Was möchtest du wissen?"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={saving || !questionForm.question.trim() || !questionForm.lesson_id}
+                                    className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save size={16} /> {saving ? "Speichern..." : "Frage absenden"}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

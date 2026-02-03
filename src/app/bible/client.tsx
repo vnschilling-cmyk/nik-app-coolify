@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import NextImage from "next/image";
 import BibleReader, { VerseData } from "@/components/features/BibleReader";
 import ChapterSelector from "@/components/features/ChapterSelector";
 import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import Link from "next/link";
 import clsx from "clsx";
 import { LinkedLesson } from "@/lib/bible";
-import { Search } from "lucide-react";
+import { Search, BookOpen } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import AnalysisModal from "@/components/features/AnalysisModal";
@@ -132,74 +133,92 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
 
     return (
         <div className="pb-20">
-            <header className="sticky top-0 z-40 bg-background px-4 h-14 flex items-center justify-between">
-                <h1
-                    className="font-semibold text-lg cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-1"
-                    onClick={() => {
-                        setSelectorMode('books');
-                        setIsSelectorOpen(true);
-                    }}
-                >
-                    {book.name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
-                </h1>
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <BookOpen className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold">Bibel</h1>
+                            <p className="text-xs text-zinc-500">Gottes Wort lesen</p>
+                        </div>
+                    </div>
+                    <div className="relative w-10 h-10">
+                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
+                    </div>
+                </div>
+            </header>
 
-                <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'KI' })}
-                        className={clsx(
-                            "p-2 rounded-xl transition-all active:scale-95",
-                            textStudies.some(s => s.category === 'KI' && s.verse_start === 0)
-                                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
-                                : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
-                        )}
-                        title="KI-Analyse"
-                    >
-                        <SparklesIcon size={20} />
-                    </button>
-                    <button
-                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Andere' })}
-                        className={clsx(
-                            "p-2 rounded-xl transition-all active:scale-95",
-                            textStudies.some(s => s.category === 'Andere' && s.verse_start === 0)
-                                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
-                                : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
-                        )}
-                        title="Andere Studien"
-                    >
-                        <Users size={20} />
-                    </button>
-                    <button
-                        onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Eigene' })}
-                        className={clsx(
-                            "p-2 rounded-xl transition-all active:scale-95",
-                            textStudies.some(s => s.category === 'Eigene' && s.verse_start === 0)
-                                ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                                : "text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
-                        )}
-                        title="Eigene Studien"
-                    >
-                        <User size={20} />
-                    </button>
-
-                    <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1" />
-
-                    <button
-                        onClick={() => setIsSearchOpen(true)}
-                        className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                        title="Suche öffnen"
-                    >
-                        <Search size={20} />
-                    </button>
-                    <button
+            <header className="sticky top-[72px] z-30 bg-background px-4 py-4 border-b border-zinc-200 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                    <div
+                        className="flex items-center gap-2 cursor-pointer group"
                         onClick={() => {
-                            setSelectorMode('chapters');
+                            setSelectorMode('books');
                             setIsSelectorOpen(true);
                         }}
-                        className="text-sm font-medium text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                        title="Kapitel-Auswahl"
                     >
-                        Kapitel
-                    </button>
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50 transition-colors">
+                            <BookOpen size={24} className="text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold flex items-center gap-1 leading-tight">
+                                {book.name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
+                            </h1>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Bibel lesen</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                        <button
+                            onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'KI' })}
+                            className={clsx(
+                                "p-2 rounded-xl transition-all active:scale-95",
+                                textStudies.some(s => s.category === 'KI' && s.verse_start === 0)
+                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+                                    : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
+                            title="KI-Analyse"
+                        >
+                            <SparklesIcon size={18} />
+                        </button>
+                        <button
+                            onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Andere' })}
+                            className={clsx(
+                                "p-2 rounded-xl transition-all active:scale-95",
+                                textStudies.some(s => s.category === 'Andere' && s.verse_start === 0)
+                                    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                                    : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
+                            title="Andere Studien"
+                        >
+                            <Users size={18} />
+                        </button>
+                        <button
+                            onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Eigene' })}
+                            className={clsx(
+                                "p-2 rounded-xl transition-all active:scale-95",
+                                textStudies.some(s => s.category === 'Eigene' && s.verse_start === 0)
+                                    ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
+                                    : "text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
+                            title="Eigene Studien"
+                        >
+                            <User size={18} />
+                        </button>
+
+                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1" />
+
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                            title="Suche öffnen"
+                        >
+                            <Search size={18} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -261,20 +280,22 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
             />
 
             {/* Word Meaning Popup */}
-            {selectedWord && (
-                <WordMeaningPopup
-                    word={selectedWord}
-                    context={`${book.name} ${chapter}`}
-                    testament={book.testament}
-                    bookId={book.id}
-                    onClose={() => setSelectedWord(null)}
-                />
-            )}
+            {
+                selectedWord && (
+                    <WordMeaningPopup
+                        word={selectedWord}
+                        context={`${book.name} ${chapter}`}
+                        testament={book.testament}
+                        bookId={book.id}
+                        onClose={() => setSelectedWord(null)}
+                    />
+                )
+            }
 
             <SearchModal
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
             />
-        </div>
+        </div >
     );
 }

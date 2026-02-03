@@ -17,6 +17,9 @@ interface Lesson {
     category: string;
     content: string;
     book_id?: string;
+    chapter_start?: number;
+    verse_start?: number;
+    verse_end?: number;
 }
 
 interface MemoryVerse {
@@ -83,7 +86,16 @@ export default function MemoryVersesTab() {
                 pb.collection('memory_verses').getFullList({ sort: 'created', expand: 'book_id,lesson_id' }),
                 pb.collection('bible_books').getFullList({ sort: 'order' })
             ]);
-            setLessons(lessonsRes.map(r => ({ id: r.id, title: r.title, category: r.category, content: r.content, book_id: r.book_id })));
+            setLessons(lessonsRes.map(r => ({
+                id: r.id,
+                title: r.title,
+                category: r.category,
+                content: r.content,
+                book_id: r.book_id,
+                chapter_start: r.chapter_start,
+                verse_start: r.verse_start,
+                verse_end: r.verse_end
+            })));
             setVerses(versesRes as any[]);
             setBooks(booksRes.map(r => ({ id: r.id, name: r.name, chapters: r.chapter_count || 50, order: r.order })));
         } catch (e) {
@@ -112,13 +124,40 @@ export default function MemoryVersesTab() {
             const lesson = lessons.find(l => l.id === selectedLessonId);
             if (!lesson) return;
 
+            // Fetch linked facts/infos
+            const linkedFacts = await pb.collection('facts').getFullList({
+                filter: `lesson_id = "${selectedLessonId}"`,
+                fields: 'title,description,type'
+            });
+
+            // Fetch Bible text for the lesson
+            let bibleText = "";
+            if (lesson.book_id && lesson.chapter_start) {
+                try {
+                    const verseRecords = await pb.collection('verses').getFullList({
+                        filter: `book="${lesson.book_id}" && chapter=${lesson.chapter_start} && verse >= ${lesson.verse_start} && verse <= ${lesson.verse_end}`,
+                        sort: 'verse',
+                        fields: 'verse,text'
+                    });
+                    bibleText = verseRecords.map(v => `${v.verse}: ${v.text}`).join('\n');
+                } catch (e) {
+                    console.error("Error fetching bibel text:", e);
+                }
+            }
+
+            const extraContext = linkedFacts.map(f =>
+                `Zusatz-Info (${f.title}): ${f.description.replace(/<[^>]*>?/gm, '')}`
+            ).join('\n\n');
+
+            const fullContent = `Bibeltext der Lektion:\n${bibleText}\n\nLektionsinhalt:\n${lesson.content}\n\n${extraContext}`;
+
             const res = await fetch('/api/suggest-verses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     title: lesson.title,
                     category: lesson.category,
-                    content: lesson.content
+                    content: fullContent
                 })
             });
 
@@ -150,7 +189,7 @@ export default function MemoryVersesTab() {
         return `${book.name} ${formChapter}:${range}`;
     };
 
-    const handleManualSubmit = async (e?: React.FormEvent) => {
+    const saveVerse = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!selectedLessonId || !formBookId || !formText) return;
 
@@ -252,19 +291,20 @@ export default function MemoryVersesTab() {
             </div>
 
             {isCreating ? (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
+                <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-6 shadow-2xl animate-fadeIn">
                     <div className="flex justify-end mb-4">
                         <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
                             <X size={24} />
                         </button>
                     </div>
 
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">Lektion *</label>
+                    <div className="mb-6">
+                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Lektion *</label>
                         <select
                             value={selectedLessonId}
                             onChange={e => setSelectedLessonId(e.target.value)}
-                            className="w-full p-2 rounded-lg border dark:bg-slate-700 dark:border-slate-600"
+                            className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+                            title="Lektion auswählen"
                         >
                             <option value="">Bitte wählen...</option>
                             {lessons.map(l => (
@@ -274,20 +314,20 @@ export default function MemoryVersesTab() {
                     </div>
 
                     {!isEditing && (
-                        <div className="flex gap-4 mb-4">
+                        <div className="flex gap-4 mb-6">
                             <button
                                 onClick={() => setMode("manual")}
-                                className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-xl border flex items-center justify-center transition-all ${mode === "manual" ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30 active:scale-95" : "bg-white/50 dark:bg-slate-900/40 border-zinc-200 dark:border-white/5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-slate-800"}`}
                                 title="Manuell erstellen"
                             >
-                                <Pencil size={24} />
+                                <Pencil size={20} />
                             </button>
                             <button
                                 onClick={() => setMode("ai")}
-                                className={`flex-1 py-3 rounded-lg border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/20" : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-400"}`}
+                                className={`flex-1 py-3 rounded-xl border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30 active:scale-95" : "bg-white/50 dark:bg-slate-900/40 border-zinc-200 dark:border-white/5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-slate-800"}`}
                                 title="Vorschläge generieren"
                             >
-                                <Sparkles size={24} />
+                                <Sparkles size={20} />
                             </button>
                         </div>
                     )}
@@ -337,7 +377,8 @@ export default function MemoryVersesTab() {
                                     <select
                                         value={formBookId}
                                         onChange={e => { setFormBookId(e.target.value); setFormChapter(1); }}
-                                        className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                        className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+                                        title="Buch auswählen"
                                     >
                                         <option value="">Wählen...</option>
                                         {books.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -366,8 +407,9 @@ export default function MemoryVersesTab() {
                                             <select
                                                 value={formChapter}
                                                 onChange={e => setFormChapter(parseInt(e.target.value))}
-                                                className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                 disabled={!formBookId}
+                                                title="Kapitel auswählen"
                                             >
                                                 {selectedBook ? Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map(n => (
                                                     <option key={n} value={n}>{n}</option>
@@ -381,16 +423,18 @@ export default function MemoryVersesTab() {
                                                     type="number" min="1"
                                                     value={formVerseStart}
                                                     onChange={e => setFormVerseStart(parseInt(e.target.value))}
-                                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                    className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                     placeholder="Start"
+                                                    title="Startvers"
                                                 />
-                                                <span>-</span>
+                                                <span className="text-zinc-400">bis</span>
                                                 <input
                                                     type="number" min="1"
                                                     value={formVerseEnd}
                                                     onChange={e => setFormVerseEnd(parseInt(e.target.value))}
-                                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm"
+                                                    className="w-full p-2.5 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
                                                     placeholder="Ende"
+                                                    title="Endvers"
                                                 />
                                             </div>
                                         </div>
@@ -403,20 +447,22 @@ export default function MemoryVersesTab() {
                                     value={formText}
                                     onChange={e => setFormText(e.target.value)}
                                     placeholder="Vers Text eingeben..."
-                                    className="w-full p-2 rounded-lg bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 text-sm min-h-[80px]"
+                                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-base focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none min-h-[120px] leading-relaxed italic"
+                                    title="Vers-Text"
                                 />
                             </div>
                         </div>
                     )}
 
-                    <div className="flex justify-end">
+                    <div className="pt-4">
                         <button
-                            onClick={handleManualSubmit}
-                            disabled={!selectedLessonId || !formBookId || !formText}
-                            className="w-full py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95"
-                            title={isEditing ? "Änderungen speichern" : "Speichern"}
+                            onClick={saveVerse}
+                            disabled={!selectedLessonId || (!formBookId && formChapter !== 0) || !formText}
+                            className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white transition-all shadow-xl ${(!selectedLessonId || (!formBookId && formChapter !== 0) || !formText) ? 'bg-zinc-300 dark:bg-zinc-700 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:scale-[1.02] active:scale-[0.98] shadow-indigo-500/20'}`}
+                            title="Vers speichern"
                         >
-                            <Save size={24} />
+                            <Save size={20} />
+                            <span>Vers speichern</span>
                         </button>
                     </div>
                 </div>

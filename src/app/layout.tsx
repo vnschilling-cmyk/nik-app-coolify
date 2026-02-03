@@ -104,7 +104,7 @@ export default function RootLayout({
       >
         <DesignProvider>
           <AuthWrapper>
-            <main className="min-h-[calc(100vh-4rem)] pb-[env(safe-area-inset-bottom)]">
+            <main className="min-h-[calc(100vh-4rem)] pb-[env(safe-area-inset-bottom)] max-w-5xl mx-auto">
               {children}
             </main>
             <BottomNav />

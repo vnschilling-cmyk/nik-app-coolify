@@ -113,6 +113,7 @@ export default function LessonsTab() {
         active: true
     });
     const [contentItems, setContentItems] = useState<any[]>([]);
+    const [generatingSummary, setGeneratingSummary] = useState(false);
     const [loadingContent, setLoadingContent] = useState(false);
     const [maxVerses, setMaxVerses] = useState(176);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -308,13 +309,19 @@ export default function LessonsTab() {
         try {
             const [f, q] = await Promise.all([
                 pb.collection('facts').getFullList({ filter: `lesson_id="${lessonId}"`, sort: 'order' }),
-                pb.collection('questions').getFullList({ filter: `lesson_id="${lessonId}"`, sort: 'order' })
+                pb.collection('questions').getFullList({ filter: `lesson_id="${lessonId}"`, sort: 'question' })
             ]);
 
+            const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
             const combined = [
                 ...f.map(i => ({ ...i, _itemType: 'fact' as const })),
                 ...q.map(i => ({ ...i, _itemType: 'question' as const }))
-            ].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+            ].sort((a: any, b: any) => {
+                if (a._itemType === 'question' && b._itemType === 'question') {
+                    return collator.compare(a.question, b.question);
+                }
+                return (a.order || 0) - (b.order || 0);
+            });
 
             setContentItems(combined);
         } catch (e) {
@@ -348,6 +355,42 @@ export default function LessonsTab() {
             }
         } catch (e) {
             console.error("Failed to save order:", e);
+        }
+    };
+
+    const handleGenerateSummary = async () => {
+        if (generatingSummary) return;
+        setGeneratingSummary(true);
+
+        try {
+            const currentFacts = contentItems.filter(i => i._itemType === 'fact').map(f => ({
+                title: f.title,
+                description: f.description
+            }));
+            const currentQuestions = contentItems.filter(i => i._itemType === 'question').map(q => ({
+                question: q.question
+            }));
+
+            const res = await fetch('/api/generate-lesson-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bibleRef: generateTitle(),
+                    facts: currentFacts,
+                    questions: currentQuestions
+                })
+            });
+
+            const data = await res.json();
+            if (data.summary) {
+                setFormData({ ...formData, content: data.summary });
+            } else if (data.error) {
+                alert("Fehler bei der Generierung: " + data.error);
+            }
+        } catch (e: any) {
+            alert("Fehler: " + e.message);
+        } finally {
+            setGeneratingSummary(false);
         }
     };
 
@@ -509,7 +552,7 @@ export default function LessonsTab() {
     const isThema = formData.category === "Thema";
 
     return (
-        <div className="space-y-4">
+        <div className="px-4 pb-20 space-y-6">
             {/* Actions */}
             <div className="flex gap-2">
                 <button
@@ -578,6 +621,7 @@ export default function LessonsTab() {
                                     value={formData.category}
                                     onChange={e => setFormData({ ...formData, category: e.target.value })}
                                     className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg font-medium"
+                                    title="Kategorie auswählen"
                                 >
                                     {CATEGORIES.map(c => (
                                         <option key={c} value={c}>{c}</option>
@@ -593,6 +637,7 @@ export default function LessonsTab() {
                                     checked={formData.has_bible_ref}
                                     onChange={e => setFormData({ ...formData, has_bible_ref: e.target.checked })}
                                     className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                    title="Mit Bibeltext verknüpfen"
                                 />
                                 <label htmlFor="hasBibleRef" className="flex items-center gap-2 text-sm font-medium">
                                     <BookOpen size={16} className="text-indigo-500" />
@@ -610,6 +655,7 @@ export default function LessonsTab() {
                                             value={formData.book_id}
                                             onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                            title="Bibelbuch auswählen"
                                         >
                                             <option value="">Buch wählen...</option>
                                             {books.map(b => (
@@ -634,6 +680,7 @@ export default function LessonsTab() {
                                                         });
                                                     }}
                                                     className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                                    title="Ganzes Buch auswählen"
                                                 />
                                                 <label htmlFor="wholeBook" className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer">
                                                     Ganzes Buch (ohne Kapitel/Verse)
@@ -653,6 +700,7 @@ export default function LessonsTab() {
                                                                 });
                                                             }}
                                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            title="Kapitel auswählen"
                                                         >
                                                             {Array.from({ length: selectedBook?.chapters || 50 }, (_, i) => i + 1).map(num => (
                                                                 <option key={num} value={num}>{num}</option>
@@ -672,6 +720,7 @@ export default function LessonsTab() {
                                                                 });
                                                             }}
                                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            title="Startvers auswählen"
                                                         >
                                                             {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
                                                                 <option key={num} value={num}>{num}</option>
@@ -684,6 +733,7 @@ export default function LessonsTab() {
                                                             value={formData.verse_end}
                                                             onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
                                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                                            title="Endvers auswählen"
                                                         >
                                                             {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
                                                                 <option key={num} value={num}>{num}</option>
@@ -702,6 +752,7 @@ export default function LessonsTab() {
                                                     type="button"
                                                     onClick={() => setFormData({ ...formData, title: generateTitle() })}
                                                     className="text-xs bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-2 py-1 rounded hover:bg-indigo-300 transition-colors"
+                                                    title="Generierten Titel übernehmen"
                                                 >
                                                     Als Titel übernehmen
                                                 </button>
@@ -721,6 +772,7 @@ export default function LessonsTab() {
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
                                     placeholder={formData.has_bible_ref ? "Titel der Lektion (z.B. Die Schöpfung)" : "z.B. Die Bedeutung der Taufe"}
+                                    title="Titel der Lektion"
                                 />
                             </div>
 
@@ -733,6 +785,7 @@ export default function LessonsTab() {
                                         value={formData.start_date}
                                         onChange={e => setFormData({ ...formData, start_date: e.target.value })}
                                         className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm dark:[color-scheme:dark]"
+                                        title="Startdatum und -zeit der Lektion"
                                     />
                                 </div>
                                 <div className="flex flex-col justify-end">
@@ -742,6 +795,7 @@ export default function LessonsTab() {
                                             checked={formData.active}
                                             onChange={e => setFormData({ ...formData, active: e.target.checked })}
                                             className="w-5 h-5 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                                            title="Lektion aktivieren/deaktivieren"
                                         />
                                         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Aktiv</span>
                                     </label>
@@ -749,9 +803,27 @@ export default function LessonsTab() {
                             </div>
 
                             {/* Description */}
-                            <div>
+                            <div className="relative">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                                        {isThema ? "Thema-Beschreibung" : "Kurzbeschreibung"}
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateSummary}
+                                        disabled={generatingSummary || (!contentItems.length && !formData.book_id)}
+                                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors disabled:opacity-30"
+                                        title="Kurzbeschreibung mit KI generieren"
+                                    >
+                                        {generatingSummary ? (
+                                            <div className="animate-spin w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                                        ) : (
+                                            <Sparkles size={12} />
+                                        )}
+                                        KI-Vorschlag
+                                    </button>
+                                </div>
                                 <RichTextEditor
-                                    label={isThema ? "Thema-Beschreibung" : "Kurzbeschreibung"}
                                     value={formData.content}
                                     onChange={(val: string) => setFormData({ ...formData, content: val })}
                                     placeholder={isThema ? "Beschreibe das Thema ausführlich..." : "Optional: Kurze Beschreibung der Lektion..."}
@@ -790,6 +862,7 @@ export default function LessonsTab() {
                                                             disabled={idx === 0}
                                                             onClick={() => moveItem(idx, 'up')}
                                                             className="p-1 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-none h-auto w-auto bg-transparent border-none"
+                                                            title="Element nach oben verschieben"
                                                         >
                                                             <ChevronRight size={14} className="-rotate-90" />
                                                         </button>
@@ -798,6 +871,7 @@ export default function LessonsTab() {
                                                             disabled={idx === contentItems.length - 1}
                                                             onClick={() => moveItem(idx, 'down')}
                                                             className="p-1 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-none h-auto w-auto bg-transparent border-none"
+                                                            title="Element nach unten verschieben"
                                                         >
                                                             <ChevronRight size={14} className="rotate-90" />
                                                         </button>
@@ -829,6 +903,7 @@ export default function LessonsTab() {
                                 type="submit"
                                 disabled={!formData.title.trim()}
                                 className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Lektion speichern"
                             >
                                 <Save size={16} /> Speichern
                             </button>
@@ -846,7 +921,7 @@ export default function LessonsTab() {
                                 <Sparkles className="text-indigo-500" size={24} />
                                 <h3 className="font-bold text-xl">Info-Import Assistent</h3>
                             </div>
-                            <button onClick={() => setShowImportWizard(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                            <button onClick={() => setShowImportWizard(false)} className="text-zinc-400 hover:text-zinc-600" title="Import Assistent schließen"><X size={20} /></button>
                         </div>
 
                         {wizardStep === 'input' ? (
@@ -858,6 +933,7 @@ export default function LessonsTab() {
                                         onChange={e => setImportText(e.target.value)}
                                         placeholder="# Info-Überschrift 1\nInhalt hier...\n\n# Info-Überschrift 2\nInhalt hier..."
                                         className="w-full h-48 px-4 py-3 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                                        title="Markdown Inhalt für Import"
                                     />
                                     <p className="text-[10px] text-zinc-400 mt-2 px-1 flex items-center gap-1">
                                         <Type size={10} /> Nutze # für jede neue Information
@@ -871,6 +947,7 @@ export default function LessonsTab() {
                                             value={importConfig.lessonId}
                                             onChange={e => setImportConfig({ ...importConfig, lessonId: e.target.value })}
                                             className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm shadow-sm"
+                                            title="Ziel-Lektion für den Import auswählen"
                                         >
                                             <option value="">Lektion wählen...</option>
                                             {lessons.map(l => (
@@ -886,6 +963,7 @@ export default function LessonsTab() {
                                                 checked={importConfig.hasBibleRef}
                                                 onChange={e => setImportConfig({ ...importConfig, hasBibleRef: e.target.checked })}
                                                 className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                                                title="Bibeltext-Verknüpfung aktivieren"
                                             />
                                             <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Mit Bibeltext der Lektion verknüpfen</span>
                                         </label>
@@ -899,6 +977,7 @@ export default function LessonsTab() {
                                                         checked={importConfig.refType === 'buch'}
                                                         onChange={() => setImportConfig({ ...importConfig, refType: 'buch' })}
                                                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-zinc-300"
+                                                        title="Ganzes Buch als Referenz"
                                                     />
                                                     <span className="text-xs font-medium">Ganzes Buch</span>
                                                 </label>
@@ -909,6 +988,7 @@ export default function LessonsTab() {
                                                         checked={importConfig.refType === 'vers'}
                                                         onChange={() => setImportConfig({ ...importConfig, refType: 'vers' })}
                                                         className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-zinc-300"
+                                                        title="Spezifischen Vers-Bereich als Referenz"
                                                     />
                                                     <span className="text-xs font-medium">Spezifischer Vers-Bereich</span>
                                                 </label>
@@ -920,6 +1000,7 @@ export default function LessonsTab() {
                                 <button
                                     onClick={startImportWizard}
                                     className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 hover:scale-[1.02] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+                                    title="Import-Inhalt analysieren und überprüfen"
                                 >
                                     Review & Analysieren <ChevronRight size={20} />
                                 </button>
@@ -965,6 +1046,7 @@ export default function LessonsTab() {
                                                             return n;
                                                         })}
                                                         className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${parsedItems[currentItemIdx].factKind === kind.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600' : 'border-zinc-100 dark:border-slate-700 hover:border-indigo-300'}`}
+                                                        title={`Inhaltstyp auf ${kind.label} setzen`}
                                                     >
                                                         <kind.icon size={18} className={kind.color} />
                                                         <span className="text-sm font-bold">{kind.label}</span>
@@ -996,6 +1078,7 @@ export default function LessonsTab() {
                                                     return n;
                                                 })}
                                                 className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                                title="Kategorie auswählen"
                                             >
                                                 {parsedItems[currentItemIdx].isQuestion ? (
                                                     [
@@ -1021,6 +1104,7 @@ export default function LessonsTab() {
                                                         return n;
                                                     })}
                                                     className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs"
+                                                    title="Eigene Kategorie eingeben"
                                                 />
                                             )}
                                         </div>
@@ -1032,6 +1116,7 @@ export default function LessonsTab() {
                                         type="button"
                                         onClick={() => setWizardStep('input')}
                                         className="px-6 py-3 text-zinc-400 hover:text-zinc-600 font-bold transition-colors flex items-center gap-2 mr-auto"
+                                        title="Zurück zum Texteditor"
                                     >
                                         <ChevronLeft size={20} /> Text bearbeiten
                                     </button>
@@ -1039,6 +1124,7 @@ export default function LessonsTab() {
                                         type="button"
                                         onClick={() => handleImportItem(true)}
                                         className="px-6 py-3 text-zinc-400 hover:text-zinc-600 font-bold transition-colors"
+                                        title="Aktuellen Eintrag überspringen"
                                     >
                                         Überspringen
                                     </button>
@@ -1048,6 +1134,7 @@ export default function LessonsTab() {
                                         onClick={() => handleImportItem(false)}
                                         disabled={isImporting}
                                         className="flex-1 max-w-[200px] py-4 bg-indigo-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50"
+                                        title="Aktuellen Eintrag importieren"
                                     >
                                         {isImporting ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : <><Check size={20} /> Importieren</>}
                                     </button>
@@ -1089,13 +1176,9 @@ export default function LessonsTab() {
                             groups.get(key)?.push(lesson);
                         });
 
-                        // Sort lessons within each group by date
+                        // Sort lessons within each group by title
                         groups.forEach(groupLessons => {
-                            groupLessons.sort((a, b) => {
-                                if (!a.start_date) return 1;
-                                if (!b.start_date) return -1;
-                                return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
-                            });
+                            groupLessons.sort((a, b) => a.title.localeCompare(b.title, 'de', { numeric: true }));
                         });
 
                         // Convert to array and sort

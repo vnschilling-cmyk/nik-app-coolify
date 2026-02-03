@@ -28,10 +28,16 @@ const TYPE_STYLES: Record<string, { bg: string, border: string, text: string, ho
 };
 
 function UnifiedContentList({ facts, questions, onSelectFact, onSelectQuestion }: any) {
+    const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
     const combined = [
         ...facts.map((f: any) => ({ ...f, _type: 'fact' as const })),
         ...questions.map((q: any) => ({ ...q, _type: 'question' as const }))
-    ].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+    ].sort((a: any, b: any) => {
+        if (a._type === 'question' && b._type === 'question') {
+            return collator.compare(a.question, b.question);
+        }
+        return (a.order || 0) - (b.order || 0);
+    });
 
     if (combined.length === 0) return (
         <div className="text-center py-12 bg-zinc-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-zinc-200 dark:border-slate-700">
@@ -219,7 +225,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
             // Load other data in parallel, handling failures gracefully
             const [factsRes, questionsRes, memoryVersesRes, quizzesRes, notesRes] = await Promise.all([
                 pb.collection('facts').getFullList({ filter: `lesson_id="${id}"`, sort: 'order' }).catch(() => []),
-                pb.collection('questions').getFullList({ filter: `lesson_id="${id}"`, sort: 'order' }).catch(() => []),
+                pb.collection('questions').getFullList({ filter: `lesson_id="${id}"`, sort: 'question' }).catch(() => []),
                 pb.collection('memory_verses').getFullList({ filter: `lesson_id="${id}"`, expand: 'book_id', sort: 'created' }).catch(() => []),
                 pb.collection('quizzes').getFullList({ filter: `lesson_id="${id}"` }).catch(() => []),
                 pb.collection('notes').getFullList({ filter: `lesson_id="${id}"`, sort: '-created' }).catch(() => [])
@@ -269,6 +275,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 questions: r.questions
             })));
 
+            const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
             setQuestions(questionsRes.map(r => ({
                 id: r.id,
                 question: r.question || "",
@@ -279,7 +286,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 answer: r.answer || "",
                 is_answered: r.is_answered || false,
                 order: r.order || 0
-            })));
+            })).sort((a, b) => collator.compare(a.question, b.question)));
 
             setNotes(notesRes.map(r => ({
                 id: r.id,

@@ -84,11 +84,12 @@ export default function QuestionsTab() {
     const loadData = async () => {
         try {
             const [questionsRes, lessonsRes, booksRes] = await Promise.all([
-                pb.collection('questions').getFullList({ sort: 'lesson_id,order,question' }),
+                pb.collection('questions').getFullList({ sort: 'question' }),
                 pb.collection('lessons').getFullList({ sort: 'title' }),
                 pb.collection('bible_books').getFullList({ sort: 'order' })
             ]);
 
+            const collator = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
             setQuestions(questionsRes.map(r => ({
                 id: r.id,
                 question: r.question || "",
@@ -102,7 +103,7 @@ export default function QuestionsTab() {
                 answer: r.answer || "",
                 is_answered: r.is_answered || false,
                 order: r.order || 0
-            })));
+            })).sort((a, b) => collator.compare(a.question, b.question)));
 
             setLessons(lessonsRes.map(r => ({
                 id: r.id,
@@ -338,56 +339,66 @@ export default function QuestionsTab() {
             </div>
 
             {/* Form Inline */}
-            {showForm && (
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 p-5 animate-fadeIn">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-lg">{editingId ? "Frage bearbeiten" : "Neue Frage"}</h3>
-                        <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={24} /></button>
+            {showForm ? (
+                <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-6 shadow-2xl animate-fadeIn mb-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            {editingId ? "Frage bearbeiten" : "Neue Frage"}
+                        </h2>
+                        <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600 transition-colors" title="Schließen">
+                            <X size={24} />
+                        </button>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Lesson Selector - Required for bibeltext, Optional for allgemein */}
-                        <div>
-                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                                Lektion {isGeneralQuestion ? "(optional)" : "*"}
-                            </label>
-                            <select
-                                required={!isGeneralQuestion}
-                                value={formData.lesson_id}
-                                onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
-                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                            >
-                                <option value="">{isGeneralQuestion ? "Keine Lektion" : "Lektion wählen..."}</option>
-                                {lessons.map(l => (
-                                    <option key={l.id} value={l.id}>{l.title}</option>
-                                ))}
-                            </select>
-                        </div>
 
-                        {/* Category Selector */}
-                        <div>
-                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
-                            <div className="flex gap-2 mt-1">
-                                {CATEGORIES.map(cat => {
-                                    const Icon = cat.icon;
-                                    const isSelected = formData.category === cat.id;
-                                    const activeClass = cat.id === "bibeltext"
-                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20"
-                                        : "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20";
-                                    const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-400 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
-
-                                    return (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Lektion {isGeneralQuestion ? "(optional)" : "*"}</label>
+                                <select
+                                    required={!isGeneralQuestion}
+                                    value={formData.lesson_id}
+                                    onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
+                                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+                                    title="Lektion auswählen"
+                                >
+                                    <option value="">{isGeneralQuestion ? "Keine Lektion" : "Lektion wählen..."}</option>
+                                    {lessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Kategorie *</label>
+                                <div className="flex gap-4">
+                                    {CATEGORIES.map(cat => (
                                         <button
                                             key={cat.id}
                                             type="button"
                                             onClick={() => setFormData({ ...formData, category: cat.id, lesson_id: cat.id === "allgemein" ? "" : formData.lesson_id })}
-                                            className={`flex-1 flex items-center justify-center py-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                            className={clsx(
+                                                "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all text-sm font-medium",
+                                                formData.category === cat.id
+                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                                                    : "bg-white/5 opacity-50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                            )}
                                             title={cat.label}
                                         >
-                                            <Icon size={24} />
+                                            <cat.icon size={18} />
+                                            <span className="hidden sm:inline">{cat.label}</span>
                                         </button>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Frage *</label>
+                            <textarea
+                                required
+                                value={formData.question}
+                                onChange={e => setFormData({ ...formData, question: e.target.value })}
+                                placeholder="Die Frage eingeben..."
+                                className="w-full p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm text-base focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none min-h-[100px] leading-relaxed italic"
+                                title="Frage-Text"
+                            />
                         </div>
 
                         {/* Verse Range (only for bibeltext with lesson) */}
@@ -669,39 +680,33 @@ export default function QuestionsTab() {
                             </>
                         )}
 
-                        {/* Question Text */}
-                        <div>
-                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Frage *</label>
-                            <textarea
-                                required
-                                value={formData.question}
-                                onChange={e => setFormData({ ...formData, question: e.target.value })}
-                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[80px]"
-                                placeholder="Die Frage eingeben..."
-                            />
-                        </div>
-
                         {/* Answer (Rich Text) */}
-                        <div>
-                            <RichTextEditor
-                                label="Antwort (optional)"
-                                value={formData.answer}
-                                onChange={(val: string) => setFormData({ ...formData, answer: val })}
-                                placeholder="Antwort eingeben oder leer lassen..."
-                            />
+                        <div className="pt-4 border-t border-zinc-100 dark:border-white/5">
+                            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Antwort (optional)</label>
+                            <div className="dark:bg-slate-900/50 rounded-xl">
+                                <RichTextEditor
+                                    value={formData.answer}
+                                    onChange={val => setFormData({ ...formData, answer: val })}
+                                    placeholder="Antwort eingeben oder leer lassen..."
+                                />
+                            </div>
+                            <p className="text-[10px] text-zinc-400 mt-2 flex justify-end">Markdown unterstützt</p>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={!formData.question.trim() || (formData.category === "bibeltext" && !formData.lesson_id)}
-                            className="w-full py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
-                            title={editingId ? "Änderungen speichern" : "Speichern"}
-                        >
-                            <Save size={24} />
-                        </button>
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={!formData.question.trim() || (formData.category === "bibeltext" && !formData.lesson_id)}
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                title="Speichern"
+                            >
+                                <Save size={20} />
+                                <span>{editingId ? "Änderungen speichern" : "Frage speichern"}</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
-            )}
+            ) : null}
 
             {/* List */}
             {questions.length === 0 ? (

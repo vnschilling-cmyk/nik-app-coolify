@@ -25,7 +25,7 @@ interface QuizOverlayProps {
 
 export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(20);
+    const [timeLeft, setTimeLeft] = useState(30);
     const [score, setScore] = useState(0);
     const [gameState, setGameState] = useState<"intro" | "playing" | "feedback" | "finished">("intro");
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -72,7 +72,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     const nextQuestion = () => {
         if (currentIndex < quiz.questions.length - 1) {
             setCurrentIndex(prev => prev + 1);
-            setTimeLeft(20);
+            setTimeLeft(30);
             setSelectedOption(null);
             setGameState("playing");
         } else {
@@ -122,7 +122,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                     <div className="bg-slate-700 border border-slate-600 p-4 rounded-xl text-left space-y-2">
                         <div className="flex items-center gap-3 text-zinc-300">
                             <Timer size={20} className="text-indigo-400" />
-                            <span>20 Sekunden pro Frage</span>
+                            <span>30 Sekunden pro Frage</span>
                         </div>
                         <div className="flex items-center gap-3 text-zinc-300">
                             <CheckCircle size={20} className="text-emerald-400" />
@@ -131,13 +131,14 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                     </div>
 
                     <button
-                        onClick={() => { setGameState("playing"); setTimeLeft(20); }}
+                        onClick={() => { setGameState("playing"); setTimeLeft(30); }}
                         className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xl shadow-lg shadow-indigo-600/30 transition-all scale-100 hover:scale-105 active:scale-95"
+                        title="Quiz starten"
                     >
                         Test Starten
                     </button>
 
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white">Abbrechen</button>
+                    <button onClick={onClose} className="text-zinc-500 hover:text-white" title="Quiz abbrechen">Abbrechen</button>
                 </div>
             </div>
         );
@@ -147,7 +148,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     if (gameState === "finished") {
         return (
             <div className="fixed inset-0 z-[100] bg-slate-800 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-                <div className="max-w-md w-full bg-slate-700 border border-slate-600 rounded-2xl p-8 shadow-2xl">
+                <div className="max-w-md w-full bg-slate-700 border border-slate-600 rounded-2xl p-8 shadow-2xl relative">
                     <h2 className="text-2xl font-bold text-white mb-6">Ergebnis</h2>
 
                     <div className="flex justify-center mb-8">
@@ -175,6 +176,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                     <button
                         onClick={onClose}
                         className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-colors"
+                        title="Schließen"
                     >
                         Schließen
                     </button>
@@ -200,7 +202,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
             <div className="h-1 bg-slate-700 w-full overflow-hidden">
                 <div
                     className={`h-full transition-all duration-1000 ease-linear ${timeLeft < 5 ? 'bg-red-500' : 'bg-indigo-500'}`}
-                    style={{ width: `${(timeLeft / 20) * 100}%` }}
+                    style={{ width: `${(timeLeft / 30) * 100}%` }}
                 />
             </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NextImage from "next/image";
 import LessonsTab from "@/components/study/LessonsTab";
 import InfosTab from "@/components/study/InfosTab";
 import MeasuresTab from "@/components/study/MeasuresTab";
@@ -66,7 +67,7 @@ export default function SetupPage() {
                     <button
                         key={tile.id}
                         onClick={() => setActiveTab(tile.id)}
-                        className="relative group bg-white dark:bg-slate-800 rounded-3xl border border-zinc-100 dark:border-slate-700 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
+                        className="relative group bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
                     >
                         {/* Gradient Background on Hover */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${tile.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300`} />
@@ -94,21 +95,27 @@ export default function SetupPage() {
     // Show Main Menu (Root)
     if (!activeTab) {
         return (
-            <div className="min-h-[100dvh] pb-32 bg-zinc-50 dark:bg-slate-900">
-                {/* Modern Header with Safe Area Support */}
-                <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 border-b border-zinc-100 dark:border-slate-800">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl shadow-sm">
-                            <Settings className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+            <div className="min-h-[100dvh] pb-32">
+                {/* Header Section */}
+                <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center shadow-lg shadow-slate-500/20">
+                                <Settings className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold">Einstellungen</h1>
+                                <p className="text-sm text-zinc-500">System konfigurieren</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-heading font-black tracking-tight text-zinc-900 dark:text-white">Einstellungen</h1>
-                            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">System konfigurieren</p>
+                        <div className="relative w-10 h-10">
+                            <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                            <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                         </div>
                     </div>
                 </header>
 
-                <div className="p-6">
+                <div className="p-4">
                     {renderGrid(mainTiles)}
                 </div>
             </div>
@@ -116,26 +123,32 @@ export default function SetupPage() {
     }
 
     return (
-        <div className="min-h-[100dvh] pb-24 bg-zinc-50 dark:bg-slate-900">
-            <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl pt-[calc(1rem+env(safe-area-inset-top))] border-b border-zinc-100 dark:border-slate-800 shadow-sm transition-all">
-                <div className="flex items-center gap-3 px-4 py-3">
-                    <button
-                        onClick={handleBack}
-                        className="p-2.5 rounded-xl bg-zinc-100 dark:bg-slate-800 text-zinc-600 dark:text-zinc-400 active:scale-90 transition-all"
-                        title="Zurück"
-                    >
-                        <ChevronLeft className="w-6 h-6 transition-transform group-active:-translate-x-1" />
-                    </button>
+        <div className="min-h-[100dvh] pb-24">
+            <header className="sticky top-0 z-40 bg-background px-4 py-4">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        {activeTile && (
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110`}>
-                                <activeTile.icon className="w-5 h-5 text-white" />
+                        <button
+                            onClick={handleBack}
+                            className="p-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 dark:backdrop-blur-md text-zinc-600 dark:text-zinc-300 active:scale-90 transition-all border border-transparent dark:border-white/5"
+                            title="Zurück"
+                        >
+                            <ChevronLeft className="w-6 h-6 transition-transform group-active:-translate-x-1" />
+                        </button>
+                        <div className="flex items-center gap-3">
+                            {activeTile && (
+                                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activeTile.gradient} flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110`}>
+                                    <activeTile.icon className="w-5 h-5 text-white" />
+                                </div>
+                            )}
+                            <div>
+                                <h1 className="text-lg font-heading font-black tracking-tight text-zinc-900 dark:text-white uppercase leading-none">{activeTile?.label}</h1>
+                                <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{activeTile?.description}</p>
                             </div>
-                        )}
-                        <div>
-                            <h1 className="text-lg font-heading font-black tracking-tight text-zinc-900 dark:text-white uppercase">{activeTile?.label}</h1>
-                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">{activeTile?.description}</p>
                         </div>
+                    </div>
+                    <div className="relative w-10 h-10">
+                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
+                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
                     </div>
                 </div>
             </header>
