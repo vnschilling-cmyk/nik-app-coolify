@@ -158,10 +158,7 @@ export default function StudyPage() {
                             <p className="text-sm text-zinc-500">Wähle eine Lektion zum Lesen</p>
                         </div>
                     </div>
-                    <div className="relative w-10 h-10">
-                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
-                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
-                    </div>
+
                 </div>
             </header>
 

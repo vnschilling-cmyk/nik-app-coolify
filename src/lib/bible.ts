@@ -135,6 +135,96 @@ export async function getLessonsForChapter(bookId: string, chapter: number): Pro
     }
 }
 
+export interface ChapterFact {
+    id: string;
+    title: string;
+    content: string;
+    category: string;
+    fact_kind: string;
+    order: number;
+    verse_start?: number;
+    verse_end?: number;
+    lesson_id: string;
+    isGlobal: boolean; // true if from a "whole book" lesson
+}
+
+export interface ChapterQuestion {
+    id: string;
+    question: string;
+    answer?: string;
+    category: string;
+    order: number;
+    verse_start?: number;
+    verse_end?: number;
+    lesson_id: string;
+    isGlobal: boolean;
+}
+
+export async function getFactsAndQuestionsForChapter(bookId: string, chapter: number): Promise<{
+    facts: ChapterFact[];
+    questions: ChapterQuestion[];
+}> {
+    try {
+        // First get lessons for this chapter to know which facts/questions to fetch
+        const lessonFilter = `book_id="${bookId}" && (chapter_start=0 || (chapter_start<=${chapter} && chapter_end>=${chapter}))`;
+        const lessonRecords = await pb.collection('lessons').getFullList({
+            filter: lessonFilter,
+        });
+
+        if (lessonRecords.length === 0) {
+            return { facts: [], questions: [] };
+        }
+
+        const lessonIds = lessonRecords.map(l => l.id);
+        const globalLessonIds = lessonRecords.filter(l => l.chapter_start === 0).map(l => l.id);
+
+        // Build filter for facts and questions
+        const lessonIdFilter = lessonIds.map(id => `lesson_id="${id}"`).join(' || ');
+
+        const [factsRes, questionsRes] = await Promise.all([
+            pb.collection('facts').getFullList({
+                filter: lessonIdFilter,
+                sort: 'order',
+            }),
+            pb.collection('questions').getFullList({
+                filter: lessonIdFilter,
+                sort: 'order',
+            })
+        ]);
+
+        const facts: ChapterFact[] = factsRes.map(r => ({
+            id: r.id,
+            title: r.title || '',
+            content: r.content || '',
+            category: r.category || '',
+            fact_kind: r.fact_kind || 'info',
+            order: r.order || 0,
+            verse_start: r.verse_start ? Number(r.verse_start) : undefined,
+            verse_end: r.verse_end ? Number(r.verse_end) : undefined,
+            lesson_id: r.lesson_id,
+            isGlobal: globalLessonIds.includes(r.lesson_id),
+        }));
+
+        const questions: ChapterQuestion[] = questionsRes.map(r => ({
+            id: r.id,
+            question: r.question || '',
+            answer: r.answer,
+            category: r.category || '',
+            order: r.order || 0,
+            verse_start: r.verse_start ? Number(r.verse_start) : undefined,
+            verse_end: r.verse_end ? Number(r.verse_end) : undefined,
+            lesson_id: r.lesson_id,
+            isGlobal: globalLessonIds.includes(r.lesson_id),
+        }));
+
+        return { facts, questions };
+    } catch (e) {
+        console.error(`Failed to fetch facts/questions for book ${bookId} ch ${chapter}:`, e);
+        return { facts: [], questions: [] };
+    }
+}
+
+
 export async function getTextStudiesForChapter(bookId: string, chapter: number): Promise<any[]> {
     try {
         return await pb.collection('facts').getFullList({

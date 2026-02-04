@@ -205,30 +205,21 @@ export default function DashboardPage() {
             {/* Hero Section with Gradient */}
             {/* Header Section */}
             <header className="sticky top-0 z-40 bg-background px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                            <TrendingUp className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold">Dashboard</h1>
-                            <p className="text-sm text-zinc-500">
-                                {user?.name ? `Willkommen zurück, ${user.name.split(' ')[0]}` : "Willkommen zurück"}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="relative w-10 h-10">
+                <div className="flex items-center justify-center">
+                    <div className="relative w-64 h-20">
                         <Image
                             src="/logo-dark.png"
                             alt="tApp Logo"
                             fill
                             className="object-contain dark:block hidden"
+                            priority
                         />
                         <Image
                             src="/logo-light.png"
                             alt="tApp Logo"
                             fill
                             className="object-contain dark:hidden block"
+                            priority
                         />
                     </div>
                 </div>

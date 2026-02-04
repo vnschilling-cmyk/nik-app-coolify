@@ -625,7 +625,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
 
                             {/* Bible Text Section - Only for concrete passages */}
                             {hasBibleRef && lesson.chapter_start !== 0 && verses.length > 0 && (
-                                <div className="bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+                                <div className="bg-white dark:bg-slate-900 border border-zinc-200 dark:border-slate-700 rounded-2xl p-8 shadow-sm space-y-6">
                                     <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-2 border-b border-indigo-100 dark:border-indigo-900/30 pb-3">
                                         <BookOpen size={18} />
                                         <span className="font-bold uppercase text-[10px] tracking-widest leading-none">Bibeltext</span>
@@ -635,70 +635,114 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                     </div>
                                     <div className="space-y-4">
                                         {verses.map(v => {
-                                            // Combine current lesson facts with any potential global word studies
-                                            // For the BibleReader component, we treat word study facts as 'LinkedLesson'
-                                            const wordStudyLessons = facts
-                                                .filter(f => f.fact_kind === 'word_study')
-                                                .map(f => ({
-                                                    id: f.id,
-                                                    title: f.title,
-                                                    word: f.word,
-                                                    category: 'Wortstudie'
-                                                }));
+                                            // Find facts and questions for this verse
+                                            const verseFacts = facts.filter(f => f.verse_start === v.verse && f.fact_kind !== 'word_study');
+                                            const verseQuestions = questions.filter(q => q.verse_start === v.verse);
 
                                             return (
-                                                <p
-                                                    key={v.id}
-                                                    className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
-                                                    lang="de"
-                                                >
-                                                    <sup className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mr-1 select-none">{v.verse}</sup>
-                                                    {v.text.split(/(\s+|[.,;!?]+)/g).map((chunk, i) => {
-                                                        if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
-                                                        if (/^[.,;!?]+$/.test(chunk)) return <span key={i} className="text-zinc-500">{chunk}</span>;
+                                                <div key={v.id} className="relative group">
+                                                    <p
+                                                        className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
+                                                        lang="de"
+                                                    >
+                                                        {/* Floating Facts Bubbles - Left side with honeycomb layout */}
+                                                        {verseFacts.length > 0 && (
+                                                            <span className="float-left mr-4 mb-1 flex flex-wrap w-20 gap-x-0 gap-y-1 content-start">
+                                                                {verseFacts.map((fact, idx) => {
+                                                                    // Last bubble with odd index should align left (no offset)
+                                                                    const isLastOdd = idx % 2 === 1 && idx === verseFacts.length - 1;
+                                                                    const shouldOffset = idx % 2 === 1 && !isLastOdd;
+                                                                    return (
+                                                                        <button
+                                                                            key={fact.id}
+                                                                            onClick={() => setSelectedFact(fact)}
+                                                                            className="w-7 h-7 bg-amber-500 text-white rounded-full shadow-md shadow-amber-500/30 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
+                                                                            style={{
+                                                                                marginLeft: shouldOffset ? '2px' : '0',
+                                                                                marginTop: shouldOffset ? '16px' : '0',
+                                                                                marginBottom: shouldOffset ? '-16px' : '0'
+                                                                            }}
+                                                                            title={fact.title || 'Info'}
+                                                                        >
+                                                                            <Lightbulb size={14} strokeWidth={2.5} />
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </span>
+                                                        )}
 
-                                                        const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim().toLowerCase();
-                                                        const matchingFact = facts.find((f: any) =>
-                                                            f.fact_kind === 'word_study' &&
-                                                            f.word?.toLowerCase() === cleanWord
-                                                        );
+                                                        {/* Floating Questions Bubbles - Right side with honeycomb layout */}
+                                                        {verseQuestions.length > 0 && (
+                                                            <span className="float-right ml-4 mb-1 flex flex-wrap w-20 gap-x-0 gap-y-1 justify-end content-start">
+                                                                {verseQuestions.map((question, idx) => {
+                                                                    // Last bubble with odd index should align right (no offset)
+                                                                    const isLastOdd = idx % 2 === 1 && idx === verseQuestions.length - 1;
+                                                                    const shouldOffset = idx % 2 === 1 && !isLastOdd;
+                                                                    return (
+                                                                        <button
+                                                                            key={question.id}
+                                                                            onClick={() => setSelectedQuestion(question)}
+                                                                            className="w-7 h-7 bg-emerald-500 text-white rounded-full shadow-md shadow-emerald-500/30 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
+                                                                            style={{
+                                                                                marginRight: shouldOffset ? '2px' : '0',
+                                                                                marginTop: shouldOffset ? '16px' : '0',
+                                                                                marginBottom: shouldOffset ? '-16px' : '0'
+                                                                            }}
+                                                                            title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
+                                                                        >
+                                                                            <HelpCircle size={14} strokeWidth={2.5} />
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </span>
+                                                        )}
 
-                                                        if (matchingFact) {
+                                                        <sup className="text-xs font-bold text-indigo-500 dark:text-indigo-400 mr-1 select-none">{v.verse}</sup>
+                                                        {v.text.split(/(\s+|[.,;!?]+)/g).map((chunk, i) => {
+                                                            if (/^\s+$/.test(chunk)) return <span key={i}>{chunk}</span>;
+                                                            if (/^[.,;!?]+$/.test(chunk)) return <span key={i} className="text-zinc-500">{chunk}</span>;
+
+                                                            const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim().toLowerCase();
+                                                            const matchingFact = facts.find((f: any) =>
+                                                                f.fact_kind === 'word_study' &&
+                                                                f.word?.toLowerCase() === cleanWord
+                                                            );
+
+                                                            if (matchingFact) {
+                                                                return (
+                                                                    <span
+                                                                        key={i}
+                                                                        onClick={() => setSelectedFact(matchingFact)}
+                                                                        className="cursor-pointer font-bold bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 rounded px-0.5 transition-colors border-b-2 border-cyan-400 dark:border-cyan-500"
+                                                                    >
+                                                                        {chunk}
+                                                                    </span>
+                                                                );
+                                                            }
+
                                                             return (
                                                                 <span
                                                                     key={i}
-                                                                    onClick={() => setSelectedFact(matchingFact)}
-                                                                    className="cursor-pointer font-bold bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 rounded px-0.5 transition-colors border-b-2 border-cyan-400 dark:border-cyan-500"
+                                                                    onClick={() => {
+                                                                        const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
+                                                                        if (clean.length > 1) setSelectedWord(clean);
+                                                                    }}
+                                                                    className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded px-0.5 transition-colors"
                                                                 >
                                                                     {chunk}
                                                                 </span>
                                                             );
-                                                        }
-
-                                                        return (
-                                                            <span
-                                                                key={i}
-                                                                onClick={() => {
-                                                                    const clean = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim();
-                                                                    if (clean.length > 1) setSelectedWord(clean);
-                                                                }}
-                                                                className="cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded px-0.5 transition-colors"
-                                                            >
-                                                                {chunk}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </p>
+                                                        })}
+                                                    </p>
+                                                </div>
                                             );
                                         })}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Content cards list (Facts and Questions) */}
-                            <div className="">
-                                <UnifiedContentList facts={facts} questions={questions} onSelectFact={setSelectedFact} onSelectQuestion={setSelectedQuestion} />
-                            </div>
+                            {/* Content cards list (Facts and Questions) - Only for Thema lessons or when no Bible ref */}
+                            {/* Skip for chapter-specific lessons since bubbles are shown inline */}
                         </>
                     )}
                 </div>

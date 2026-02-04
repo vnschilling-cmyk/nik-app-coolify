@@ -7,8 +7,8 @@ import ChapterSelector from "@/components/features/ChapterSelector";
 import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import Link from "next/link";
 import clsx from "clsx";
-import { LinkedLesson } from "@/lib/bible";
-import { Search, BookOpen } from "lucide-react";
+import { LinkedLesson, ChapterFact, ChapterQuestion } from "@/lib/bible";
+import { Search, BookOpen, Lightbulb, HelpCircle, X } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import AnalysisModal from "@/components/features/AnalysisModal";
@@ -27,12 +27,14 @@ interface BiblePageClientProps {
     verses: VerseData[];
     lessons: LinkedLesson[];
     textStudies: any[];
+    facts: ChapterFact[];
+    questions: ChapterQuestion[];
     book: BookSummary;
     chapter: number;
     allBooks: BookSummary[];
 }
 
-export default function BiblePageClient({ verses, lessons, textStudies, book, chapter, allBooks }: BiblePageClientProps) {
+export default function BiblePageClient({ verses, lessons, textStudies, facts, questions, book, chapter, allBooks }: BiblePageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const searchQuery = searchParams.get('q') || undefined;
@@ -41,12 +43,20 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
     const [selectorMode, setSelectorMode] = useState<'books' | 'chapters'>('books');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
+    const [selectedFact, setSelectedFact] = useState<ChapterFact | null>(null);
+    const [selectedQuestion, setSelectedQuestion] = useState<ChapterQuestion | null>(null);
     const [analysisConfig, setAnalysisConfig] = useState<{
         isOpen: boolean;
         type: 'chapter' | 'verse';
         category?: 'KI' | 'Andere' | 'Eigene';
         verse?: number
     }>({ isOpen: false, type: 'chapter' });
+
+    // Separate facts and questions into chapter-specific (bubbles) vs global (textboxes)
+    const chapterFacts = facts.filter(f => !f.isGlobal);
+    const chapterQuestions = questions.filter(q => !q.isGlobal);
+    const globalFacts = facts.filter(f => f.isGlobal);
+    const globalQuestions = questions.filter(q => q.isGlobal);
 
     // 1. Redirection to last read position
     useEffect(() => {
@@ -144,10 +154,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
                             <p className="text-xs text-zinc-500">Gottes Wort lesen</p>
                         </div>
                     </div>
-                    <div className="relative w-10 h-10">
-                        <NextImage src="/logo-dark.png" alt="Logo" fill className="object-contain dark:block hidden" />
-                        <NextImage src="/logo-light.png" alt="Logo" fill className="object-contain dark:hidden block" />
-                    </div>
+
                 </div>
             </header>
 
@@ -296,6 +303,123 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
             />
+
+            {/* Global Content Section (for whole-book lessons) */}
+            {(globalFacts.length > 0 || globalQuestions.length > 0) && (
+                <section className="px-4 pb-8 max-w-prose mx-auto">
+                    <h2 className="text-lg font-bold mb-4 text-zinc-800 dark:text-zinc-200">Zum Buch {book.name}</h2>
+                    <div className="space-y-3">
+                        {[...globalFacts.map(f => ({ ...f, _type: 'fact' as const })), ...globalQuestions.map(q => ({ ...q, _type: 'question' as const }))]
+                            .sort((a, b) => a.order - b.order)
+                            .map(item => (
+                                item._type === 'fact' ? (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setSelectedFact(item as ChapterFact)}
+                                        className="w-full text-left p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg shrink-0">
+                                                <Lightbulb size={16} className="text-amber-600 dark:text-amber-400" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-sm text-amber-900 dark:text-amber-100">{(item as ChapterFact).title || 'Info'}</p>
+                                                <p className="text-xs text-amber-700 dark:text-amber-300 line-clamp-2 mt-1">{(item as ChapterFact).content}</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                ) : (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setSelectedQuestion(item as ChapterQuestion)}
+                                        className="w-full text-left p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg shrink-0">
+                                                <HelpCircle size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-sm text-emerald-900 dark:text-emerald-100">{(item as ChapterQuestion).question}</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                )
+                            ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Fact Detail Modal */}
+            {selectedFact && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedFact(null)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-slate-700 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setSelectedFact(null)}
+                            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                            title="Schließen"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                                <Lightbulb size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">{selectedFact.title || 'Info'}</h3>
+                                {selectedFact.category && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                        {selectedFact.category}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedFact.content}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Question Detail Modal */}
+            {selectedQuestion && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedQuestion(null)}>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-slate-700 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setSelectedQuestion(null)}
+                            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                            title="Schließen"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                                <HelpCircle size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">Frage</h3>
+                                {selectedQuestion.category && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                        {selectedQuestion.category}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <p className="text-zinc-900 dark:text-zinc-100 font-medium">{selectedQuestion.question}</p>
+                            {selectedQuestion.answer && (
+                                <div className="pt-3 border-t border-zinc-200 dark:border-slate-700">
+                                    <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Antwort</p>
+                                    <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedQuestion.answer}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

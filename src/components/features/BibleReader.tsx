@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Lightbulb, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import { LinkedLesson } from "@/lib/bible";
+import { LinkedLesson, ChapterFact, ChapterQuestion } from "@/lib/bible";
 import { findMeasure, parseGermanNumber, formatBestUnit, Unit, ANCIENT_MEASURES } from "@/lib/measures";
 import { Calculator, X, Coins } from "lucide-react";
 
@@ -16,12 +16,16 @@ export interface VerseData {
 interface BibleReaderProps {
     verses: VerseData[];
     lessons?: LinkedLesson[];
+    facts?: ChapterFact[];
+    questions?: ChapterQuestion[];
     onWordClick: (word: string) => void;
     onVerseClick?: (verse: number) => void;
+    onFactClick?: (fact: ChapterFact) => void;
+    onQuestionClick?: (question: ChapterQuestion) => void;
     searchQuery?: string;
 }
 
-export default function BibleReader({ verses, lessons = [], onWordClick, onVerseClick, searchQuery }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], facts = [], questions = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -167,13 +171,15 @@ export default function BibleReader({ verses, lessons = [], onWordClick, onVerse
                         const isDateReached = !l.start_date || (lessonDate <= now.getTime() + buffer);
                         const isNextPossible = l.id === nextPossibleId;
 
-                        const isActiveFlag = l.active === true || l.active === undefined;
-                        // Effectively active if date is reached OR it's the next one in line
-                        const isEffectivelyActive = isActiveFlag && (isDateReached || isNextPossible);
+                        const isActiveFlag = l.active;
+                        // User Request: If active, lesson is unlocked regardless of date. 
+                        // Date is only used for status text or sorting, not for locking.
+                        const isEffectivelyActive = isActiveFlag;
 
                         let statusText = isActiveFlag ? 'Aktiv' : 'Deaktiviert';
                         if (isActiveFlag && !isDateReached) {
-                            statusText = isNextPossible ? 'Nächste (Vorab freigeschaltet)' : 'Geplant (Zukünftig)';
+                            // It is active (unlocked), but technically in the future.
+                            statusText = 'Vorab freigeschaltet (Zukünftig)';
                         }
 
                         const debugTitle = `Lektion: ${l.title}\n` +
@@ -225,6 +231,46 @@ export default function BibleReader({ verses, lessons = [], onWordClick, onVerse
                                     })}
                                 </span>
                             )}
+
+                            {/* Facts Bubbles - Floated Left */}
+                            {(() => {
+                                const verseFacts = facts.filter(f => f.verse_start === v.verse);
+                                if (verseFacts.length === 0) return null;
+                                return (
+                                    <span className="float-left mr-4 mb-2 flex flex-col gap-2">
+                                        {verseFacts.map(fact => (
+                                            <button
+                                                key={fact.id}
+                                                onClick={() => onFactClick?.(fact)}
+                                                className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-500/40 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
+                                                title={fact.title || 'Info'}
+                                            >
+                                                <Lightbulb size={16} strokeWidth={2.5} />
+                                            </button>
+                                        ))}
+                                    </span>
+                                );
+                            })()}
+
+                            {/* Questions Bubbles - Also floated right but below lessons */}
+                            {(() => {
+                                const verseQuestions = questions.filter(q => q.verse_start === v.verse);
+                                if (verseQuestions.length === 0) return null;
+                                return (
+                                    <span className="float-right ml-4 mb-2 flex flex-col gap-2">
+                                        {verseQuestions.map(question => (
+                                            <button
+                                                key={question.id}
+                                                onClick={() => onQuestionClick?.(question)}
+                                                className="bg-emerald-500 text-white p-2 rounded-full shadow-lg shadow-emerald-500/40 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
+                                                title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
+                                            >
+                                                <HelpCircle size={16} strokeWidth={2.5} />
+                                            </button>
+                                        ))}
+                                    </span>
+                                );
+                            })()}
 
                             <button
                                 onClick={() => onVerseClick?.(v.verse)}
