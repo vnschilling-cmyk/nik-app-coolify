@@ -74,7 +74,7 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
 
                     ${data.usage ? `
                     <div class="pt-2 border-t border-zinc-100 dark:border-slate-700">
-                        <p class="text-xs text-zinc-500 italic"><span class="font-bold">Verwendung:</span> ${data.usage}</p>
+                        <p class="text-sm text-zinc-100"><span class="font-bold text-amber-400">Verwendung:</span> ${data.usage}</p>
                     </div>` : ''}
                 </div>
             `.trim();
@@ -280,8 +280,8 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                             {/* Usage */}
                             {data.usage && (
                                 <div className="border-t border-zinc-100 dark:border-slate-700 pt-4">
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                        <span className="font-semibold">Verwendung:</span> {data.usage}
+                                    <p className="text-sm text-zinc-700 dark:text-zinc-100">
+                                        <span className="font-semibold text-amber-600 dark:text-amber-400">Verwendung:</span> {data.usage}
                                     </p>
                                 </div>
                             )}

@@ -8,7 +8,7 @@ import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import Link from "next/link";
 import clsx from "clsx";
 import { LinkedLesson, ChapterFact, ChapterQuestion } from "@/lib/bible";
-import { Search, BookOpen, Lightbulb, HelpCircle, X } from "lucide-react";
+import { Search, BookOpen, Lightbulb, HelpCircle, X, GraduationCap } from "lucide-react";
 import SearchModal from "@/components/features/SearchModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import AnalysisModal from "@/components/features/AnalysisModal";
@@ -51,6 +51,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
         category?: 'KI' | 'Andere' | 'Eigene';
         verse?: number
     }>({ isOpen: false, type: 'chapter' });
+    const [showLessons, setShowLessons] = useState(true);
 
     // Separate facts and questions into chapter-specific (bubbles) vs global (textboxes)
     const chapterFacts = facts.filter(f => !f.isGlobal);
@@ -143,22 +144,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
 
     return (
         <div className="pb-20">
-            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <BookOpen className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold">Bibel</h1>
-                            <p className="text-xs text-zinc-500">Gottes Wort lesen</p>
-                        </div>
-                    </div>
-
-                </div>
-            </header>
-
-            <header className="sticky top-[72px] z-30 bg-background px-4 py-4 border-b border-zinc-200 dark:border-slate-800">
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md px-4 py-4 border-b border-zinc-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
                     <div
                         className="flex items-center gap-2 cursor-pointer group"
@@ -216,6 +202,19 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <User size={18} />
                         </button>
 
+                        <button
+                            onClick={() => setShowLessons(!showLessons)}
+                            className={clsx(
+                                "p-2 rounded-xl transition-all active:scale-95",
+                                showLessons
+                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+                                    : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                            )}
+                            title={showLessons ? "Lektionen ausblenden" : "Lektionen einblenden"}
+                        >
+                            <GraduationCap size={18} />
+                        </button>
+
                         <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1" />
 
                         <button
@@ -231,7 +230,8 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
 
             <BibleReader
                 verses={verses}
-                lessons={lessons}
+                lessons={showLessons ? lessons : []}
+                wordStudies={lessons.filter(l => l.category === 'Wortstudie')}
                 onWordClick={handleWordClick}
                 onVerseClick={(v) => setAnalysisConfig({ isOpen: true, type: 'verse', verse: v })}
                 searchQuery={searchQuery}

@@ -36,6 +36,8 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
             .replace(/\[center\](.*?)\[\/center\]/g, '<span style="display: block; text-align: center">$1</span>')
             .replace(/\[right\](.*?)\[\/right\]/g, '<span style="display: block; text-align: right">$1</span>')
             .replace(/\[justify\](.*?)\[\/justify\]/g, '<span style="display: block; text-align: justify">$1</span>')
+            // Hyphenation tag
+            .replace(/\[hyphen\]([\s\S]*?)\[\/hyphen\]/g, '<span style="hyphens: auto; -webkit-hyphens: auto" lang="de">$1</span>')
             // Links (basic)
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
     };

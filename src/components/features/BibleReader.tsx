@@ -16,6 +16,7 @@ export interface VerseData {
 interface BibleReaderProps {
     verses: VerseData[];
     lessons?: LinkedLesson[];
+    wordStudies?: LinkedLesson[];
     facts?: ChapterFact[];
     questions?: ChapterQuestion[];
     onWordClick: (word: string) => void;
@@ -25,7 +26,7 @@ interface BibleReaderProps {
     searchQuery?: string;
 }
 
-export default function BibleReader({ verses, lessons = [], facts = [], questions = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], wordStudies = [], facts = [], questions = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -77,7 +78,7 @@ export default function BibleReader({ verses, lessons = [], facts = [], question
 
             // Clean the word for lookup
             const cleanWord = chunk.replace(/[.,;!?"'()\[\]]/g, '').trim().toLowerCase();
-            const wordStudy = lessons?.find(l =>
+            const wordStudy = wordStudies?.find(l =>
                 l.category === 'Wortstudie' &&
                 (l as any).word?.toLowerCase() === cleanWord
             );

@@ -1148,7 +1148,7 @@ export default function LessonsTab() {
             {/* List */}
             {lessons.length === 0 ? (
                 <div className="text-center py-12 text-zinc-500">
-                    <p className="text-4xl mb-2">📚</p>
+                    <p className="text-4xl mb-2">🎓</p>
                     <p>Noch keine Lektionen vorhanden.</p>
                 </div>
             ) : (
@@ -1263,7 +1263,10 @@ export default function LessonsTab() {
                                                             )}
                                                             {lesson.content && (
                                                                 <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
-                                                                    {lesson.content.replace(/<[^>]*>?/gm, ' ')}
+                                                                    {lesson.content
+                                                                        .replace(/<[^>]*>?/gm, ' ')
+                                                                        .replace(/\[\/?(justify|hyphen|center|left|right)\]/g, '')
+                                                                        .trim()}
                                                                 </div>
                                                             )}
                                                         </div>

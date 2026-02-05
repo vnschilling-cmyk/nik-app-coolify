@@ -1179,7 +1179,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                                                     <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
                                                                                     {fact.description && (
                                                                                         <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
-                                                                                            {fact.description.replace(/<[^>]*>?/gm, ' ')}
+                                                                                            {fact.description
+                                                                                                .replace(/<[^>]*>?/gm, ' ')
+                                                                                                .replace(/\[\/?(justify|hyphen|center|left|right)\]/g, '')
+                                                                                                .trim()}
                                                                                         </div>
                                                                                     )}
                                                                                 </div>

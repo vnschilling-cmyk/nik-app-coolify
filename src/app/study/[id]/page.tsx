@@ -408,9 +408,14 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             }`}>
                             {lesson.category}
                         </span>
-                        {facts.length > 0 && (
+                        {facts.filter(f => f.fact_kind !== 'word_study').length > 0 && (
                             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                <Lightbulb size={10} /> {facts.length}
+                                <Lightbulb size={10} /> {facts.filter(f => f.fact_kind !== 'word_study').length}
+                            </span>
+                        )}
+                        {facts.filter(f => f.fact_kind === 'word_study').length > 0 && (
+                            <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+                                <Languages size={10} /> {facts.filter(f => f.fact_kind === 'word_study').length}
                             </span>
                         )}
                         {memoryVerses.length > 0 && (
@@ -425,7 +430,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                         )}
                         {quizzes.length > 0 && (
                             <span className="text-[10px] font-bold text-fuchsia-600 dark:text-fuchsia-400 flex items-center gap-1">
-                                <GraduationCap size={10} /> {quizzes.length}
+                                <Trophy size={10} /> {quizzes.length}
                             </span>
                         )}
                     </div>
@@ -619,7 +624,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             {/* Description if exists */}
                             {lesson.content && (
                                 <div className="bg-zinc-50 dark:bg-slate-800/50 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
-                                    <RichTextDisplay content={lesson.content} className="text-sm" />
+                                    <RichTextDisplay content={lesson.content} />
                                 </div>
                             )}
 
@@ -634,10 +639,16 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                         </span>
                                     </div>
                                     <div className="space-y-4">
-                                        {verses.map(v => {
+                                        {verses.map((v, vIdx) => {
                                             // Find facts and questions for this verse
-                                            const verseFacts = facts.filter(f => f.verse_start === v.verse && f.fact_kind !== 'word_study');
-                                            const verseQuestions = questions.filter(q => q.verse_start === v.verse);
+                                            // Show fact on its verse_start, or on first verse if verse_start=0
+                                            const verseFacts = facts.filter(f =>
+                                                f.fact_kind !== 'word_study' &&
+                                                ((f.verse_start === v.verse) || (f.verse_start === 0 && vIdx === 0))
+                                            );
+                                            const verseQuestions = questions.filter(q =>
+                                                (q.verse_start === v.verse) || (q.verse_start === 0 && vIdx === 0)
+                                            );
 
                                             return (
                                                 <div key={v.id} className="relative group">
@@ -645,55 +656,35 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                                         className="text-lg text-zinc-800 dark:text-zinc-200 leading-loose hyphens-auto"
                                                         lang="de"
                                                     >
-                                                        {/* Floating Facts Bubbles - Left side with honeycomb layout */}
+                                                        {/* Floating Facts Bubbles - Left side - Vertical Stack */}
                                                         {verseFacts.length > 0 && (
-                                                            <span className="float-left mr-4 mb-1 flex flex-wrap w-20 gap-x-0 gap-y-1 content-start">
-                                                                {verseFacts.map((fact, idx) => {
-                                                                    // Last bubble with odd index should align left (no offset)
-                                                                    const isLastOdd = idx % 2 === 1 && idx === verseFacts.length - 1;
-                                                                    const shouldOffset = idx % 2 === 1 && !isLastOdd;
-                                                                    return (
-                                                                        <button
-                                                                            key={fact.id}
-                                                                            onClick={() => setSelectedFact(fact)}
-                                                                            className="w-7 h-7 bg-amber-500 text-white rounded-full shadow-md shadow-amber-500/30 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
-                                                                            style={{
-                                                                                marginLeft: shouldOffset ? '2px' : '0',
-                                                                                marginTop: shouldOffset ? '16px' : '0',
-                                                                                marginBottom: shouldOffset ? '-16px' : '0'
-                                                                            }}
-                                                                            title={fact.title || 'Info'}
-                                                                        >
-                                                                            <Lightbulb size={14} strokeWidth={2.5} />
-                                                                        </button>
-                                                                    );
-                                                                })}
+                                                            <span className="float-left mr-1 mb-1 flex flex-col gap-1 items-start">
+                                                                {verseFacts.map((fact) => (
+                                                                    <button
+                                                                        key={fact.id}
+                                                                        onClick={() => setSelectedFact(fact)}
+                                                                        className="w-7 h-7 bg-amber-500 text-white rounded-full shadow-md shadow-amber-500/30 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center shrink-0"
+                                                                        title={fact.title || 'Info'}
+                                                                    >
+                                                                        <Lightbulb size={14} strokeWidth={2.5} />
+                                                                    </button>
+                                                                ))}
                                                             </span>
                                                         )}
 
-                                                        {/* Floating Questions Bubbles - Right side with honeycomb layout */}
+                                                        {/* Floating Questions Bubbles - Right side - Vertical Stack */}
                                                         {verseQuestions.length > 0 && (
-                                                            <span className="float-right ml-4 mb-1 flex flex-wrap w-20 gap-x-0 gap-y-1 justify-end content-start">
-                                                                {verseQuestions.map((question, idx) => {
-                                                                    // Last bubble with odd index should align right (no offset)
-                                                                    const isLastOdd = idx % 2 === 1 && idx === verseQuestions.length - 1;
-                                                                    const shouldOffset = idx % 2 === 1 && !isLastOdd;
-                                                                    return (
-                                                                        <button
-                                                                            key={question.id}
-                                                                            onClick={() => setSelectedQuestion(question)}
-                                                                            className="w-7 h-7 bg-emerald-500 text-white rounded-full shadow-md shadow-emerald-500/30 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
-                                                                            style={{
-                                                                                marginRight: shouldOffset ? '2px' : '0',
-                                                                                marginTop: shouldOffset ? '16px' : '0',
-                                                                                marginBottom: shouldOffset ? '-16px' : '0'
-                                                                            }}
-                                                                            title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
-                                                                        >
-                                                                            <HelpCircle size={14} strokeWidth={2.5} />
-                                                                        </button>
-                                                                    );
-                                                                })}
+                                                            <span className="float-right ml-1 mb-1 flex flex-col gap-1 items-end">
+                                                                {verseQuestions.map((question) => (
+                                                                    <button
+                                                                        key={question.id}
+                                                                        onClick={() => setSelectedQuestion(question)}
+                                                                        className="w-7 h-7 bg-emerald-500 text-white rounded-full shadow-md shadow-emerald-500/30 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center shrink-0"
+                                                                        title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
+                                                                    >
+                                                                        <HelpCircle size={14} strokeWidth={2.5} />
+                                                                    </button>
+                                                                ))}
                                                             </span>
                                                         )}
 

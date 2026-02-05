@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
 import NextImage from "next/image";
-import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Scroll, Brain, Languages, Quote } from "lucide-react";
+import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Trophy, Scroll, Brain, Languages, Quote } from "lucide-react";
 
 interface Lesson {
     id: string;
@@ -249,7 +249,7 @@ export default function StudyPage() {
                                                             ? "bg-gradient-to-br from-purple-500 to-pink-600"
                                                             : "bg-gradient-to-br from-indigo-500 to-purple-600"
                                                             } ${isInactive ? "grayscale opacity-50" : ""}`}>
-                                                            {lesson.category === "Thema" ? <Scroll size={16} /> : <BookOpen size={16} />}
+                                                            {lesson.category === "Thema" ? <Scroll size={16} /> : <GraduationCap size={16} />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
@@ -289,12 +289,17 @@ export default function StudyPage() {
                                                                 )}
                                                                 {quizzes.filter(q => q.lesson_id === lesson.id).length > 0 && (
                                                                     <span className="shrink-0 flex items-center gap-1 text-xs text-fuchsia-600 dark:text-fuchsia-400">
-                                                                        <GraduationCap size={12} /> {quizzes.filter(q => q.lesson_id === lesson.id).length}
+                                                                        <Trophy size={11} /> {quizzes.filter(q => q.lesson_id === lesson.id).length}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                             {lesson.content && (
-                                                                <p className="text-xs text-zinc-500 truncate">{lesson.content.replace(/<[^>]*>?/gm, ' ')}</p>
+                                                                <p className="text-xs text-zinc-500 truncate">
+                                                                    {lesson.content
+                                                                        .replace(/<[^>]*>?/gm, ' ')
+                                                                        .replace(/\[\/?(justify|hyphen|center|left|right)\]/g, '')
+                                                                        .trim()}
+                                                                </p>
                                                             )}
                                                         </div>
                                                         {!isInactive && <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-500 transition-colors" />}
