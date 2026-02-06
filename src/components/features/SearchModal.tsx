@@ -106,8 +106,12 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             className="w-full bg-transparent border-none outline-none text-lg text-zinc-900 dark:text-white placeholder-zinc-400"
                         />
                     </form>
-                    <button onClick={onClose} className="p-2 bg-zinc-100 dark:bg-slate-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-slate-100 transition-colors">
-                        <X size={18} />
+                    <button
+                        onClick={onClose}
+                        className="p-3 bg-zinc-100 dark:bg-slate-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-slate-100 transition-all active:scale-90"
+                        title="Schließen"
+                    >
+                        <X size={20} />
                     </button>
                 </div>
 

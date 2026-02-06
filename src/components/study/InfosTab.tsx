@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
 import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles, User } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
+import QuoteSelectionModal from "@/components/features/QuoteSelectionModal";
 import clsx from "clsx";
 
 interface BibleBook {
@@ -16,6 +17,7 @@ interface BibleBook {
 interface Lesson {
     id: string;
     title: string;
+    content: string;
     book_id: string;
     verse_ref: string;
 }
@@ -101,6 +103,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [wordSelectorText, setWordSelectorText] = useState("");
     const [wordSelectorLoading, setWordSelectorLoading] = useState(false);
 
+    // AI Quote state
+    const [quoteSelectorOpen, setQuoteSelectorOpen] = useState(false);
+
     // AI Generation state
     const [aiLoading, setAiLoading] = useState(false);
 
@@ -154,6 +159,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
             setLessons(lessonsRes.map(r => ({
                 id: r.id,
                 title: r.title || "(Ohne Titel)",
+                content: r.content || "",
                 book_id: r.book_id || r.book || "",
                 verse_ref: r.verse_ref || ""
             })));
@@ -727,13 +733,25 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             {/* Author Field */}
                             <div>
                                 <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Verfasser / Quelle</label>
-                                <input
-                                    type="text"
-                                    value={formData.author}
-                                    onChange={e => setFormData({ ...formData, author: e.target.value })}
-                                    className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                    placeholder="z.B. Martin Luther, KI, etc."
-                                />
+                                <div className="flex gap-2 mt-1">
+                                    <input
+                                        type="text"
+                                        value={formData.author}
+                                        onChange={e => setFormData({ ...formData, author: e.target.value })}
+                                        className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
+                                        placeholder="z.B. Martin Luther, KI, etc."
+                                    />
+                                    {mode === 'quote' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuoteSelectorOpen(true)}
+                                            className="flex items-center justify-center px-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shrink-0"
+                                            title="KI Zitate vorschlagen"
+                                        >
+                                            <Sparkles size={18} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Description (Rich Text) */}
@@ -1219,6 +1237,25 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                     </div>
                 )
             }
+
+            {/* Question Detail Modal (exists below, adding our modal) */}
+            <QuoteSelectionModal
+                isOpen={quoteSelectorOpen}
+                onClose={() => setQuoteSelectorOpen(false)}
+                topic={formData.title}
+                bibleRef={formData.has_bible_ref ? generateVerseRef() : undefined}
+                lessonContext={formData.lesson_id ? (() => {
+                    const l = lessons.find(lx => lx.id === formData.lesson_id);
+                    return l ? `${l.title}: ${l.content.replace(/<[^>]*>?/gm, ' ')}` : undefined;
+                })() : undefined}
+                onSelect={(quote) => {
+                    setFormData(prev => ({
+                        ...prev,
+                        description: quote.text,
+                        author: quote.author
+                    }));
+                }}
+            />
 
             {/* Word Selection Modal */}
             {

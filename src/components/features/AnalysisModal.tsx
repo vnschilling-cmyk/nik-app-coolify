@@ -182,7 +182,8 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full text-zinc-400 dark:text-zinc-500 transition-colors"
+                        className="p-3 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full text-zinc-400 dark:text-zinc-500 transition-colors active:scale-90"
+                        title="Schließen"
                     >
                         <X size={20} />
                     </button>

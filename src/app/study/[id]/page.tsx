@@ -24,7 +24,8 @@ const TYPE_STYLES: Record<string, { bg: string, border: string, text: string, ho
     video: { bg: 'bg-red-50 dark:bg-slate-800/50', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', hover: 'hover:border-red-400', badge: 'bg-red-100 dark:bg-red-900/40', solidBg: 'bg-red-600', hoverBg: 'hover:bg-red-700' },
     map: { bg: 'bg-emerald-50 dark:bg-slate-800/50', border: 'border-emerald-200 dark:border-emerald-800/50', text: 'text-emerald-600 dark:text-emerald-400', hover: 'hover:border-emerald-400', badge: 'bg-emerald-100 dark:bg-emerald-900/40', solidBg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-700' },
     link: { bg: 'bg-blue-50 dark:bg-slate-800/50', border: 'border-blue-200 dark:border-blue-800/50', text: 'text-blue-600 dark:text-blue-400', hover: 'hover:border-blue-400', badge: 'bg-blue-100 dark:bg-blue-900/40', solidBg: 'bg-blue-600', hoverBg: 'hover:bg-blue-700' },
-    text: { bg: 'bg-amber-50 dark:bg-slate-800/50', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', hover: 'hover:border-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40', solidBg: 'bg-amber-500', hoverBg: 'hover:bg-amber-600' }
+    text: { bg: 'bg-amber-50 dark:bg-slate-800/50', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', hover: 'hover:border-amber-400', badge: 'bg-amber-100 dark:bg-amber-900/40', solidBg: 'bg-amber-500', hoverBg: 'hover:bg-amber-600' },
+    quote: { bg: 'bg-rose-50 dark:bg-slate-800/50', border: 'border-rose-200 dark:border-rose-800/50', text: 'text-rose-600 dark:text-rose-400', hover: 'hover:border-rose-400', badge: 'bg-rose-100 dark:bg-rose-900/40', solidBg: 'bg-rose-500', hoverBg: 'hover:bg-rose-600' }
 };
 
 function UnifiedContentList({ facts, questions, onSelectFact, onSelectQuestion }: any) {
@@ -409,9 +410,14 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             }`}>
                             {lesson.category}
                         </span>
-                        {facts.filter(f => f.fact_kind !== 'word_study').length > 0 && (
+                        {facts.filter(f => !f.fact_kind || (f.fact_kind !== 'word_study' && f.fact_kind !== 'quote')).length > 0 && (
                             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                <Lightbulb size={10} /> {facts.filter(f => f.fact_kind !== 'word_study').length}
+                                <Lightbulb size={10} /> {facts.filter(f => !f.fact_kind || (f.fact_kind !== 'word_study' && f.fact_kind !== 'quote')).length}
+                            </span>
+                        )}
+                        {facts.filter(f => f.fact_kind === 'quote').length > 0 && (
+                            <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                                <Quote size={10} /> {facts.filter(f => f.fact_kind === 'quote').length}
                             </span>
                         )}
                         {facts.filter(f => f.fact_kind === 'word_study').length > 0 && (
@@ -599,18 +605,26 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
 
                 {/* Main Content */}
                 <div className="space-y-4">
-                    {/* Thema: Show description and then sorted list of items */}
-                    {isThema && (
+                    {/* Thema or Whole Book lessons: Show description and then sorted list of items */}
+                    {(isThema || (hasBibleRef && lesson.chapter_start === 0)) && (
                         <div className="space-y-4">
-                            <div className="">
-                                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
-                                    <FileText size={20} />
-                                    <span className="font-medium">Thema-Beschreibung</span>
+                            {!isThema && lesson.content && (
+                                <div className="bg-zinc-50 dark:bg-slate-800/50 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
+                                    <RichTextDisplay content={lesson.content} />
                                 </div>
-                                <div className="prose prose-zinc dark:prose-invert text-zinc-700 dark:text-zinc-300">
-                                    <RichTextDisplay content={lesson.content || "Keine Beschreibung vorhanden."} />
+                            )}
+
+                            {isThema && (
+                                <div className="">
+                                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
+                                        <FileText size={20} />
+                                        <span className="font-medium">Thema-Beschreibung</span>
+                                    </div>
+                                    <div className="prose prose-zinc dark:prose-invert text-zinc-700 dark:text-zinc-300">
+                                        <RichTextDisplay content={lesson.content || "Keine Beschreibung vorhanden."} />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Sorted list of infos and questions */}
                             <div className="">
@@ -619,8 +633,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                         </div>
                     )}
 
-
-                    {!isThema && (
+                    {!isThema && lesson.chapter_start !== 0 && (
                         <>
                             {/* Description if exists */}
                             {lesson.content && (
@@ -660,16 +673,22 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                                         {/* Floating Facts Bubbles - Left side - Vertical Stack */}
                                                         {verseFacts.length > 0 && (
                                                             <span className="float-left mr-1 mb-1 flex flex-col gap-1 items-start">
-                                                                {verseFacts.map((fact) => (
-                                                                    <button
-                                                                        key={fact.id}
-                                                                        onClick={() => setSelectedFact(fact)}
-                                                                        className="w-7 h-7 bg-amber-500 text-white rounded-full shadow-md shadow-amber-500/30 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center shrink-0"
-                                                                        title={fact.title || 'Info'}
-                                                                    >
-                                                                        <Lightbulb size={14} strokeWidth={2.5} />
-                                                                    </button>
-                                                                ))}
+                                                                {verseFacts.map((fact) => {
+                                                                    const isQuote = fact.fact_kind === 'quote';
+                                                                    const Icon = isQuote ? Quote : Lightbulb;
+                                                                    const bgColor = isQuote ? 'bg-rose-500 shadow-rose-500/30 hover:bg-rose-400' : 'bg-amber-500 shadow-amber-500/30 hover:bg-amber-400';
+
+                                                                    return (
+                                                                        <button
+                                                                            key={fact.id}
+                                                                            onClick={() => setSelectedFact(fact)}
+                                                                            className={`w-7 h-7 ${bgColor} text-white rounded-full shadow-md transition-all cursor-pointer flex items-center justify-center shrink-0`}
+                                                                            title={fact.title || (isQuote ? 'Zitat' : 'Info')}
+                                                                        >
+                                                                            <Icon size={14} strokeWidth={2.5} />
+                                                                        </button>
+                                                                    );
+                                                                })}
                                                             </span>
                                                         )}
 
@@ -729,12 +748,27 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                                 </div>
                                             );
                                         })}
+                                        {/* Quotes Section - Under Bible Text */}
+                                        {facts.filter(f => f.fact_kind === 'quote').length > 0 && (
+                                            <div className="mt-8 pt-8 border-t border-rose-100 dark:border-rose-900/20 space-y-8">
+                                                {facts.filter(f => f.fact_kind === 'quote').map((quote) => (
+                                                    <div key={quote.id} className="text-center px-4 max-w-md mx-auto">
+                                                        <Quote className="w-8 h-8 mx-auto mb-4 text-rose-400 opacity-30" />
+                                                        <div className="text-xl md:text-2xl font-serif text-zinc-700 dark:text-zinc-300 leading-relaxed italic mb-4">
+                                                            <RichTextDisplay content={quote.description} />
+                                                        </div>
+                                                        {quote.title && quote.title !== "Zitat" && (
+                                                            <p className="font-bold text-zinc-500 dark:text-zinc-400 tracking-wide uppercase text-xs">
+                                                                — {quote.title} —
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
-
-                            {/* Content cards list (Facts and Questions) - Only for Thema lessons or when no Bible ref */}
-                            {/* Skip for chapter-specific lessons since bubbles are shown inline */}
                         </>
                     )}
                 </div>
@@ -775,112 +809,121 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             </div>
                         ))}
                     </div>
-                )}
-            </div>
+                )
+                }
+            </div >
 
             {/* Floating Action Button for Notes */}
-            <button
+            < button
                 onClick={openNewNote}
                 className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-30"
                 title="Notiz hinzufügen"
             >
                 <Plus size={24} />
-            </button>
+            </button >
 
             {/* Quiz Section */}
-            {quizzes.length > 0 && (
-                <div className="max-w-prose mx-auto px-4 mt-8 pb-8">
-                    <div className="bg-gradient-to-br from-fuchsia-50 to-purple-50 dark:from-fuchsia-900/10 dark:to-purple-900/10 rounded-xl p-6 border border-fuchsia-100 dark:border-fuchsia-800/30">
-                        <div className="flex items-center gap-3 mb-4 text-fuchsia-600 dark:text-fuchsia-400">
-                            <Trophy size={24} />
-                            <h3 className="text-lg font-bold">Wissen testen</h3>
-                        </div>
-                        <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-sm">
-                            Teste dein Wissen zu dieser Lektion mit einem interaktiven Quiz.
-                        </p>
-                        <div className="space-y-3">
-                            {quizzes.map(quiz => (
-                                <button
-                                    key={quiz.id}
-                                    onClick={() => setActiveQuiz(quiz)}
-                                    className="w-full bg-white dark:bg-slate-700 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-between hover:shadow-md transition-all group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-fuchsia-100 dark:bg-fuchsia-900/30 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400 font-bold">
-                                            {quiz.questions.length}
+            {
+                quizzes.length > 0 && (
+                    <div className="max-w-prose mx-auto px-4 mt-8 pb-8">
+                        <div className="bg-gradient-to-br from-fuchsia-50 to-purple-50 dark:from-fuchsia-900/10 dark:to-purple-900/10 rounded-xl p-6 border border-fuchsia-100 dark:border-fuchsia-800/30">
+                            <div className="flex items-center gap-3 mb-4 text-fuchsia-600 dark:text-fuchsia-400">
+                                <Trophy size={24} />
+                                <h3 className="text-lg font-bold">Wissen testen</h3>
+                            </div>
+                            <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-sm">
+                                Teste dein Wissen zu dieser Lektion mit einem interaktiven Quiz.
+                            </p>
+                            <div className="space-y-3">
+                                {quizzes.map(quiz => (
+                                    <button
+                                        key={quiz.id}
+                                        onClick={() => setActiveQuiz(quiz)}
+                                        className="w-full bg-white dark:bg-slate-700 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-between hover:shadow-md transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-fuchsia-100 dark:bg-fuchsia-900/30 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400 font-bold">
+                                                {quiz.questions.length}
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold text-zinc-900 dark:text-white">{quiz.title || "Wissenstest"}</p>
+                                                <p className="text-xs text-zinc-500">20 Sek. pro Frage</p>
+                                            </div>
                                         </div>
-                                        <div className="text-left">
-                                            <p className="font-bold text-zinc-900 dark:text-white">{quiz.title || "Wissenstest"}</p>
-                                            <p className="text-xs text-zinc-500">20 Sek. pro Frage</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="text-zinc-300 group-hover:text-fuchsia-500 transition-colors" />
-                                </button>
-                            ))}
+                                        <ChevronRight className="text-zinc-300 group-hover:text-fuchsia-500 transition-colors" />
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Note Modal */}
-            {showNoteModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg flex items-center gap-2">
-                                <StickyNote className="text-yellow-500" size={20} />
-                                {editingNote ? "Notiz bearbeiten" : "Neue Notiz"}
-                            </h3>
-                            <button
-                                onClick={() => { setShowNoteModal(false); setEditingNote(null); setNoteContent(""); }}
-                                className="text-zinc-400 hover:text-zinc-600"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <textarea
-                            value={noteContent}
-                            onChange={e => setNoteContent(e.target.value)}
-                            placeholder="Deine Gedanken zu dieser Lektion..."
-                            className="w-full px-4 py-3 bg-yellow-50 dark:bg-slate-700 border border-yellow-200 dark:border-slate-600 rounded-xl min-h-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                            autoFocus
-                        />
-                        <div className="flex gap-2 mt-4">
-                            <button
-                                onClick={() => { setShowNoteModal(false); setEditingNote(null); setNoteContent(""); }}
-                                className="flex-1 py-2.5 bg-zinc-100 dark:bg-slate-700 rounded-lg font-medium text-zinc-600 dark:text-zinc-400"
-                            >
-                                Abbrechen
-                            </button>
-                            <button
-                                onClick={handleSaveNote}
-                                disabled={savingNote || !noteContent.trim()}
-                                className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                                <Save size={16} /> {savingNote ? "..." : "Speichern"}
-                            </button>
+            {
+                showNoteModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <StickyNote className="text-yellow-500" size={20} />
+                                    {editingNote ? "Notiz bearbeiten" : "Neue Notiz"}
+                                </h3>
+                                <button
+                                    onClick={() => { setShowNoteModal(false); setEditingNote(null); setNoteContent(""); }}
+                                    className="text-zinc-400 hover:text-zinc-600"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <textarea
+                                value={noteContent}
+                                onChange={e => setNoteContent(e.target.value)}
+                                placeholder="Deine Gedanken zu dieser Lektion..."
+                                className="w-full px-4 py-3 bg-yellow-50 dark:bg-slate-700 border border-yellow-200 dark:border-slate-600 rounded-xl min-h-[150px] text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                autoFocus
+                            />
+                            <div className="flex gap-2 mt-4">
+                                <button
+                                    onClick={() => { setShowNoteModal(false); setEditingNote(null); setNoteContent(""); }}
+                                    className="flex-1 py-2.5 bg-zinc-100 dark:bg-slate-700 rounded-lg font-medium text-zinc-600 dark:text-zinc-400"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={handleSaveNote}
+                                    disabled={savingNote || !noteContent.trim()}
+                                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                    <Save size={16} /> {savingNote ? "..." : "Speichern"}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Quiz Overlay */}
-            {activeQuiz && (
-                <QuizOverlay
-                    quiz={activeQuiz}
-                    onClose={() => setActiveQuiz(null)}
-                />
-            )}
+            {
+                activeQuiz && (
+                    <QuizOverlay
+                        quiz={activeQuiz}
+                        onClose={() => setActiveQuiz(null)}
+                    />
+                )
+            }
 
             {/* Word Meaning Popup */}
-            {selectedWord && lesson && (
-                <WordMeaningPopup
-                    word={selectedWord}
-                    context={lesson.title}
-                    testament={lesson.expand?.book_id?.order && lesson.expand.book_id.order >= 40 ? 'NT' : 'OT'}
-                    onClose={() => setSelectedWord(null)}
-                />
-            )}
-        </div>
+            {
+                selectedWord && lesson && (
+                    <WordMeaningPopup
+                        word={selectedWord}
+                        context={lesson.title}
+                        testament={lesson.expand?.book_id?.order && lesson.expand.book_id.order >= 40 ? 'NT' : 'OT'}
+                        onClose={() => setSelectedWord(null)}
+                    />
+                )
+            }
+        </div >
     );
 }

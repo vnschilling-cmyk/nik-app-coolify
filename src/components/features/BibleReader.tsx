@@ -93,7 +93,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                         key={i}
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer transition-all inline-block",
+                            "cursor-pointer transition-all inline p-1 -m-1 rounded-sm decoration-clone",
                             isMatch
                                 ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border-b-2 border-amber-500 rounded px-1 py-0.5 font-bold"
                                 : "text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
@@ -111,7 +111,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                         key={i}
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer rounded px-1 py-0.5 transition-all inline-block mb-0.5",
+                            "cursor-pointer rounded px-1 -mx-1 py-0.5 transition-all inline decoration-clone",
                             isMatch
                                 ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
                                 : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
@@ -127,7 +127,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                     <span
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer rounded px-1 py-0.5 transition-all",
+                            "cursor-pointer rounded px-1 -mx-1 py-0.5 transition-all inline decoration-clone",
                             isMatch
                                 ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
                                 : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
@@ -198,10 +198,10 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                 return (
                     <div key={v.verse} id={`v${v.verse}`} className="relative group mb-6 scroll-mt-20">
                         <p
-                            className="text-justify leading-relaxed whitespace-pre-wrap hyphens-auto"
+                            className="text-justify leading-relaxed whitespace-pre-wrap hyphens-auto break-words"
                             lang="de"
                             style={{
-                                textJustify: 'inter-word'
+                                textJustify: 'auto'
                             }}
                         >
                             {/* Lesson Icons Floated in Right Margin */}
@@ -275,7 +275,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
 
                             <button
                                 onClick={() => onVerseClick?.(v.verse)}
-                                className="text-sm font-bold text-blue-500 mr-2 p-1.5 -m-1.5 select-none align-top pt-1 inline-block hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                                className="text-sm font-black text-indigo-500/80 dark:text-indigo-400/80 mr-2 p-3 -m-3 select-none align-top pt-1 inline-block hover:scale-125 active:scale-90 transition-all cursor-pointer"
                                 title={`Vers ${v.verse} analysieren`}
                             >
                                 {v.verse}

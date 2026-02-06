@@ -688,6 +688,7 @@ export default function QuestionsTab() {
                                     value={formData.answer}
                                     onChange={val => setFormData({ ...formData, answer: val })}
                                     placeholder="Antwort eingeben oder leer lassen..."
+                                    expandOnFocus
                                 />
                             </div>
                             <p className="text-[10px] text-zinc-400 mt-2 flex justify-end">Markdown unterstützt</p>

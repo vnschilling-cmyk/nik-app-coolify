@@ -174,9 +174,10 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-1.5 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                            className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-all active:scale-90"
+                            title="Schließen"
                         >
-                            <X size={18} />
+                            <X size={20} />
                         </button>
                     </div>
                 </div>

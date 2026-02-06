@@ -827,6 +827,7 @@ export default function LessonsTab() {
                                     value={formData.content}
                                     onChange={(val: string) => setFormData({ ...formData, content: val })}
                                     placeholder={isThema ? "Beschreibe das Thema ausführlich..." : "Optional: Kurze Beschreibung der Lektion..."}
+                                    expandOnFocus
                                 />
                             </div>
 

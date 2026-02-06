@@ -1,4 +1,6 @@
 import Link from "next/link";
+import React from "react";
+import clsx from "clsx";
 
 interface RichTextDisplayProps {
     content: string;
@@ -20,105 +22,177 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
         );
     }
 
-    // Helper to process text
+    // Helper to process inline text (bold, italic, etc.)
     const processText = (text: string) => {
         return text
             // HTML Escape (basic)
             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-            // Restore intended HTML tags (only <u> for now, maybe <br> later if needed)
+            // Restore intended HTML tags (only <u> for now)
             .replace(/&lt;u&gt;/g, "<u>").replace(/&lt;\/u&gt;/g, "</u>")
             // Bold
             .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
             // Italic
             .replace(/\*(.*?)\*/g, "<em>$1</em>")
-            // Alignment tags
-            .replace(/\[left\](.*?)\[\/left\]/g, '<span style="display: block; text-align: left">$1</span>')
-            .replace(/\[center\](.*?)\[\/center\]/g, '<span style="display: block; text-align: center">$1</span>')
-            .replace(/\[right\](.*?)\[\/right\]/g, '<span style="display: block; text-align: right">$1</span>')
-            .replace(/\[justify\](.*?)\[\/justify\]/g, '<span style="display: block; text-align: justify">$1</span>')
-            // Hyphenation tag
-            .replace(/\[hyphen\]([\s\S]*?)\[\/hyphen\]/g, '<span style="hyphens: auto; -webkit-hyphens: auto" lang="de">$1</span>')
             // Links (basic)
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
     };
 
-    // Split by newlines to handle paragraphs and lists
-    const lines = content.split('\n');
+    // Block state trackers (global across multiple paragraphs)
+    let globalJustified = false;
+    let globalHyphenated = false;
+    let globalAlignment: 'left' | 'center' | 'right' | null = null;
+
+    const paragraphs = content.split(/\n\s*\n/);
     const elements: React.ReactNode[] = [];
 
-    let currentList: JSX.Element[] = [];
-    let listType: 'ul' | 'ol' | null = null;
+    paragraphs.forEach((p, pIndex) => {
+        let lines = p.split('\n');
+        let processedLines: string[] = [];
+        let currentList: JSX.Element[] = [];
+        let listType: 'ul' | 'ol' | null = null;
 
-    lines.forEach((line, index) => {
-        const trimLine = line.trim();
+        // Paragraph-level effective state (persists for the entire paragraph)
+        let pJustified = globalJustified;
+        let pHyphenated = globalHyphenated;
+        let pAlignment = globalAlignment;
 
-        // Unordered List
-        if (trimLine.startsWith('- ')) {
-            if (listType !== 'ul' && currentList.length > 0) {
-                // Flush previous list (must be ol since we're switching to ul)
+        lines.forEach((line, lIndex) => {
+            const stripTagsAndTrack = (text: string) => {
+                let t = text;
+                // Opening tags: set global AND paragraph-effective state
+                if (t.includes('[justify]')) { globalJustified = true; pJustified = true; t = t.replace('[justify]', ''); }
+                if (t.includes('[hyphen]')) { globalHyphenated = true; pHyphenated = true; t = t.replace('[hyphen]', ''); }
+                if (t.includes('[center]')) { globalAlignment = 'center'; pAlignment = 'center'; t = t.replace('[center]', ''); }
+                if (t.includes('[right]')) { globalAlignment = 'right'; pAlignment = 'right'; t = t.replace('[right]', ''); }
+                if (t.includes('[left]')) { globalAlignment = 'left'; pAlignment = 'left'; t = t.replace('[left]', ''); }
+
+                // Closing tags: update global state (for NEXT paragraphs), 
+                // but pJustified/etc. remains true for THIS paragraph.
+                if (t.includes('[/justify]')) { globalJustified = false; t = t.replace('[/justify]', ''); }
+                if (t.includes('[/hyphen]')) { globalHyphenated = false; t = t.replace('[/hyphen]', ''); }
+                if (t.includes('[/center]') || t.includes('[/right]') || t.includes('[/left]')) {
+                    globalAlignment = null;
+                    t = t.replace(/\[\/(center|right|left)\]/g, '');
+                }
+                return t;
+            };
+
+            const getEffectiveStyles = (): React.CSSProperties => {
+                const styles: React.CSSProperties = {};
+                if (pJustified) {
+                    styles.textAlign = 'justify';
+                    styles.textJustify = 'inter-word';
+                }
+                if (pAlignment) styles.textAlign = pAlignment;
+                if (pHyphenated) {
+                    styles.hyphens = 'auto';
+                    (styles as any).WebkitHyphens = 'auto';
+                }
+                return styles;
+            };
+
+            let cleanLine = stripTagsAndTrack(line);
+            let trimCleanLine = cleanLine.trim();
+
+            if (!trimCleanLine && currentList.length === 0) return;
+
+            // 1. Headers
+            if (trimCleanLine.startsWith('# ')) {
+                elements.push(<h1 key={`h1-${pIndex}-${lIndex}`} style={getEffectiveStyles()} className="text-2xl font-bold mb-4 mt-6">{trimCleanLine.substring(2).trim()}</h1>);
+                return;
+            }
+            if (trimCleanLine.startsWith('## ')) {
+                elements.push(<h2 key={`h2-${pIndex}-${lIndex}`} style={getEffectiveStyles()} className="text-xl font-bold mb-3 mt-4">{trimCleanLine.substring(3).trim()}</h2>);
+                return;
+            }
+
+            // 2. Horizontal Rule
+            if (trimCleanLine === '---' || trimCleanLine === '***') {
+                elements.push(<hr key={`hr-${pIndex}-${lIndex}`} className="my-6 border-zinc-200 dark:border-white/10" />);
+                return;
+            }
+
+            // 3. Lists
+            if (trimCleanLine.startsWith('- ') || /^\d+\.\s/.test(trimCleanLine)) {
+                const isBullet = trimCleanLine.startsWith('- ');
+                const type = isBullet ? 'ul' : 'ol';
+                const text = isBullet ? trimCleanLine.substring(2) : trimCleanLine.replace(/^\d+\.\s/, '');
+
+                if (listType !== type && currentList.length > 0) {
+                    const ListTag = listType === 'ul' ? 'ul' : 'ol';
+                    elements.push(
+                        <ListTag key={`list-${pIndex}-${lIndex}`} style={getEffectiveStyles()} className={clsx("list-inside mb-4 space-y-1", listType === 'ul' ? "list-disc" : "list-decimal")}>
+                            {currentList}
+                        </ListTag>
+                    );
+                    currentList = [];
+                }
+
+                listType = type;
+                currentList.push(<li key={`li-${pIndex}-${lIndex}`} dangerouslySetInnerHTML={{ __html: processText(text.trim()) }} />);
+                return;
+            }
+
+            // Flush list if needed
+            if (currentList.length > 0) {
+                const ListTag = listType === 'ul' ? 'ul' : 'ol';
                 elements.push(
-                    <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                    <ListTag key={`list-flush-${pIndex}-${lIndex}`} style={getEffectiveStyles()} className={clsx("list-inside mb-4 space-y-1", listType === 'ul' ? "list-disc" : "list-decimal")}>
+                        {currentList}
+                    </ListTag>
                 );
                 currentList = [];
+                listType = null;
             }
-            listType = 'ul';
-            currentList.push(
-                <li key={`item-${index}`} dangerouslySetInnerHTML={{ __html: processText(trimLine.substring(2)) }} />
-            );
-            return; // Continue to next line
-        }
 
-        // Ordered List
-        if (/^\d+\.\s/.test(trimLine)) {
-            if (listType !== 'ol' && currentList.length > 0) {
-                // Flush previous list (must be ul since we're switching to ol)
-                elements.push(
-                    <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
-                );
-                currentList = [];
+            // 4. Regular Line
+            if (trimCleanLine) {
+                processedLines.push(cleanLine.trim());
             }
-            listType = 'ol';
-            const content = trimLine.replace(/^\d+\.\s/, '');
-            currentList.push(
-                <li key={`item-${index}`} dangerouslySetInnerHTML={{ __html: processText(content) }} />
-            );
-            return;
-        }
+        });
 
-        // Not a list item: Flush any pending list
+        // Final list flush for THIS paragraph
         if (currentList.length > 0) {
+            const ListTag = listType === 'ul' ? 'ul' : 'ol';
+            const styles: React.CSSProperties = {};
+            if (pJustified) { styles.textAlign = 'justify'; styles.textJustify = 'inter-word'; }
+            if (pAlignment) styles.textAlign = pAlignment;
+            if (pHyphenated) { styles.hyphens = 'auto'; (styles as any).WebkitHyphens = 'auto'; }
+
             elements.push(
-                listType === 'ul'
-                    ? <ul key={`list-${index}`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
-                    : <ol key={`list-${index}`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
+                <ListTag key={`list-end-${pIndex}`} style={styles} className={clsx("list-inside mb-4 space-y-1", listType === 'ul' ? "list-disc" : "list-decimal")}>
+                    {currentList}
+                </ListTag>
             );
-            currentList = [];
-            listType = null;
         }
 
-        // Empty line -> simple spacer or ignore
-        if (!trimLine) {
-            // elements.push(<div key={`spacer-${index}`} className="h-2" />);
-            return;
-        }
+        // Final paragraph flush
+        if (processedLines.length > 0) {
+            const styles: React.CSSProperties = {};
+            if (pJustified) {
+                styles.textAlign = 'justify';
+                styles.textJustify = 'inter-word';
+            }
+            if (pAlignment) styles.textAlign = pAlignment;
+            if (pHyphenated) {
+                styles.hyphens = 'auto';
+                (styles as any).WebkitHyphens = 'auto';
+            }
 
-        // Standard Paragraph
-        elements.push(
-            <p key={`p-${index}`} className="mb-2 last:mb-0" dangerouslySetInnerHTML={{ __html: processText(line) }} />
-        );
+            elements.push(
+                <p
+                    key={`p-${pIndex}`}
+                    className="mb-4 last:mb-0"
+                    style={styles}
+                    lang={pHyphenated ? "de" : undefined}
+                    dangerouslySetInnerHTML={{ __html: processText(processedLines.join(' ')) }}
+                />
+            );
+        }
     });
 
-    // Flush any remaining list at the end
-    if (currentList.length > 0) {
-        elements.push(
-            listType === 'ul'
-                ? <ul key={`list-end`} className="list-disc list-inside mb-4 space-y-1">{[...currentList]}</ul>
-                : <ol key={`list-end`} className="list-decimal list-inside mb-4 space-y-1">{[...currentList]}</ol>
-        );
-    }
-
     return (
-        <div className={`prose prose-sm prose-zinc dark:prose-invert max-w-none ${className}`}>
+        <div className={clsx("prose prose-sm prose-zinc dark:prose-invert max-w-none", className)}>
             {elements}
         </div>
     );

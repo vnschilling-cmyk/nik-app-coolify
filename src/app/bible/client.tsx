@@ -164,26 +164,26 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mask-fade-right -mr-4 pr-4">
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pr-1 -mr-1">
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'KI' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
+                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
                                 textStudies.some(s => s.category === 'KI' && s.verse_start === 0)
-                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
-                                    : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40"
+                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400"
                             )}
                             title="KI-Analyse"
                         >
-                            <SparklesIcon size={18} />
+                            <SparklesIcon size={20} />
                         </button>
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Andere' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
+                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
                                 textStudies.some(s => s.category === 'Andere' && s.verse_start === 0)
                                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
-                                    : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-emerald-600 dark:hover:text-emerald-400"
                             )}
                             title="Andere Studien"
                         >
@@ -192,10 +192,10 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Eigene' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
+                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
                                 textStudies.some(s => s.category === 'Eigene' && s.verse_start === 0)
                                     ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                                    : "text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-amber-600 dark:hover:text-amber-400"
                             )}
                             title="Eigene Studien"
                         >
@@ -205,10 +205,10 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         <button
                             onClick={() => setShowLessons(!showLessons)}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
+                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
                                 showLessons
                                     ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
-                                    : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400"
                             )}
                             title={showLessons ? "Lektionen ausblenden" : "Lektionen einblenden"}
                         >
@@ -219,7 +219,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
 
                         <button
                             onClick={() => setIsSearchOpen(true)}
-                            className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
+                            className="p-2.5 text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all active:scale-90 shrink-0"
                             title="Suche öffnen"
                         >
                             <Search size={18} />
