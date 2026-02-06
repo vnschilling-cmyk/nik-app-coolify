@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, MessageCircleQuestion, HelpCircle, Book } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, MessageCircleQuestion, HelpCircle, Book, Scroll } from "lucide-react";
 import clsx from "clsx";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 
@@ -807,27 +807,42 @@ export default function QuestionsTab() {
                                 return a[0].localeCompare(b[0]);
                             });
 
+                            const isThema = bookGroup.id === "thema";
+
                             return (
-                                <section key={bookGroup.id} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
+                                <section key={bookGroup.id} className="bg-white/50 dark:bg-slate-800/40 backdrop-blur-md rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 shadow-sm transition-all duration-300">
                                     <button
                                         onClick={() => toggleGroup(bookGroup.id)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                        className={clsx(
+                                            "w-full flex items-center justify-between p-4 hover:bg-white/80 dark:hover:bg-white/10 transition-all group border-l-4",
+                                            isThema ? "border-l-purple-500" : isBookSection ? "border-l-indigo-500" : "border-l-zinc-300 dark:border-l-zinc-700"
+                                        )}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <h3 className={`text-sm font-bold uppercase tracking-wider ${isBookSection
-                                                ? "text-indigo-600 dark:text-indigo-400"
-                                                : "text-zinc-600 dark:text-zinc-400"
-                                                }`}>
-                                                {bookGroup.title}
-                                            </h3>
-                                            <span className="text-zinc-400 text-xs font-normal">({bookGroup.questionCount})</span>
-                                            {bookGroup.unansweredCount > 0 && (
-                                                <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                                    {bookGroup.unansweredCount} offen
-                                                </span>
-                                            )}
+                                        <div className="flex items-center gap-3">
+                                            <div className={clsx(
+                                                "w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
+                                                isThema ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                                                    : isBookSection ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                                            )}>
+                                                {isThema ? <Scroll size={16} /> : isBookSection ? <BookOpen size={16} /> : <HelpCircle size={16} />}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className={clsx(
+                                                    "text-sm font-bold uppercase tracking-wider",
+                                                    isThema ? "text-purple-700 dark:text-purple-300" : isBookSection ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-700 dark:text-zinc-300"
+                                                )}>
+                                                    {bookGroup.title}
+                                                </h3>
+                                                <span className="opacity-40 text-xs font-medium italic">({bookGroup.questionCount})</span>
+                                                {bookGroup.unansweredCount > 0 && (
+                                                    <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                                        {bookGroup.unansweredCount} offen
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
+                                        {isExpanded ? <ChevronDown size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" /> : <ChevronRight size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />}
                                     </button>
 
                                     {isExpanded && (

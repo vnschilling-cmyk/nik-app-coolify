@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText, Sparkles, Brain, Quote, Type, Search, Check, HelpCircle, ChevronLeft } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText, Sparkles, Brain, Quote, Type, Search, Check, HelpCircle, ChevronLeft, Scroll } from "lucide-react";
+import clsx from "clsx";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { exportLessonsToExcel } from "@/lib/exportUtils";
 import { useRouter } from "next/navigation";
@@ -1212,20 +1213,31 @@ export default function LessonsTab() {
                             const isExpanded = expandedGroups.has(groupTitle);
 
                             return (
-                                <section key={groupTitle} className="bg-zinc-50 dark:bg-slate-700/40 rounded-xl overflow-hidden border border-zinc-200 dark:border-slate-700">
+                                <section key={groupTitle} className="bg-white/50 dark:bg-slate-800/40 backdrop-blur-md rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 shadow-sm transition-all duration-300">
                                     <button
                                         onClick={() => toggleGroup(groupTitle)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                                        className={clsx(
+                                            "w-full flex items-center justify-between p-4 hover:bg-white/80 dark:hover:bg-white/10 transition-all group border-l-4",
+                                            isThemaGroup ? "border-l-purple-500" : isBookGroup ? "border-l-indigo-500" : "border-l-zinc-300 dark:border-l-zinc-700"
+                                        )}
                                     >
-                                        <h3 className={`text-sm font-bold uppercase tracking-wider ${isThemaGroup
-                                            ? "text-purple-600 dark:text-purple-400"
-                                            : isBookGroup
-                                                ? "text-indigo-600 dark:text-indigo-400"
-                                                : "text-zinc-600 dark:text-zinc-400"
-                                            }`}>
-                                            {groupTitle} <span className="text-zinc-400 text-xs ml-2 font-normal">({groupLessons.length})</span>
-                                        </h3>
-                                        {isExpanded ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
+                                        <div className="flex items-center gap-3">
+                                            <div className={clsx(
+                                                "w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
+                                                isThemaGroup ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                                                    : isBookGroup ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                                            )}>
+                                                {isThemaGroup ? <Scroll size={16} /> : isBookGroup ? <BookOpen size={16} /> : <FileText size={16} />}
+                                            </div>
+                                            <h3 className={clsx(
+                                                "text-sm font-bold uppercase tracking-wider",
+                                                isThemaGroup ? "text-purple-700 dark:text-purple-300" : isBookGroup ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-700 dark:text-zinc-300"
+                                            )}>
+                                                {groupTitle} <span className="opacity-40 text-xs ml-1 font-medium italic">({groupLessons.length})</span>
+                                            </h3>
+                                        </div>
+                                        {isExpanded ? <ChevronDown size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" /> : <ChevronRight size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />}
                                     </button>
 
                                     {isExpanded && (

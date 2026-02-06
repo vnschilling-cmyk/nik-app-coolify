@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles, User } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles, User, FileDigit } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import QuoteSelectionModal from "@/components/features/QuoteSelectionModal";
 import clsx from "clsx";
+import mammoth from "mammoth";
 
 interface BibleBook {
     id: string;
@@ -64,7 +65,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [activeWordStudyTab, setActiveWordStudyTab] = useState<'general' | 'lessons'>('general');
     const [activeTextStudyTab, setActiveTextStudyTab] = useState<'KI' | 'Andere' | 'Eigene'>('KI');
-    const [activeIllustrationTab, setActiveIllustrationTab] = useState<'KI' | 'Andere' | 'Eigene'>('KI');
+    const [illustrationSearchQuery, setIllustrationSearchQuery] = useState("");
+    const [illustrationSourceFilter, setIllustrationSourceFilter] = useState("");
+    const [aiIllustrationResults, setAiIllustrationResults] = useState<string[] | null>(null);
+    const [isAiSearching, setIsAiSearching] = useState(false);
 
     const toggleGroup = (group: string) => {
         const newSet = new Set(expandedGroups);
@@ -96,7 +100,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const [maxVerses, setMaxVerses] = useState(176);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const wordImportRef = useRef<HTMLInputElement>(null);
 
     // Word selection state
     const [wordSelectorOpen, setWordSelectorOpen] = useState(false);
@@ -112,6 +116,36 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     useEffect(() => {
         loadData();
     }, []);
+
+    const handleIllustrationAISearch = async () => {
+        if (!illustrationSearchQuery.trim()) {
+            setAiIllustrationResults(null);
+            return;
+        }
+
+        setIsAiSearching(true);
+        try {
+            // Send only titles and IDs of all illustrations to the AI to rank them
+            const illustrationData = facts.map(f => ({ id: f.id, title: f.title }));
+            const res = await fetch("/api/search-illustrations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    query: illustrationSearchQuery,
+                    illustrations: illustrationData
+                })
+            });
+
+            if (!res.ok) throw new Error("KI-Suche fehlgeschlagen");
+            const { ids } = await res.json();
+            setAiIllustrationResults(ids);
+        } catch (error) {
+            console.error("[AI Search] Error:", error);
+            alert("Die KI-Suche ist derzeit nicht verfügbar.");
+        } finally {
+            setIsAiSearching(false);
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -146,6 +180,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                 lesson_id: r.lesson_id || "",
                 file: r.file || "",
                 url: r.url || "",
+                author: r.source || r.author || "",
                 collectionId: r.collectionId
             })));
 
@@ -231,9 +266,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         if (mode === 'word_study') {
             data.append('word', formData.word);
         }
-        data.append('url', formData.url);
+        data.append('url', formData.url || "");
         data.append('lesson_id', formData.lesson_id || "");
-        data.append('author', formData.author || "");
+        data.append('source', formData.author || "");
 
         if (selectedFile) {
             data.append('file', selectedFile);
@@ -327,29 +362,84 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
         }
     };
 
-    // CSV Import is kept simple for now - mainly for text facts
-    const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleWordImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const text = await file.text();
-        const lines = text.split('\n').filter(l => l.trim());
-        let imported = 0;
-        for (let i = 1; i < lines.length; i++) {
-            const [title, description, category, source] = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
-            if (title) {
-                try {
-                    // Map old categories if necessary or default to 'text'
-                    const cat = CATEGORIES.some(c => c.id === category.toLowerCase()) ? category.toLowerCase() : "text"; // simplified mapping
-                    await pb.collection('facts').create({ title, description, category: cat, source });
-                    imported++;
-                } catch (e) {
-                    console.error(`Failed to import line ${i}:`, e);
+
+        setAiLoading(true);
+        try {
+            let text = "";
+            console.log("[Import] Selected file:", file.name, file.size, "bytes");
+
+            if (file.name.toLowerCase().endsWith(".docx")) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                text = result.value;
+                console.log("[Import] Mammoth extracted text length:", text.length);
+            } else {
+                text = await file.text();
+                console.log("[Import] Text file read, length:", text.length);
+            }
+
+            if (!text.trim()) {
+                console.warn("[Import] No text found in file");
+                throw new Error("Die Datei scheint keinen Text zu enthalten.");
+            }
+
+            const CHUNK_SIZE = 40000;
+            const chunks: string[] = [];
+            for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+                chunks.push(text.substring(i, i + CHUNK_SIZE));
+            }
+
+            console.log(`[Import] Processing ${chunks.length} chunks...`);
+            let totalCreated = 0;
+
+            for (let i = 0; i < chunks.length; i++) {
+                console.log(`[Import] Processing chunk ${i + 1}/${chunks.length}...`);
+                const res = await fetch("/api/import-illustrations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: chunks[i] }),
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    console.error(`[Import] Chunk ${i + 1} failed:`, errData.error);
+                    continue; // Skip failed chunk and try next
+                }
+
+                const illustrations = await res.json();
+                console.log(`[Import] Chunk ${i + 1} returned ${illustrations.length} illustrations`);
+
+                if (Array.isArray(illustrations)) {
+                    for (const ill of illustrations) {
+                        await pb.collection("facts").create({
+                            title: ill.title,
+                            description: `[justify][hyphen]\n${ill.content}`,
+                            category: "Andere",
+                            type: "text",
+                            fact_kind: "illustration",
+                            source: "Alexander Ryshov"
+                        });
+                        totalCreated++;
+                    }
                 }
             }
+
+            console.log("[Import] Successfully created", totalCreated, "records");
+            alert(`Import abgeschlossen! ${totalCreated} Illustrationen wurden erfolgreich importiert.`);
+
+            // Refresh data after import
+            loadData();
+        } catch (err: any) {
+            console.error("Import error:", err);
+            alert("Fehler beim Import:\n" + err.message);
+        } finally {
+            setAiLoading(false);
+            if (wordImportRef.current) wordImportRef.current.value = "";
         }
-        alert(`${imported} Infos importiert!`);
-        loadData();
-        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const compressImage = async (file: File): Promise<File> => {
@@ -544,13 +634,19 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                 >
                     <Plus size={20} />
                 </button>
-                <label
-                    className="flex items-center justify-center w-10 h-10 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors cursor-pointer shrink-0"
-                    title="CSV Import"
-                >
-                    <Upload size={20} />
-                    <input type="file" accept=".csv" className="hidden" ref={fileInputRef} onChange={handleCSVImport} />
-                </label>
+                {mode === 'illustration' && (
+                    <label
+                        className="flex items-center justify-center w-10 h-10 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-all cursor-pointer border border-indigo-200 dark:border-indigo-800 shadow-sm group"
+                        title="Illustrationen aus Word importieren"
+                    >
+                        {aiLoading ? (
+                            <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                        ) : (
+                            <FileDigit size={20} className="group-hover:scale-110 transition-transform" />
+                        )}
+                        <input type="file" accept=".docx" className="hidden" ref={wordImportRef} onChange={handleWordImport} />
+                    </label>
+                )}
             </div>
 
             {/* Form Modal */}
@@ -976,8 +1072,8 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             </div>
                         )}
 
-                        {/* Text Study & Illustration Tabs */}
-                        {(mode === 'text_study' || mode === 'illustration') && (
+                        {/* Text Study Tabs */}
+                        {mode === 'text_study' && (
                             <div className="flex p-1 bg-zinc-100 dark:bg-slate-800/80 rounded-xl border border-zinc-200 dark:border-slate-700">
                                 {[
                                     { id: 'KI', label: 'KI' },
@@ -986,10 +1082,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                 ].map((tab) => (
                                     <button
                                         key={tab.id}
-                                        onClick={() => mode === 'text_study' ? setActiveTextStudyTab(tab.id as any) : setActiveIllustrationTab(tab.id as any)}
+                                        onClick={() => setActiveTextStudyTab(tab.id as any)}
                                         className={clsx(
                                             "flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
-                                            (mode === 'text_study' ? activeTextStudyTab === tab.id : activeIllustrationTab === tab.id)
+                                            activeTextStudyTab === tab.id
                                                 ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
                                                 : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                                         )}
@@ -1000,20 +1096,159 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             </div>
                         )}
 
+                        {/* Illustration Search & Filter UI */}
+                        {mode === 'illustration' && (
+                            <div className="space-y-3 p-3 bg-white dark:bg-slate-800/50 rounded-2xl border border-zinc-200 dark:border-slate-700">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="Nach Quelle / Verfasser suchen..."
+                                            value={illustrationSourceFilter}
+                                            onChange={(e) => setIllustrationSourceFilter(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="KI-Themensuche (z.B. Treue, Hoffnung)..."
+                                            value={illustrationSearchQuery}
+                                            onChange={(e) => setIllustrationSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleIllustrationAISearch()}
+                                            className="w-full pl-10 pr-12 py-2 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        />
+                                        <button
+                                            onClick={handleIllustrationAISearch}
+                                            disabled={isAiSearching || !illustrationSearchQuery.trim()}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-indigo-500 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg disabled:opacity-50"
+                                        >
+                                            {isAiSearching ? <div className="animate-spin w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full" /> : <ChevronRight size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                {(illustrationSourceFilter || aiIllustrationResults) && (
+                                    <button
+                                        onClick={() => {
+                                            setIllustrationSourceFilter("");
+                                            setIllustrationSearchQuery("");
+                                            setAiIllustrationResults(null);
+                                        }}
+                                        className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                                    >
+                                        Filter zurücksetzen
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         {(() => {
-                            // Filter by selected tab if in word study mode or text study / illustration
                             const filteredFacts = mode === 'word_study'
                                 ? facts.filter(f => activeWordStudyTab === 'lessons' ? !!f.lesson_id : !f.lesson_id)
                                 : mode === 'text_study'
                                     ? facts.filter(f => f.category === activeTextStudyTab)
                                     : mode === 'illustration'
-                                        ? facts.filter(f => f.category === activeIllustrationTab)
+                                        ? facts.filter(f => {
+                                            // 1. Filter by source (local search)
+                                            const sourceMatch = !illustrationSourceFilter ||
+                                                (f.author || "").toLowerCase().includes(illustrationSourceFilter.toLowerCase());
+
+                                            // 2. Filter by AI results if active
+                                            const aiMatch = !aiIllustrationResults || aiIllustrationResults.includes(f.id);
+
+                                            return sourceMatch && aiMatch;
+                                        }).sort((a, b) => {
+                                            // If AI results are active, sort by AI relevance
+                                            if (aiIllustrationResults) {
+                                                return aiIllustrationResults.indexOf(a.id) - aiIllustrationResults.indexOf(b.id);
+                                            }
+                                            return 0; // Default sort from PocketBase
+                                        })
                                         : facts;
 
                             if (filteredFacts.length === 0) {
                                 return (
                                     <div className="text-center py-12 text-zinc-500 bg-zinc-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-slate-700">
                                         <p className="text-sm">Keine Einträge in dieser Kategorie.</p>
+                                    </div>
+                                );
+                            }
+
+                            // Flat list for Illustrations
+                            if (mode === 'illustration') {
+                                return (
+                                    <div className="space-y-3">
+                                        {filteredFacts.map(fact => {
+                                            const TypeLabel = CATEGORIES.find(c => c.id === fact.type)?.label || "Text";
+                                            const TypeIcon = CATEGORIES.find(c => c.id === fact.type)?.icon || FileText;
+
+                                            const colorClass = fact.type === 'image' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300' :
+                                                fact.type === 'video' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' :
+                                                    fact.type === 'map' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' :
+                                                        fact.type === 'link' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' :
+                                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+
+                                            return (
+                                                <div key={fact.id} className="bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg p-3 flex justify-between items-start gap-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap gap-2 mb-1">
+                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1 ${colorClass}`}>
+                                                                <TypeIcon size={10} />
+                                                                {TypeLabel}
+                                                            </span>
+                                                            {fact.word && (
+                                                                <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/40 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                    Wort: {fact.word}
+                                                                </span>
+                                                            )}
+                                                            {fact.category && (
+                                                                <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wide">
+                                                                    {fact.category}
+                                                                </span>
+                                                            )}
+                                                            {fact.author && (
+                                                                <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700/50 px-1.5 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
+                                                                    <User size={10} />
+                                                                    {fact.author}
+                                                                </span>
+                                                            )}
+                                                            {fact.verse_ref && (
+                                                                <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                                                    <BookOpen size={10} /> {fact.verse_ref}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <h4 className="font-semibold text-zinc-900 dark:text-white text-sm">{fact.title}</h4>
+                                                        {fact.description && (
+                                                            <div className="text-xs text-zinc-500 mt-1 line-clamp-1">
+                                                                {fact.description
+                                                                    .replace(/<[^>]*>?/gm, ' ')
+                                                                    .replace(/\[\/?(justify|hyphen|center|left|right)\]/g, '')
+                                                                    .trim()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-1 shrink-0">
+                                                        <button
+                                                            onClick={() => handleEdit(fact)}
+                                                            className="p-1.5 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                            title="Bearbeiten"
+                                                        >
+                                                            <Edit size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(fact.id)}
+                                                            className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                            title="Löschen"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 );
                             }
