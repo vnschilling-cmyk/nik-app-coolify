@@ -607,21 +607,20 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 <div className="space-y-4">
                     {/* Thema or Whole Book lessons: Show description and then sorted list of items */}
                     {(isThema || (hasBibleRef && lesson.chapter_start === 0)) && (
-                        <div className="space-y-4">
-                            {!isThema && lesson.content && (
-                                <div className="bg-zinc-50 dark:bg-slate-800/50 rounded-lg p-4 shadow-sm border border-zinc-100 dark:border-slate-700">
-                                    <RichTextDisplay content={lesson.content} />
-                                </div>
-                            )}
-
-                            {isThema && (
-                                <div className="">
-                                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-2">
-                                        <FileText size={20} />
-                                        <span className="font-medium">Thema-Beschreibung</span>
-                                    </div>
-                                    <div className="prose prose-zinc dark:prose-invert text-zinc-700 dark:text-zinc-300">
-                                        <RichTextDisplay content={lesson.content || "Keine Beschreibung vorhanden."} />
+                        <div className="space-y-6">
+                            {lesson.content && (
+                                <div className="relative group">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                                    <div className="relative bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-xl p-6 shadow-xl shadow-indigo-500/5 border border-indigo-500/10 border-l-4 border-l-indigo-500">
+                                        {isThema && (
+                                            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-4">
+                                                <FileText size={18} className="animate-pulse" />
+                                                <span className="text-xs font-bold uppercase tracking-widest">Thema-Beschreibung</span>
+                                            </div>
+                                        )}
+                                        <div className="prose prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                            <RichTextDisplay content={lesson.content} />
+                                        </div>
                                     </div>
                                 </div>
                             )}
