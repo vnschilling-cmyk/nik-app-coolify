@@ -93,10 +93,10 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                         key={i}
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer font-bold rounded px-0.5 transition-all select-none border-b-2",
+                            "cursor-pointer transition-all inline-block",
                             isMatch
-                                ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border-amber-500"
-                                : "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 border-cyan-400 dark:border-cyan-500"
+                                ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 border-b-2 border-amber-500 rounded px-1 py-0.5 font-bold"
+                                : "text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300"
                         )}
                     >
                         {chunk}
@@ -111,7 +111,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                         key={i}
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer rounded px-0.5 transition-all select-none",
+                            "cursor-pointer rounded px-1 py-0.5 transition-all inline-block mb-0.5",
                             isMatch
                                 ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
                                 : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
@@ -123,11 +123,11 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
             }
 
             return (
-                <span key={i} className="inline-flex items-baseline flex-nowrap">
+                <span key={i} className="inline-flex items-baseline flex-nowrap mb-0.5">
                     <span
                         onClick={() => onWordClick(chunk)}
                         className={clsx(
-                            "cursor-pointer rounded px-0.5 transition-all select-none",
+                            "cursor-pointer rounded px-1 py-0.5 transition-all",
                             isMatch
                                 ? "bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold"
                                 : "hover:bg-blue-100 dark:hover:bg-blue-900/50 active:bg-blue-200 dark:active:bg-blue-800"
@@ -140,10 +140,10 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                             e.stopPropagation();
                             setSelectedMeasure({ unit: measureMatch.unit, originalWord: chunk, quantity });
                         }}
-                        className="ml-0.5 inline-flex items-center justify-center p-0.5 text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 rounded-full hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors align-super shrink-0"
+                        className="ml-0.5 inline-flex items-center justify-center p-1 text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/30 rounded-full hover:bg-amber-100 dark:hover:bg-amber-800 transition-colors align-super shrink-0"
                         title={`Maßeinheit: ${measureMatch.unit.name}`}
                     >
-                        <Calculator size={10} />
+                        <Calculator size={12} />
                     </button>
                 </span>
             );
@@ -212,7 +212,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                             return (
                                                 <span
                                                     key={lesson.id}
-                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2 rounded-full shadow-md cursor-not-allowed transition-opacity flex items-center justify-center"
+                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed transition-opacity flex items-center justify-center"
                                                     title={lesson.debugTitle}
                                                 >
                                                     <GraduationCap size={18} strokeWidth={2.5} />
@@ -223,7 +223,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                             <Link
                                                 key={lesson.id}
                                                 href={`/study/${lesson.id}`}
-                                                className="bg-indigo-600 text-white p-2 rounded-full shadow-lg shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer flex items-center justify-center"
+                                                className="bg-indigo-600 text-white p-2.5 rounded-full shadow-lg shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer flex items-center justify-center"
                                                 title={lesson.debugTitle}
                                             >
                                                 <GraduationCap size={18} strokeWidth={2.5} />
@@ -243,7 +243,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                             <button
                                                 key={fact.id}
                                                 onClick={() => onFactClick?.(fact)}
-                                                className="bg-amber-500 text-white p-2 rounded-full shadow-lg shadow-amber-500/40 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
+                                                className="bg-amber-500 text-white p-2.5 rounded-full shadow-lg shadow-amber-500/40 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
                                                 title={fact.title || 'Info'}
                                             >
                                                 <Lightbulb size={16} strokeWidth={2.5} />
@@ -263,7 +263,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                             <button
                                                 key={question.id}
                                                 onClick={() => onQuestionClick?.(question)}
-                                                className="bg-emerald-500 text-white p-2 rounded-full shadow-lg shadow-emerald-500/40 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
+                                                className="bg-emerald-500 text-white p-2.5 rounded-full shadow-lg shadow-emerald-500/40 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
                                                 title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
                                             >
                                                 <HelpCircle size={16} strokeWidth={2.5} />
@@ -275,7 +275,7 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
 
                             <button
                                 onClick={() => onVerseClick?.(v.verse)}
-                                className="text-xs font-bold text-blue-500 mr-2 select-none align-top pt-1 inline-block hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                                className="text-sm font-bold text-blue-500 mr-2 p-1.5 -m-1.5 select-none align-top pt-1 inline-block hover:scale-110 active:scale-95 transition-transform cursor-pointer"
                                 title={`Vers ${v.verse} analysieren`}
                             >
                                 {v.verse}

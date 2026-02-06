@@ -74,6 +74,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         word = body.word;
         const { context, testament } = body;
+        const userAgent = request.headers.get('user-agent') || 'unknown';
+
+        console.log(`[WordMeaning] Request: word=${word}, testament=${testament}, UA=${userAgent}`);
 
         if (!word) {
             return NextResponse.json({ error: 'Word is required' }, { status: 400 });

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
 import NextImage from "next/image";
-import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Trophy, Scroll, Brain, Languages, Quote } from "lucide-react";
+import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Trophy, Scroll, Brain, Languages, Quote, Sparkles } from "lucide-react";
 
 interface Lesson {
     id: string;
@@ -260,13 +260,18 @@ export default function StudyPage() {
 
                                                                 {!isInactive && (
                                                                     <>
-                                                                        {lessonFacts.filter(f => !f.fact_kind || f.fact_kind === 'info').length > 0 && (
+                                                                        {lessonFacts.some(f => f.category === 'KI') && (
+                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-indigo-500 animate-pulse-soft">
+                                                                                <Sparkles size={12} /> KI
+                                                                            </span>
+                                                                        )}
+                                                                        {lessonFacts.filter(f => (!f.fact_kind || f.fact_kind === 'info') && f.category !== 'KI').length > 0 && (
                                                                             <span className="shrink-0 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                                                                                <Lightbulb size={12} /> {lessonFacts.filter(f => !f.fact_kind || f.fact_kind === 'info').length}
+                                                                                <Lightbulb size={12} /> {lessonFacts.filter(f => (!f.fact_kind || f.fact_kind === 'info') && f.category !== 'KI').length}
                                                                             </span>
                                                                         )}
                                                                         {lessonFacts.filter(f => f.fact_kind === 'word_study').length > 0 && (
-                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-cyan-600 dark:text-cyan-400">
+                                                                            <span className="shrink-0 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                                                                                 <Languages size={12} /> {lessonFacts.filter(f => f.fact_kind === 'word_study').length}
                                                                             </span>
                                                                         )}

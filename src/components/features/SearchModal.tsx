@@ -230,7 +230,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                                             <div className="space-y-1">
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-1.5 py-0.5 rounded">
-                                                                        {r.bookName} {r.chapter}:{r.verse}
+                                                                        {r.bookShort} {r.chapter}:{r.verse}
                                                                     </span>
                                                                     <span className="text-[10px] text-zinc-400 capitalize">{r.translation}</span>
                                                                 </div>

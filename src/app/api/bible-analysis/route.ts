@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { type, book, chapter, verse, testament } = body;
+        const userAgent = request.headers.get('user-agent') || 'unknown';
+
+        console.log(`[BibleAnalysis] Request: type=${type}, book=${book}, chapter=${chapter}, verse=${verse}, testament=${testament}, UA=${userAgent}`);
 
         if (!type || !book || !chapter) {
             return NextResponse.json({ error: 'Type, book, and chapter are required' }, { status: 400 });

@@ -102,6 +102,7 @@ interface Lesson {
     expand?: {
         book_id?: {
             name: string;
+            short_name: string;
             order: number;
         };
     };
@@ -266,7 +267,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
             setMemoryVerses(memoryVersesRes.map(r => ({
                 id: r.id,
                 text: r.text,
-                reference: `${r.expand?.book_id?.name || ""} ${r.chapter}:${r.verse_start}${r.verse_end > r.verse_start ? `-${r.verse_end}` : ""}`
+                reference: `${r.expand?.book_id?.short_name || r.expand?.book_id?.name || ""} ${r.chapter}:${r.verse_start}${r.verse_end > r.verse_start ? `-${r.verse_end}` : ""}`
             })));
 
             setQuizzes(quizzesRes.map(r => ({
@@ -414,7 +415,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                             </span>
                         )}
                         {facts.filter(f => f.fact_kind === 'word_study').length > 0 && (
-                            <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                                 <Languages size={10} /> {facts.filter(f => f.fact_kind === 'word_study').length}
                             </span>
                         )}
@@ -704,7 +705,7 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                                                     <span
                                                                         key={i}
                                                                         onClick={() => setSelectedFact(matchingFact)}
-                                                                        className="cursor-pointer font-bold bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100 rounded px-0.5 transition-colors border-b-2 border-cyan-400 dark:border-cyan-500"
+                                                                        className="cursor-pointer font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded px-0.5 transition-colors"
                                                                     >
                                                                         {chunk}
                                                                     </span>

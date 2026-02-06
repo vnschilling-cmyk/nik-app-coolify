@@ -158,17 +158,17 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         </div>
                         <div>
                             <h1 className="text-lg font-bold flex items-center gap-1 leading-tight">
-                                {book.name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
+                                {book.short_name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
                             </h1>
                             <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Bibel lesen</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mask-fade-right -mr-4 pr-4">
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'KI' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95",
+                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
                                 textStudies.some(s => s.category === 'KI' && s.verse_start === 0)
                                     ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
                                     : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
@@ -180,7 +180,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Andere' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95",
+                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
                                 textStudies.some(s => s.category === 'Andere' && s.verse_start === 0)
                                     ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                                     : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
@@ -192,7 +192,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         <button
                             onClick={() => setAnalysisConfig({ isOpen: true, type: 'chapter', category: 'Eigene' })}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95",
+                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
                                 textStudies.some(s => s.category === 'Eigene' && s.verse_start === 0)
                                     ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
                                     : "text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
@@ -205,7 +205,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         <button
                             onClick={() => setShowLessons(!showLessons)}
                             className={clsx(
-                                "p-2 rounded-xl transition-all active:scale-95",
+                                "p-2 rounded-xl transition-all active:scale-95 shrink-0",
                                 showLessons
                                     ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
                                     : "text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800"
@@ -215,11 +215,11 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <GraduationCap size={18} />
                         </button>
 
-                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1" />
+                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
 
                         <button
                             onClick={() => setIsSearchOpen(true)}
-                            className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                            className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-xl transition-colors shrink-0"
                             title="Suche öffnen"
                         >
                             <Search size={18} />
