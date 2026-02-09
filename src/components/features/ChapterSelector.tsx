@@ -129,6 +129,8 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                     <button
                         onClick={handleBack}
                         className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                        aria-label="Zurück zur Buchauswahl"
+                        title="Zurück"
                     >
                         <ChevronRight className="w-5 h-5 rotate-180" />
                     </button>
@@ -143,6 +145,8 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                 <button
                     onClick={onClose}
                     className="p-2 -mr-2 rounded-full hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                    aria-label="Schließen"
+                    title="Schließen"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -189,6 +193,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                                         : `${color.bg} ${color.text} opacity-80 hover:opacity-100`
                                                 )}
                                                 title={book.name}
+                                                aria-label={book.name}
                                             >
                                                 <span className="font-bold text-xs leading-tight text-center">{getDisplayName(book)}</span>
                                                 <span className="text-[8px] opacity-75">{book.chapters}</span>
@@ -220,6 +225,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                                         : `${color.bg} ${color.text} opacity-80 hover:opacity-100`
                                                 )}
                                                 title={book.name}
+                                                aria-label={book.name}
                                             >
                                                 <span className="font-bold text-xs leading-tight text-center">{getDisplayName(book)}</span>
                                                 <span className="text-[8px] opacity-75">{book.chapters}</span>
@@ -253,6 +259,7 @@ export default function ChapterSelector({ isOpen, onClose, currentBook, currentC
                                         ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
                                         : "bg-zinc-100 dark:bg-slate-700 hover:bg-zinc-200 dark:hover:bg-slate-600 text-zinc-700 dark:text-zinc-300"
                                 )}
+                                aria-label={`Kapitel ${chapter}`}
                             >
                                 {chapter}
                             </button>

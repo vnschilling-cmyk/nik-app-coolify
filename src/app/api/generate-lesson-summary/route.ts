@@ -1,6 +1,6 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { THEOLOGICAL_CONSTRAINTS } from "@/lib/theology";
 
 const API_KEY = process.env.GOOGLE_AI_API_KEY;
 
@@ -32,6 +32,8 @@ export async function POST(req: Request) {
 
         const prompt = `
             Du bist ein Experte für theologische Bildung. Erstelle eine kurze, einladende Kurzbeschreibung (Vorschau) für eine Bibellektion.
+
+            ${THEOLOGICAL_CONSTRAINTS}
 
             KONTEXT DER LEKTION:
             ---

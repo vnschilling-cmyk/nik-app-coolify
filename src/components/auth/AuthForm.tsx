@@ -109,8 +109,9 @@ export default function AuthForm() {
                 )}
 
                 <div>
-                    <label className="block text-xs font-medium text-zinc-500 mb-1">Name (Vorname Nachname)</label>
+                    <label htmlFor="identity" className="block text-xs font-medium text-zinc-500 mb-1">Name (Vorname Nachname)</label>
                     <input
+                        id="identity"
                         type="text"
                         required
                         className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -121,8 +122,9 @@ export default function AuthForm() {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-zinc-500 mb-1">Passwort</label>
+                    <label htmlFor="password" className="block text-xs font-medium text-zinc-500 mb-1">Passwort</label>
                     <input
+                        id="password"
                         type="password"
                         required
                         className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"

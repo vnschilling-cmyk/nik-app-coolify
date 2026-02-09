@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
 import NextImage from "next/image";
-import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Trophy, Scroll, Brain, Languages, Quote, Sparkles, FileText } from "lucide-react";
+import { BookOpen, ChevronRight, ChevronDown, Lightbulb, HelpCircle, GraduationCap, Trophy, Scroll, Brain, Languages, Quote, Sparkles, FileText, Shield } from "lucide-react";
 import clsx from "clsx";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Lesson {
     id: string;
@@ -46,6 +47,7 @@ interface Quiz {
 }
 
 export default function StudyPage() {
+    const { canAccessPage } = usePermissions();
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [facts, setFacts] = useState<Fact[]>([]);
     const [questions, setQuestions] = useState<Question[]>([]);
@@ -59,6 +61,26 @@ export default function StudyPage() {
         setCurrentUser(pb.authStore.model);
         loadData();
     }, []);
+
+    if (!loading && !canAccessPage("study")) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-3xl flex items-center justify-center text-red-600 dark:text-red-400 mb-6 shadow-xl shadow-red-500/10 scale-110">
+                    <Shield size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-3 uppercase tracking-tight">Zugriff verweigert</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                    Du hast keine Berechtigung, diesen Bereich zu sehen. Bitte wende dich an die Jugendleitung.
+                </p>
+                <Link
+                    href="/dashboard"
+                    className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-all active:scale-95"
+                >
+                    Zum Dashboard
+                </Link>
+            </div>
+        );
+    }
 
     const loadData = async () => {
         try {

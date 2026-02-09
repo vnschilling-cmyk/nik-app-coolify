@@ -7,6 +7,7 @@ import clsx from "clsx";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { exportLessonsToExcel } from "@/lib/exportUtils";
 import { useRouter } from "next/navigation";
+import { usePermissions } from "@/hooks/usePermissions";
 interface BibleBook {
     id: string;
     name: string;
@@ -40,6 +41,8 @@ export default function LessonsTab() {
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
 
     useEffect(() => {
         loadData();
@@ -360,6 +363,10 @@ export default function LessonsTab() {
     };
 
     const handleGenerateSummary = async () => {
+        if (!hasAIPermission) {
+            alert("Du hast keine Berechtigung für KI-Funktionen.");
+            return;
+        }
         if (generatingSummary) return;
         setGeneratingSummary(true);
 
@@ -809,20 +816,22 @@ export default function LessonsTab() {
                                     <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                                         {isThema ? "Thema-Beschreibung" : "Kurzbeschreibung"}
                                     </label>
-                                    <button
-                                        type="button"
-                                        onClick={handleGenerateSummary}
-                                        disabled={generatingSummary || (!contentItems.length && !formData.book_id)}
-                                        className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors disabled:opacity-30"
-                                        title="Kurzbeschreibung mit KI generieren"
-                                    >
-                                        {generatingSummary ? (
-                                            <div className="animate-spin w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full" />
-                                        ) : (
-                                            <Sparkles size={12} />
-                                        )}
-                                        KI-Vorschlag
-                                    </button>
+                                    {hasAIPermission && (
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateSummary}
+                                            disabled={generatingSummary || (!contentItems.length && !formData.book_id)}
+                                            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors disabled:opacity-30"
+                                            title="Kurzbeschreibung mit KI generieren"
+                                        >
+                                            {generatingSummary ? (
+                                                <div className="animate-spin w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                                            ) : (
+                                                <Sparkles size={12} />
+                                            )}
+                                            KI-Vorschlag
+                                        </button>
+                                    )}
                                 </div>
                                 <RichTextEditor
                                     value={formData.content}

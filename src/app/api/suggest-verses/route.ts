@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { THEOLOGICAL_CONSTRAINTS } from '@/lib/theology';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
 
         const prompt = `Du bist ein Bibelexperte. Schlage mir 5 passende "Lernverse" (Memory Verses) für folgende Lektion vor.
 Die Verse sollen den Kern der Lektion biblisch untermauern.
+
+${THEOLOGICAL_CONSTRAINTS}
 
 Lektion: "${title}"
 Kategorie: "${category || 'Allgemein'}"

@@ -19,6 +19,7 @@ interface BibleReaderProps {
     wordStudies?: LinkedLesson[];
     facts?: ChapterFact[];
     questions?: ChapterQuestion[];
+    textStudies?: any[];
     onWordClick: (word: string) => void;
     onVerseClick?: (verse: number) => void;
     onFactClick?: (fact: ChapterFact) => void;
@@ -26,7 +27,7 @@ interface BibleReaderProps {
     searchQuery?: string;
 }
 
-export default function BibleReader({ verses, lessons = [], wordStudies = [], facts = [], questions = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], wordStudies = [], facts = [], questions = [], textStudies = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -153,48 +154,6 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
     return (
         <article className="w-full px-4 py-6 dark:text-zinc-200 relative bible-text" lang="de">
             {verses.map((v) => {
-                // Determine which lesson is the "next possible" one across all lessons
-                // (This could be cached outside the map if performance is an issue, but for a chapter it's fine)
-                const now = new Date();
-                const buffer = 600000; // 10 min 
-
-                const activeFutureLessons = lessons
-                    .filter(l => l.active && l.start_date && (new Date(l.start_date).getTime() > now.getTime() + buffer))
-                    .sort((a, b) => new Date(a!.start_date!).getTime() - new Date(b!.start_date!).getTime());
-
-                const nextPossibleId = activeFutureLessons.length > 0 ? activeFutureLessons[0].id : null;
-
-                // Find lessons starting at this verse
-                const currentLessons = lessons
-                    .filter(l => Number(l.verse_start) === v.verse)
-                    .map(l => {
-                        const lessonDate = l.start_date ? new Date(l.start_date).getTime() : 0;
-                        const isDateReached = !l.start_date || (lessonDate <= now.getTime() + buffer);
-                        const isNextPossible = l.id === nextPossibleId;
-
-                        const isActiveFlag = l.active;
-                        // User Request: If active, lesson is unlocked regardless of date. 
-                        // Date is only used for status text or sorting, not for locking.
-                        const isEffectivelyActive = isActiveFlag;
-
-                        let statusText = isActiveFlag ? 'Aktiv' : 'Deaktiviert';
-                        if (isActiveFlag && !isDateReached) {
-                            // It is active (unlocked), but technically in the future.
-                            statusText = 'Vorab freigeschaltet (Zukünftig)';
-                        }
-
-                        const debugTitle = `Lektion: ${l.title}\n` +
-                            `Status: ${statusText}\n` +
-                            `Datum: ${l.start_date ? new Date(l.start_date).toLocaleString() : 'Keins'}\n` +
-                            `Klickbar: ${isEffectivelyActive ? 'JA' : 'NEIN'}`;
-
-                        return { ...l, isEffectivelyActive, isNextPossible, debugTitle };
-                    })
-                    .sort((a, b) => {
-                        if (a.isEffectivelyActive !== b.isEffectivelyActive) return a.isEffectivelyActive ? -1 : 1;
-                        return (a.start_date || '') > (b.start_date || '') ? 1 : -1;
-                    });
-
                 return (
                     <div key={v.verse} id={`v${v.verse}`} className="relative group mb-6 scroll-mt-20">
                         <p
@@ -204,82 +163,24 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                 textJustify: 'auto'
                             }}
                         >
-                            {/* Lesson Icons Floated in Right Margin */}
-                            {currentLessons.length > 0 && (
-                                <span className="float-right ml-4 mb-2 flex flex-col gap-3">
-                                    {currentLessons.map(lesson => {
-                                        if (!lesson.isEffectivelyActive) {
-                                            return (
-                                                <span
-                                                    key={lesson.id}
-                                                    className="bg-zinc-100 dark:bg-slate-700/80 text-zinc-400 dark:text-slate-300 p-2.5 rounded-full shadow-md cursor-not-allowed transition-opacity flex items-center justify-center"
-                                                    title={lesson.debugTitle}
-                                                >
-                                                    <GraduationCap size={18} strokeWidth={2.5} />
-                                                </span>
-                                            );
-                                        }
-                                        return (
-                                            <Link
-                                                key={lesson.id}
-                                                href={`/study/${lesson.id}`}
-                                                className="bg-indigo-600 text-white p-2.5 rounded-full shadow-lg shadow-indigo-600/40 hover:scale-110 hover:bg-indigo-500 transition-all cursor-pointer flex items-center justify-center"
-                                                title={lesson.debugTitle}
-                                            >
-                                                <GraduationCap size={18} strokeWidth={2.5} />
-                                            </Link>
-                                        );
-                                    })}
-                                </span>
-                            )}
-
-                            {/* Facts Bubbles - Floated Left */}
                             {(() => {
-                                const verseFacts = facts.filter(f => f.verse_start === v.verse);
-                                if (verseFacts.length === 0) return null;
+                                const hasKIAnalysis = textStudies.some(s => s.verse_start === v.verse && s.category === 'KI');
+
                                 return (
-                                    <span className="float-left mr-4 mb-2 flex flex-col gap-2">
-                                        {verseFacts.map(fact => (
-                                            <button
-                                                key={fact.id}
-                                                onClick={() => onFactClick?.(fact)}
-                                                className="bg-amber-500 text-white p-2.5 rounded-full shadow-lg shadow-amber-500/40 hover:scale-110 hover:bg-amber-400 transition-all cursor-pointer flex items-center justify-center"
-                                                title={fact.title || 'Info'}
-                                            >
-                                                <Lightbulb size={16} strokeWidth={2.5} />
-                                            </button>
-                                        ))}
-                                    </span>
+                                    <button
+                                        onClick={() => onVerseClick?.(v.verse)}
+                                        className={clsx(
+                                            "text-sm font-black mr-2 p-3 -m-3 select-none align-top pt-1 inline-block hover:scale-125 active:scale-90 transition-all cursor-pointer",
+                                            hasKIAnalysis
+                                                ? "bg-indigo-600 text-white rounded-lg px-2.5 py-1 -mt-1 shadow-lg shadow-indigo-600/30"
+                                                : "text-indigo-500/80 dark:text-indigo-400/80"
+                                        )}
+                                        title={hasKIAnalysis ? `Analyse anzeigen (Vers ${v.verse})` : `Vers ${v.verse} analysieren`}
+                                    >
+                                        {v.verse}
+                                    </button>
                                 );
                             })()}
-
-                            {/* Questions Bubbles - Also floated right but below lessons */}
-                            {(() => {
-                                const verseQuestions = questions.filter(q => q.verse_start === v.verse);
-                                if (verseQuestions.length === 0) return null;
-                                return (
-                                    <span className="float-right ml-4 mb-2 flex flex-col gap-2">
-                                        {verseQuestions.map(question => (
-                                            <button
-                                                key={question.id}
-                                                onClick={() => onQuestionClick?.(question)}
-                                                className="bg-emerald-500 text-white p-2.5 rounded-full shadow-lg shadow-emerald-500/40 hover:scale-110 hover:bg-emerald-400 transition-all cursor-pointer flex items-center justify-center"
-                                                title={question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')}
-                                            >
-                                                <HelpCircle size={16} strokeWidth={2.5} />
-                                            </button>
-                                        ))}
-                                    </span>
-                                );
-                            })()}
-
-                            <button
-                                onClick={() => onVerseClick?.(v.verse)}
-                                className="text-sm font-black text-indigo-500/80 dark:text-indigo-400/80 mr-2 p-3 -m-3 select-none align-top pt-1 inline-block hover:scale-125 active:scale-90 transition-all cursor-pointer"
-                                title={`Vers ${v.verse} analysieren`}
-                            >
-                                {v.verse}
-                            </button>
                             {renderInteractiveText(v.text)}
                         </p>
                     </div>
@@ -295,6 +196,8 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                         <button
                             onClick={() => setSelectedMeasure(null)}
                             className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                            aria-label="Schließen"
+                            title="Schließen"
                         >
                             <X size={20} />
                         </button>

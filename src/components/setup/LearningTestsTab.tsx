@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil, RefreshCw } from "lucide-react";
 import clsx from "clsx";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Question {
     question: string;
@@ -33,6 +34,8 @@ export default function LearningTestsTab() {
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [loading, setLoading] = useState(true);
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
 
     // Create/Edit State
     const [isCreating, setIsCreating] = useState(false);
@@ -101,6 +104,10 @@ export default function LearningTestsTab() {
     };
 
     const handleGenerateAI = async () => {
+        if (!hasAIPermission) {
+            alert("Du hast keine Berechtigung für KI-Funktionen.");
+            return;
+        }
         if (!selectedLessonId) return;
         setGenerating(true);
         try {
@@ -352,20 +359,22 @@ export default function LearningTestsTab() {
                             <Pencil size={18} />
                             <span>Manuell</span>
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setMode("ai")}
-                            className={clsx(
-                                "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all text-sm font-medium",
-                                mode === "ai"
-                                    ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30"
-                                    : "bg-white/5 opacity-50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
-                            )}
-                            title="KI Generierung"
-                        >
-                            <Sparkles size={18} />
-                            <span>KI</span>
-                        </button>
+                        {hasAIPermission && (
+                            <button
+                                type="button"
+                                onClick={() => setMode("ai")}
+                                className={clsx(
+                                    "flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all text-sm font-medium",
+                                    mode === "ai"
+                                        ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30"
+                                        : "bg-white/5 opacity-50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
+                                )}
+                                title="KI Generierung"
+                            >
+                                <Sparkles size={18} />
+                                <span>KI</span>
+                            </button>
+                        )}
                     </div>
 
                     {mode === "ai" && (

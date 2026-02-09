@@ -227,6 +227,7 @@ export default function GroupsOverview() {
                     disabled={syncing}
                     className="p-3 bg-zinc-100 dark:bg-slate-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                     title="Gruppen synchronisieren"
+                    aria-label="Gruppen synchronisieren"
                 >
                     <RefreshCw size={20} className={syncing ? "animate-spin text-indigo-500" : "text-zinc-600 dark:text-zinc-400"} />
                 </button>
@@ -259,6 +260,7 @@ export default function GroupsOverview() {
                                         disabled={syncing}
                                         className="p-2 text-zinc-400 hover:text-indigo-500 transition-colors"
                                         title="Mitglieder synchronisieren"
+                                        aria-label="Mitglieder synchronisieren"
                                     >
                                         <RefreshCw size={18} className={syncing ? "animate-spin" : ""} />
                                     </button>
@@ -275,6 +277,8 @@ export default function GroupsOverview() {
                                             : "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
                                             }`}
                                         title={selectedGroupId === group.id ? "Schließen" : "Mitglieder anzeigen"}
+                                        aria-label={selectedGroupId === group.id ? "Mitgliederliste schließen" : "Mitgliederliste anzeigen"}
+                                        aria-expanded={selectedGroupId === group.id ? "true" : "false"}
                                     >
                                         {selectedGroupId === group.id ? <X size={18} /> : <Users size={18} />}
                                     </button>
@@ -307,6 +311,7 @@ export default function GroupsOverview() {
                                                             value={member.role}
                                                             onChange={(e) => updateMemberRole(member.id, e.target.value)}
                                                             className="text-xs bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                            aria-label={`Rolle für ${member.name}`}
                                                         >
                                                             <option value="youth">Jugendlicher</option>
                                                             <option value="staff">Mitarbeiter</option>
@@ -329,6 +334,8 @@ export default function GroupsOverview() {
                 <button
                     onClick={() => setConfigOpen(!configOpen)}
                     className="w-full flex items-center justify-between p-4 bg-zinc-50 dark:bg-slate-800/50 hover:bg-zinc-100 dark:hover:bg-slate-800 transition-colors"
+                    aria-label="ChurchTools Integration Einstellungen umschalten"
+                    aria-expanded={configOpen ? "true" : "false"}
                 >
                     <div className="flex items-center gap-3">
                         <LinkIcon size={18} className="text-indigo-500" />
@@ -341,8 +348,9 @@ export default function GroupsOverview() {
                     <div className="p-6 animate-slideDown">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Instanz URL</label>
+                                <label htmlFor="ct-url" className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Instanz URL</label>
                                 <input
+                                    id="ct-url"
                                     type="url"
                                     value={config.url}
                                     onChange={e => setConfig({ ...config, url: e.target.value })}
@@ -351,8 +359,9 @@ export default function GroupsOverview() {
                                 />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Login Token</label>
+                                <label htmlFor="ct-token" className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Login Token</label>
                                 <input
+                                    id="ct-token"
                                     type="password"
                                     value={config.token}
                                     onChange={e => setConfig({ ...config, token: e.target.value })}

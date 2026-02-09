@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { THEOLOGICAL_CONSTRAINTS } from '@/lib/theology';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +96,8 @@ export async function POST(request: NextRequest) {
         const languageCode = testament === 'NT' ? 'Greek' : 'Hebrew';
 
         const prompt = `Du bist ein Bibelexperte und Sprachwissenschaftler. Analysiere das deutsche Wort "${word}" im biblischen Kontext.
+
+${THEOLOGICAL_CONSTRAINTS}
 
 Kontext: "${context || 'Bibeltext'}"
 Testament: ${testament === 'NT' ? 'Neues Testament' : 'Altes Testament'}

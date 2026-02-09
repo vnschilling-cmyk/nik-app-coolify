@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, Link, ChevronDown, ChevronRight, Image as ImageIcon, Video, FileText, Map as MapIcon, ExternalLink, Search, Sparkles, User, FileDigit } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import QuoteSelectionModal from "@/components/features/QuoteSelectionModal";
@@ -56,6 +57,8 @@ interface InfosTabProps {
 }
 
 export default function InfosTab({ mode = 'info' }: InfosTabProps) {
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
     const [facts, setFacts] = useState<Fact[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -118,6 +121,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     }, []);
 
     const handleIllustrationAISearch = async () => {
+        if (!hasAIPermission) return;
         if (!illustrationSearchQuery.trim()) {
             setAiIllustrationResults(null);
             return;
@@ -274,6 +278,29 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
             data.append('file', selectedFile);
         }
 
+        // Generate plainText for word studies (clean version for workbook)
+        if (mode === 'word_study') {
+            // Extract Bedeutung and Wortwurzel from HTML description
+            const desc = formData.description;
+            const plainTextParts: string[] = [];
+
+            // Extract Bedeutung
+            const bedeutungMatch = desc.match(/>Bedeutung<\/p>\s*<p[^>]*>([^<]+)</i);
+            if (bedeutungMatch && bedeutungMatch[1] && bedeutungMatch[1] !== '—') {
+                plainTextParts.push(`**Bedeutung:** ${bedeutungMatch[1].trim()}`);
+            }
+
+            // Extract Wortwurzel
+            const wurzelMatch = desc.match(/>Wortwurzel<\/p>\s*<p[^>]*>([^<]+)</i);
+            if (wurzelMatch && wurzelMatch[1]) {
+                plainTextParts.push(`**Wortwurzel:** ${wurzelMatch[1].trim()}`);
+            }
+
+            if (plainTextParts.length > 0) {
+                data.append('plainText', plainTextParts.join('\n'));
+            }
+        }
+
         if (formData.has_bible_ref && formData.book_id) {
             data.append('verse_ref', generateVerseRef());
             data.append('book_id', formData.book_id);
@@ -364,6 +391,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
 
     const handleWordImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!hasAIPermission) return;
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -634,7 +662,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                 >
                     <Plus size={20} />
                 </button>
-                {mode === 'illustration' && (
+                {mode === 'illustration' && hasAIPermission && (
                     <label
                         className="flex items-center justify-center w-10 h-10 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-all cursor-pointer border border-indigo-200 dark:border-indigo-800 shadow-sm group"
                         title="Illustrationen aus Word importieren"
@@ -768,19 +796,21 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                 <Search size={18} />
                                             </button>
                                         )}
-                                        <button
-                                            type="button"
-                                            onClick={handleGenerateAIStudy}
-                                            disabled={aiLoading || !formData.word.trim()}
-                                            className="flex items-center gap-2 px-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shrink-0 disabled:opacity-50"
-                                            title="KI-Studie generieren"
-                                        >
-                                            {aiLoading ? (
-                                                <div className="animate-spin w-4.5 h-4.5 border-2 border-emerald-500 border-t-transparent rounded-full" />
-                                            ) : (
-                                                <Sparkles size={18} />
-                                            )}
-                                        </button>
+                                        {hasAIPermission && (
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerateAIStudy}
+                                                disabled={aiLoading || !formData.word.trim()}
+                                                className="flex items-center gap-2 px-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shrink-0 disabled:opacity-50"
+                                                title="KI-Studie generieren"
+                                            >
+                                                {aiLoading ? (
+                                                    <div className="animate-spin w-4.5 h-4.5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                                                ) : (
+                                                    <Sparkles size={18} />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )}

@@ -115,6 +115,8 @@ export default function GroupsTab() {
             <button
                 onClick={() => setView(backTo)}
                 className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Zurück"
+                title="Zurück"
             >
                 <ArrowLeft size={20} />
             </button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
 import { Plus, Trash2, BookOpen, Sparkles, X, ChevronDown, ChevronRight, GraduationCap, Check, Pencil, Save } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface BibleBook {
     id: string;
@@ -52,6 +53,8 @@ export default function MemoryVersesTab() {
     const [verses, setVerses] = useState<MemoryVerse[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
 
     // Create/Edit State
     const [isCreating, setIsCreating] = useState(false);
@@ -116,6 +119,10 @@ export default function MemoryVersesTab() {
     };
 
     const getSuggestions = async () => {
+        if (!hasAIPermission) {
+            alert("Du hast keine Berechtigung für KI-Funktionen.");
+            return;
+        }
         if (!selectedLessonId) return;
         setLoadingSuggestions(true);
         setSuggestions([]);
@@ -322,13 +329,15 @@ export default function MemoryVersesTab() {
                             >
                                 <Pencil size={20} />
                             </button>
-                            <button
-                                onClick={() => setMode("ai")}
-                                className={`flex-1 py-3 rounded-xl border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30 active:scale-95" : "bg-white/50 dark:bg-slate-900/40 border-zinc-200 dark:border-white/5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-slate-800"}`}
-                                title="Vorschläge generieren"
-                            >
-                                <Sparkles size={20} />
-                            </button>
+                            {hasAIPermission && (
+                                <button
+                                    onClick={() => setMode("ai")}
+                                    className={`flex-1 py-3 rounded-xl border flex items-center justify-center transition-all ${mode === "ai" ? "bg-purple-600 border-purple-600 text-white shadow-lg shadow-purple-500/30 active:scale-95" : "bg-white/50 dark:bg-slate-900/40 border-zinc-200 dark:border-white/5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-slate-800"}`}
+                                    title="Vorschläge generieren"
+                                >
+                                    <Sparkles size={20} />
+                                </button>
+                            )}
                         </div>
                     )}
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { THEOLOGICAL_CONSTRAINTS, ANABAPTIST_AUTHORS } from '@/lib/theology';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,14 @@ export async function POST(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-        const prompt = `Du bist ein Experte für christliche Zitate und Theologie. 
-Suche 10 verbriefte (echte, bekannte) Zitate von bekannten Persönlichkeiten (Theologen, Heilige, Reformatoren, christliche Autoren), die zum folgenden Kontext passen:
+        const prompt = `Du bist ein Experte für christliche Zitate und Theologie mit Fokus auf täuferische Geschichte. 
+Suche 10 verbriefte (echte, bekannte) Zitate von Täufer-Vätern, Märtyrern oder modernen täuferischen Autoren, die zum folgenden Kontext passen:
+
+${THEOLOGICAL_CONSTRAINTS}
+
+WICHTIG: 
+- Verwende VORRANGIG Zitate von folgenden Autoren: ${ANABAPTIST_AUTHORS.join(', ')}.
+- Schließe REFORMATOREN (wie Luther, Calvin, Zwingli) STRENG AUS.
 
 ${lessonContext ? `KERNGEDANKEN DER LEKTION (Primär):
 ${lessonContext}

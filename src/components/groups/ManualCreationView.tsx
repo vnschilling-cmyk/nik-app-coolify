@@ -105,8 +105,9 @@ export default function ManualCreationView() {
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Gruppenname</label>
+                        <label htmlFor="manual-group-name" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Gruppenname</label>
                         <input
+                            id="manual-group-name"
                             type="text"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
@@ -122,6 +123,7 @@ export default function ManualCreationView() {
                                 onClick={addMemberRow}
                                 className="w-8 h-8 flex items-center justify-center bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors"
                                 title="Mitglied hinzufügen"
+                                aria-label="Mitglied hinzufügen"
                             >
                                 <UserPlus size={16} />
                             </button>
@@ -137,6 +139,7 @@ export default function ManualCreationView() {
                                             onChange={(e) => updateMember(index, "name", e.target.value)}
                                             placeholder="Name"
                                             className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-pink-500"
+                                            aria-label={`Name von Mitglied ${index + 1}`}
                                         />
                                     </div>
                                     <div className="flex-1 w-full">
@@ -146,6 +149,7 @@ export default function ManualCreationView() {
                                             onChange={(e) => updateMember(index, "email", e.target.value)}
                                             placeholder="E-Mail (optional)"
                                             className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-pink-500"
+                                            aria-label={`E-Mail von Mitglied ${index + 1}`}
                                         />
                                     </div>
                                     <div className="w-full sm:w-32">
@@ -153,6 +157,7 @@ export default function ManualCreationView() {
                                             value={member.role}
                                             onChange={(e) => updateMember(index, "role", e.target.value)}
                                             className="w-full px-2 py-1.5 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-pink-500"
+                                            aria-label={`Rolle von Mitglied ${index + 1}`}
                                         >
                                             <option value="youth">Jugendlicher</option>
                                             <option value="staff">Mitarbeiter</option>
@@ -164,6 +169,7 @@ export default function ManualCreationView() {
                                         disabled={members.length === 1}
                                         className="p-1.5 text-zinc-400 hover:text-red-500 disabled:opacity-30 transition-colors"
                                         title="Lösche Zeile"
+                                        aria-label={`Mitglied ${index + 1} entfernen`}
                                     >
                                         <Trash2 size={16} />
                                     </button>

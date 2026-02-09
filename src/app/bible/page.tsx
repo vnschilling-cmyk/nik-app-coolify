@@ -59,11 +59,10 @@ export default async function BiblePage({ searchParams }: BiblePageProps) {
     }
 
     // Use targetBook from here on
-    const [verses, lessons, textStudies, factsAndQuestions] = await Promise.all([
+    const [verses, lessons, textStudies] = await Promise.all([
         getVerses(targetBook.id, chapterParam),
         getLessonsForChapter(targetBook.id, chapterParam),
-        getTextStudiesForChapter(targetBook.id, chapterParam),
-        getFactsAndQuestionsForChapter(targetBook.id, chapterParam)
+        getTextStudiesForChapter(targetBook.id, chapterParam)
     ]);
 
     return (
@@ -71,8 +70,6 @@ export default async function BiblePage({ searchParams }: BiblePageProps) {
             verses={verses}
             lessons={lessons}
             textStudies={textStudies}
-            facts={factsAndQuestions.facts}
-            questions={factsAndQuestions.questions}
             book={targetBook}
             chapter={chapterParam}
             allBooks={allBooks}

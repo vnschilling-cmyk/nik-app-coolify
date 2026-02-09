@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Sparkles, Quote, Check, RefreshCw } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 import clsx from "clsx";
 
 interface QuoteData {
@@ -19,6 +20,8 @@ interface QuoteSelectionModalProps {
 }
 
 export default function QuoteSelectionModal({ isOpen, onClose, onSelect, topic, bibleRef, lessonContext }: QuoteSelectionModalProps) {
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
     const [loading, setLoading] = useState(false);
     const [quotes, setQuotes] = useState<QuoteData[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -32,6 +35,12 @@ export default function QuoteSelectionModal({ isOpen, onClose, onSelect, topic, 
     const fetchQuotes = async () => {
         setLoading(true);
         setError(null);
+        if (!hasAIPermission) {
+            setError("Du hast keine Berechtigung, KI-Zitate zu generieren.");
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await fetch('/api/generate-quotes', {
                 method: 'POST',

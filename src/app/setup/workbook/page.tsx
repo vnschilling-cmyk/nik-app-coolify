@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { fetchWorkbookData, WorkbookLesson } from "@/lib/workbook";
-import { ChevronLeft, Printer, Eye, Settings as SettingsIcon, GripVertical, Check, X, RefreshCw, Maximize2, Minimize2, Type, ChevronRight, BookOpen, Plus, Minus, Image as ImageIcon, Video, Link2, MapPin, Youtube, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, WholeWord, ChevronsLeftRight, Info, MessageSquare, Star, PenLine, Copy } from "lucide-react";
+import { ChevronLeft, Printer, Eye, Settings as SettingsIcon, GripVertical, Check, X, RefreshCw, Maximize2, Minimize2, Type, ChevronRight, BookOpen, Plus, Minus, Image as ImageIcon, Video, Link2, MapPin, Youtube, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, WholeWord, ChevronsLeftRight, Info, MessageSquare, Star, PenLine, Copy, Languages, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
 import { projectFonts, getFontFamily } from "@/lib/fonts";
@@ -40,6 +40,10 @@ const MarkdownRenderer = ({ content, className, style, headerStyles }: { content
         .replace(/\[\/center\]/g, '</div>')
         .replace(/\[right\]/g, '<div style="text-align: right">')
         .replace(/\[\/right\]/g, '</div>')
+        .replace(/\[left\]/g, '<div style="text-align: left">')
+        .replace(/\[\/left\]/g, '</div>')
+        .replace(/\[hyphen\]/g, '')
+        .replace(/\[\/hyphen\]/g, '')
         .replace(/\n/g, '<br />')
         .replace(/^- (.*)/gm, '<li>$1</li>')
         .replace(/^\d+\. (.*)/gm, '<li>$1</li>');
@@ -47,7 +51,7 @@ const MarkdownRenderer = ({ content, className, style, headerStyles }: { content
     return (
         <div
             className={clsx("prose prose-sm max-w-none prose-p:my-0 prose-headings:my-0", className)}
-            style={{ ...style, lineHeight: style?.lineHeight }}
+            style={style}
             dangerouslySetInnerHTML={{ __html: html }}
         />
     );
@@ -90,11 +94,13 @@ const InlineEditor = ({
                                 onEditToggle(false);
                             }
                         }}
+                        aria-label="Inhalt bearbeiten"
+                        title="Inhalt bearbeiten"
                         className={clsx(
-                            "w-full p-4 border-2 border-indigo-600 rounded-xl shadow-[0_20px_50px_rgba(79,70,229,0.3)] focus:ring-4 focus:ring-indigo-500/20 bg-white text-zinc-900 transition-all",
+                            "w-full p-4 border-2 border-indigo-600 rounded-xl shadow-[0_20px_50px_rgba(79,70,229,0.3)] focus:ring-4 focus:ring-indigo-500/20 bg-white text-zinc-900 transition-all min-h-[200px]",
                             className
                         )}
-                        style={{ ...style, minHeight: '200px' }}
+                        style={style}
                         rows={8}
                     />
                 ) : (
@@ -130,7 +136,7 @@ const InlineEditor = ({
                 markdown ? (
                     <MarkdownRenderer content={value} style={style} headerStyles={style?.headerStyles} />
                 ) : (
-                    <div style={style}>{value}</div>
+                    <div>{value}</div>
                 )
             )}
             <div className="absolute top-0 -right-6 opacity-0 group-hover/preview:opacity-100 transition-opacity no-print">
@@ -234,6 +240,7 @@ const SectionToolbar = ({
                         onClick={onCancel}
                         className="p-2 bg-red-500 text-white hover:bg-red-600 rounded-xl transition-all shadow-sm"
                         title="Abbrechen"
+                        aria-label="Abbrechen"
                     >
                         <X size={18} strokeWidth={3} />
                     </button>
@@ -241,6 +248,7 @@ const SectionToolbar = ({
                         onClick={onSave}
                         className="p-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl shadow-lg transition-all"
                         title="Speichern"
+                        aria-label="Speichern"
                     >
                         <Check size={18} strokeWidth={3} />
                     </button>
@@ -254,14 +262,16 @@ const SectionToolbar = ({
                         onClick={() => onScale(parseFloat((fontSize + 0.5).toFixed(1)))}
                         className="p-1.5 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all"
                         title="Schrift vergrößern"
+                        aria-label="Schrift vergrößern"
                     >
                         <Plus size={14} strokeWidth={3} />
                     </button>
-                    <span className="text-xs font-black text-zinc-900 dark:text-white min-w-[2rem] text-center">{fontSize}</span>
+                    <span className="text-xs font-black text-zinc-900 dark:text-white min-w-[2rem] text-center" aria-live="polite">{fontSize}</span>
                     <button
                         onClick={() => onScale(Math.max(6, parseFloat((fontSize - 0.5).toFixed(1))))}
                         className="p-1.5 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all"
                         title="Schrift verkleinern"
+                        aria-label="Schrift verkleinern"
                     >
                         <Minus size={14} strokeWidth={3} />
                     </button>
@@ -273,14 +283,16 @@ const SectionToolbar = ({
                         onClick={() => onLineHeight(parseFloat((lineHeight + 0.1).toFixed(1)))}
                         className="p-1.5 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all"
                         title="Zeilenabstand vergrößern"
+                        aria-label="Zeilenabstand vergrößern"
                     >
                         <Plus size={14} strokeWidth={3} />
                     </button>
-                    <span className="text-xs font-black text-zinc-900 dark:text-white min-w-[2rem] text-center">{lineHeight}</span>
+                    <span className="text-xs font-black text-zinc-900 dark:text-white min-w-[2rem] text-center" aria-live="polite">{lineHeight}</span>
                     <button
                         onClick={() => onLineHeight(Math.max(1.0, parseFloat((lineHeight - 0.1).toFixed(1))))}
                         className="p-1.5 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg transition-all"
                         title="Zeilenabstand verkleinern"
+                        aria-label="Zeilenabstand verkleinern"
                     >
                         <Minus size={14} strokeWidth={3} />
                     </button>
@@ -296,18 +308,24 @@ const SectionToolbar = ({
                                 <button
                                     onClick={() => onToggleStyle('bold')}
                                     className={clsx("p-1.5 rounded-lg transition-all", bold ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Fett"
+                                    title="Fett"
                                 >
                                     <Bold size={14} strokeWidth={bold ? 3 : 2} />
                                 </button>
                                 <button
                                     onClick={() => onToggleStyle('italic')}
                                     className={clsx("p-1.5 rounded-lg transition-all", italic ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Kursiv"
+                                    title="Kursiv"
                                 >
                                     <Italic size={14} strokeWidth={italic ? 3 : 2} />
                                 </button>
                                 <button
                                     onClick={() => onToggleStyle('underline')}
                                     className={clsx("p-1.5 rounded-lg transition-all", underline ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Unterstrichen"
+                                    title="Unterstrichen"
                                 >
                                     <Underline size={14} strokeWidth={underline ? 3 : 2} />
                                 </button>
@@ -317,24 +335,32 @@ const SectionToolbar = ({
                                 <button
                                     onClick={() => onChangeStyle('align', 'left')}
                                     className={clsx("p-1.5 rounded-lg transition-all", align === 'left' ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Linksbündig"
+                                    title="Linksbündig"
                                 >
                                     <AlignLeft size={14} strokeWidth={2} />
                                 </button>
                                 <button
                                     onClick={() => onChangeStyle('align', 'center')}
                                     className={clsx("p-1.5 rounded-lg transition-all", align === 'center' ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Zentriert"
+                                    title="Zentriert"
                                 >
                                     <AlignCenter size={14} strokeWidth={2} />
                                 </button>
                                 <button
                                     onClick={() => onChangeStyle('align', 'right')}
                                     className={clsx("p-1.5 rounded-lg transition-all", align === 'right' ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Rechtsbündig"
+                                    title="Rechtsbündig"
                                 >
                                     <AlignRight size={14} strokeWidth={2} />
                                 </button>
                                 <button
                                     onClick={() => onChangeStyle('align', 'justify')}
                                     className={clsx("p-1.5 rounded-lg transition-all", align === 'justify' ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Blocksatz"
+                                    title="Blocksatz"
                                 >
                                     <AlignJustify size={14} strokeWidth={2} />
                                 </button>
@@ -345,6 +371,9 @@ const SectionToolbar = ({
                                 <button
                                     onClick={() => onToggleStyle('hyphens')}
                                     className={clsx("p-1.5 rounded-lg transition-all", hyphens ? "bg-indigo-600 text-white shadow-md" : "bg-zinc-50 dark:bg-slate-800 text-zinc-400 hover:bg-indigo-50 hover:text-indigo-600")}
+                                    aria-label="Silbentrennung umschalten"
+                                    title="Silbentrennung umschalten"
+                                    aria-pressed={hyphens ? "true" : "false"}
                                 >
                                     <WholeWord size={14} strokeWidth={2} />
                                 </button>
@@ -355,10 +384,11 @@ const SectionToolbar = ({
                     {onLayoutCorrection && typeof layoutCorrection === 'number' && type !== 'facts' && (
                         <div className="flex flex-col gap-1 border-t border-zinc-100 dark:border-slate-800 pt-2">
                             <div className="flex justify-between items-center px-1">
-                                <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Layout</span>
+                                <label htmlFor="layout-correction-range" className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest cursor-pointer">Layout</label>
                                 <span className="text-[9px] font-bold text-zinc-500">{layoutCorrection > 0 ? '+' : ''}{layoutCorrection}px</span>
                             </div>
                             <input
+                                id="layout-correction-range"
                                 type="range"
                                 min="500"
                                 max="1600"
@@ -367,6 +397,7 @@ const SectionToolbar = ({
                                 onChange={(e) => onLayoutCorrection(parseInt(e.target.value))}
                                 className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                                 title="Regler nach rechts schieben, um mehr Inhalt auf die Seite zu bringen."
+                                aria-label="Layout-Korrektur"
                             />
                         </div>
                     )}
@@ -381,14 +412,16 @@ const SectionToolbar = ({
                                     onClick={() => onAnswerLines && onAnswerLines(Math.max(1, (answerLines || 0) - 1))}
                                     className="bg-indigo-50 dark:bg-slate-800 p-1.5 border border-indigo-100 dark:border-slate-700 rounded-lg text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                     title="Weniger Zeilen"
+                                    aria-label="Weniger Zeilen"
                                 >
                                     <Minus size={12} strokeWidth={4} />
                                 </button>
-                                <span className="min-w-[1.2rem] text-center text-xs text-zinc-900 dark:text-white">{answerLines}</span>
+                                <span className="min-w-[1.2rem] text-center text-xs text-zinc-900 dark:text-white" aria-live="polite">{answerLines}</span>
                                 <button
                                     onClick={() => onAnswerLines && onAnswerLines(Math.min(15, (answerLines || 0) + 1))}
                                     className="bg-indigo-50 dark:bg-slate-800 p-1.5 border border-indigo-100 dark:border-slate-700 rounded-lg text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                     title="Mehr Zeilen"
+                                    aria-label="Mehr Zeilen"
                                 >
                                     <Plus size={12} strokeWidth={4} />
                                 </button>
@@ -402,14 +435,16 @@ const SectionToolbar = ({
                                     onClick={() => onAnswerLineSpacing && onAnswerLineSpacing(Math.max(0.5, (answerLineSpacing || 1.0) - 0.2))}
                                     className="bg-indigo-50 dark:bg-slate-800 p-1.5 border border-indigo-100 dark:border-slate-700 rounded-lg text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                     title="Zeilenabstand verringern"
+                                    aria-label="Zeilenabstand verringern"
                                 >
                                     <Minus size={12} strokeWidth={4} />
                                 </button>
-                                <span className="min-w-[1.2rem] text-center text-xs text-zinc-900 dark:text-white">{(answerLineSpacing || 1.0).toFixed(1)}</span>
+                                <span className="min-w-[1.2rem] text-center text-xs text-zinc-900 dark:text-white" aria-live="polite">{(answerLineSpacing || 1.0).toFixed(1)}</span>
                                 <button
                                     onClick={() => onAnswerLineSpacing && onAnswerLineSpacing((answerLineSpacing || 1.0) + 0.2)}
                                     className="bg-indigo-50 dark:bg-slate-800 p-1.5 border border-indigo-100 dark:border-slate-700 rounded-lg text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                                     title="Zeilenabstand erhöhen"
+                                    aria-label="Zeilenabstand erhöhen"
                                 >
                                     <Plus size={12} strokeWidth={4} />
                                 </button>
@@ -472,6 +507,10 @@ export default function WorkbookPage() {
                     if (parsed && typeof parsed === 'object') {
                         // Merge root level options but keep existing lessons/status if any
                         next = { ...next, ...parsed };
+
+                        // Load zoomMode and splitStrategy if available
+                        if (parsed.zoomMode) setZoomMode(parsed.zoomMode);
+                        if (parsed.splitStrategy) setSplitStrategy(parsed.splitStrategy);
                     }
                 } catch (e) {
                     console.error("Failed to parse saved root options", e);
@@ -481,6 +520,35 @@ export default function WorkbookPage() {
             return next;
         });
     }, []);
+
+    const handleZoomModeToggle = (nextMode?: 'fit-page' | 'fit-width') => {
+        const mode = nextMode || (zoomMode === 'fit-width' ? 'fit-page' : 'fit-width');
+        setZoomMode(mode);
+
+        if (saveAsDefault) {
+            try {
+                const currentOptions = JSON.parse(localStorage.getItem('workbook_creator_options') || '{}');
+                currentOptions.zoomMode = mode;
+                localStorage.setItem('workbook_creator_options', JSON.stringify(currentOptions));
+            } catch (e) {
+                console.error("Failed to save zoomMode", e);
+            }
+        }
+    };
+
+    const handleSplitStrategyChange = (strategy: 'paragraph' | 'sentence' | 'hyphens' | 'smart') => {
+        setSplitStrategy(strategy);
+
+        if (saveAsDefault) {
+            try {
+                const currentOptions = JSON.parse(localStorage.getItem('workbook_creator_options') || '{}');
+                currentOptions.splitStrategy = strategy;
+                localStorage.setItem('workbook_creator_options', JSON.stringify(currentOptions));
+            } catch (e) {
+                console.error("Failed to save splitStrategy", e);
+            }
+        }
+    };
 
     const getSectionKey = (lessonId: string, type: string, index: number = 0, partIndex: number = 0) => `${lessonId}-${type}-${index}-${partIndex}`;
 
@@ -523,6 +591,8 @@ export default function WorkbookPage() {
                                     }
                                 }
                             });
+                        } else if (field === 'factTitle') {
+                            arr[index] = { ...arr[index], title: value };
                         } else {
                             arr[index] = { ...arr[index], [field === 'facts' ? 'description' : 'question']: value };
                         }
@@ -680,7 +750,7 @@ export default function WorkbookPage() {
             factsWidth: 100,
             factsFill: 'none',
             factsMarginTop: 4,
-            factsHeader: 'Infos & Medien', // Default header
+            factsHeader: 'Infos', // Default header
 
             // Fact Subtypes
             factsTextBorder: false,
@@ -781,6 +851,7 @@ export default function WorkbookPage() {
             memoryWidth: 100,
             memoryFill: 'bg-indigo-50',
             memoryMarginTop: 4,
+            memoryHeaderMT: 0,
 
             // Notes
             notes: 11,
@@ -856,6 +927,8 @@ export default function WorkbookPage() {
                                 value={getStyle('Font') || 'var(--font-quicksand)'}
                                 onChange={(e) => setStyle('Font', e.target.value)}
                                 className={clsx("text-xs p-1.5 rounded bg-zinc-100 dark:bg-slate-800 border-none focus:ring-1 focus:ring-indigo-500")}
+                                aria-label="Schriftart auswählen"
+                                title="Schriftart auswählen"
                             >
                                 {projectFonts.map(font => (
                                     <option key={font.value} value={font.value}>{font.label}</option>
@@ -863,35 +936,126 @@ export default function WorkbookPage() {
                             </select>
 
                             <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
-                                <button onClick={() => setStyle('', getSizeStyle() - 1)} className="p-1 hover:bg-zinc-200 rounded" title="Schrift verkleinern"><Minus size={10} /></button>
-                                <span className="text-xs font-bold flex-1 text-center">{getSizeStyle()}</span>
-                                <button onClick={() => setStyle('', getSizeStyle() + 1)} className="p-1 hover:bg-zinc-200 rounded" title="Schrift vergrößern"><Plus size={10} /></button>
+                                <button
+                                    onClick={() => setStyle('', getSizeStyle() - 1)}
+                                    className="p-1 hover:bg-zinc-200 rounded transition-colors"
+                                    title="Schrift verkleinern"
+                                    aria-label="Schrift verkleinern"
+                                >
+                                    <Minus size={10} />
+                                </button>
+                                <span className="text-xs font-bold flex-1 text-center" aria-live="polite">{getSizeStyle()}</span>
+                                <button
+                                    onClick={() => setStyle('', getSizeStyle() + 1)}
+                                    className="p-1 hover:bg-zinc-200 rounded transition-colors"
+                                    title="Schrift vergrößern"
+                                    aria-label="Schrift vergrößern"
+                                >
+                                    <Plus size={10} />
+                                </button>
                             </div>
 
                         </div>
                         <div className="flex bg-zinc-100 dark:bg-slate-800 rounded-lg p-1 gap-1 mb-3">
-                            <button onClick={() => setStyle('Bold', !getStyle('Bold'))} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Bold') ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Fett"><Bold size={12} /></button>
-                            <button onClick={() => setStyle('Italic', !getStyle('Italic'))} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Italic') ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Kursiv"><Italic size={12} /></button>
-                            <button onClick={() => setStyle('Underline', !getStyle('Underline'))} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Underline') ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Unterstrichen"><Underline size={12} /></button>
+                            <button
+                                onClick={() => setStyle('Bold', !getStyle('Bold'))}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Bold') ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Fett"
+                                aria-label="Fett"
+                                aria-pressed={getStyle('Bold') ? "true" : "false"}
+                            >
+                                <Bold size={12} />
+                            </button>
+                            <button
+                                onClick={() => setStyle('Italic', !getStyle('Italic'))}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Italic') ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Kursiv"
+                                aria-label="Kursiv"
+                                aria-pressed={getStyle('Italic') ? "true" : "false"}
+                            >
+                                <Italic size={12} />
+                            </button>
+                            <button
+                                onClick={() => setStyle('Underline', !getStyle('Underline'))}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Underline') ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Unterstrichen"
+                                aria-label="Unterstrichen"
+                                aria-pressed={getStyle('Underline') ? "true" : "false"}
+                            >
+                                <Underline size={12} />
+                            </button>
                             <div className="w-px bg-zinc-300 mx-1" />
-                            <button onClick={() => setStyle('Align', 'left')} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Align') === 'left' ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Linksbündig"><AlignLeft size={12} /></button>
-                            <button onClick={() => setStyle('Align', 'center')} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Align') === 'center' ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Zentriert"><AlignCenter size={12} /></button>
-                            <button onClick={() => setStyle('Align', 'justify')} className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center", getStyle('Align') === 'justify' ? "bg-indigo-600 text-white" : "text-zinc-500")} title="Blocksatz"><AlignJustify size={12} /></button>
+                            <button
+                                onClick={() => setStyle('Align', 'left')}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Align') === 'left' ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Linksbündig"
+                                aria-label="Linksbündig"
+                                aria-pressed={getStyle('Align') === 'left' ? "true" : "false"}
+                            >
+                                <AlignLeft size={12} />
+                            </button>
+                            <button
+                                onClick={() => setStyle('Align', 'center')}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Align') === 'center' ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Zentriert"
+                                aria-label="Zentriert"
+                                aria-pressed={getStyle('Align') === 'center' ? "true" : "false"}
+                            >
+                                <AlignCenter size={12} />
+                            </button>
+                            <button
+                                onClick={() => setStyle('Align', 'right')}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Align') === 'right' ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Rechtsbündig"
+                                aria-label="Rechtsbündig"
+                                aria-pressed={getStyle('Align') === 'right' ? "true" : "false"}
+                            >
+                                <AlignRight size={12} />
+                            </button>
+                            <button
+                                onClick={() => setStyle('Align', 'justify')}
+                                className={clsx("flex-1 p-1 rounded shadow-sm flex justify-center transition-all", getStyle('Align') === 'justify' ? "bg-indigo-600 text-white" : "text-zinc-500")}
+                                title="Blocksatz"
+                                aria-label="Blocksatz"
+                                aria-pressed={getStyle('Align') === 'justify' ? "true" : "false"}
+                            >
+                                <AlignJustify size={12} />
+                            </button>
                         </div>
 
                         {/* Spacing Controls for Headers */}
                         <div className="mt-3 flex items-center gap-2">
                             <div className="flex-1">
-                                <label className="text-[10px] text-zinc-400 block mb-1">Abstand Oben</label>
+                                <label htmlFor="header_mt" className="text-[10px] text-zinc-400 block mb-1">Abstand Oben</label>
                                 <div className="flex items-center gap-1">
-                                    <input type="range" min="0" max="100" step="1" value={options.styles.sectionTitleMT || 0} onChange={(e) => handleStyleChange('MT', parseInt(e.target.value), 'sectionTitle')} className="flex-1 h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                                    <input
+                                        id="header_mt"
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        value={options.styles.sectionTitleMT || 0}
+                                        onChange={(e) => handleStyleChange('MT', parseInt(e.target.value), 'sectionTitle')}
+                                        className="flex-1 h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                        aria-label="Abstand Oben"
+                                    />
                                     <span className="text-[10px] text-zinc-500 w-4 text-right">{options.styles.sectionTitleMT || 0}</span>
                                 </div>
                             </div>
                             <div className="flex-1">
-                                <label className="text-[10px] text-zinc-400 block mb-1">Abstand Unten</label>
+                                <label htmlFor="header_mb" className="text-[10px] text-zinc-400 block mb-1">Abstand Unten</label>
                                 <div className="flex items-center gap-1">
-                                    <input type="range" min="0" max="50" step="1" value={options.styles.sectionTitleMB ?? 8} onChange={(e) => handleStyleChange('MB', parseInt(e.target.value), 'sectionTitle')} className="flex-1 h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                                    <input
+                                        id="header_mb"
+                                        type="range"
+                                        min="0"
+                                        max="50"
+                                        step="1"
+                                        value={options.styles.sectionTitleMB ?? 8}
+                                        onChange={(e) => handleStyleChange('MB', parseInt(e.target.value), 'sectionTitle')}
+                                        className="flex-1 h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                        aria-label="Abstand Unten"
+                                    />
                                     <span className="text-[10px] text-zinc-500 w-4 text-right">{options.styles.sectionTitleMB ?? 8}</span>
                                 </div>
                             </div>
@@ -1209,7 +1373,7 @@ export default function WorkbookPage() {
         if (subtypeMap[type]) styleKey = subtypeMap[type];
         else styleKey = 'facts';
 
-        const paddingScale = styles[`${styleKey}Padding`] ?? 2;
+        const paddingScale = (styleKey === 'sectionTitle') ? 0 : (styles[`${styleKey}Padding`] ?? 2);
         const widthPercent = styles[`${styleKey}Width`] ?? 100;
         const verticalPaddingPx = paddingScale * 0.25 * 16 * 2;
         const horizontalPaddingPx = paddingScale * 0.25 * 16 * 2;
@@ -1240,6 +1404,7 @@ export default function WorkbookPage() {
         height += verticalPaddingPx;
         // Important: Match the renderer's sub-header spacing (MT 16px + FS + MB 8px approx)
         if (type === 'facts' && partIndex === 0) height += ((styles.sectionTitleMT ?? 16) + (styles.sectionTitle || 10) * 1.33 + (styles.sectionTitleMB ?? 8));
+        if (type === 'memory' && partIndex === 0) height += ((styles.memoryHeaderMT ?? (styles.sectionTitleMT || 0)) + (styles.sectionTitle || 10) * 1.33 + (styles.sectionTitleMB ?? 8));
         return Math.max(10, height);
     };
 
@@ -1504,21 +1669,44 @@ export default function WorkbookPage() {
 
                     if (!isVisible) return;
 
+                    // Word Studies: Handle separately, don't group with other text facts
+                    if (f.fact_kind === 'word_study') {
+                        flushTextGroup(); // Flush any pending text group
+                        const content = f.plainText || f.description;
+                        addBlock('facts', content, 'facts', {
+                            fIdx,
+                            mediaType: 'text',
+                            originalTitle: f.title,
+                            isFact: true,
+                            plainText: f.plainText,
+                            isWordStudy: true
+                        }, options.styles);
+                        return;
+                    }
+
                     if (mediaType === 'text') {
-                        if (firstIdxInGroup === -1) firstIdxInGroup = fIdx;
-                        // Group text facts
-                        // Sanitization: Only add ### header if it's not already at the start of the description
-                        const titlePart = f.title && !f.description.startsWith('###')
-                            ? `### ${f.title.replace(/^###\s*/, '')}\n`
-                            : '';
-                        currentTextGroup.push(`${titlePart}${f.description}`);
+                        if (f.title) {
+                            flushTextGroup();
+                            // Prepend "Info: " if not present
+                            const displayTitle = (f.title.toLowerCase().startsWith('info')) ? f.title : `Info: ${f.title}`;
+                            addBlock('facts', f.description, 'facts', {
+                                fIdx,
+                                mediaType: 'text',
+                                originalTitle: displayTitle,
+                                isFact: true
+                            }, options.styles);
+                        } else {
+                            if (firstIdxInGroup === -1) firstIdxInGroup = fIdx;
+                            currentTextGroup.push(f.description);
+                        }
                     } else {
                         // Non-text items flush the current group
                         flushTextGroup();
 
                         // Title of Fact
                         if (f.title) {
-                            addBlock('facts', f.description, 'facts', { fIdx, mediaType, originalTitle: f.title, isFact: true }, options.styles);
+                            const displayTitle = (f.title.toLowerCase().startsWith('info')) ? f.title : `Info: ${f.title}`;
+                            addBlock('facts', f.description, 'facts', { fIdx, mediaType, originalTitle: displayTitle, isFact: true }, options.styles);
                         } else {
                             addBlock('facts', f.description, 'facts', { fIdx, mediaType, isFact: true }, options.styles);
                         }
@@ -1578,9 +1766,8 @@ export default function WorkbookPage() {
             // 6. Memory Verse
             if (options.showMemoryVerses && lesson.memoryVerses.length > 0) {
                 lesson.memoryVerses.forEach((mv, mvIdx) => {
-                    // Only add bold wrapper if there is actually a verse ref
-                    const versePart = mv.verse ? `**${mv.verse}**\n\n` : '';
-                    const mvContent = `${versePart}${mv.text || ''}`;
+                    // Ref is in the header now, keep box clean as per screenshot
+                    const mvContent = mv.text || '';
                     addBlock('memory', mvContent, 'memoryVerses', { index: mvIdx }, options.styles);
                 });
             }
@@ -1601,25 +1788,33 @@ export default function WorkbookPage() {
 
                 // Loop until all lines are placed
                 while (remainingLines > 0) {
-                    // Header on EVERY part (User requirement)
-                    const currentHeaderH = headerHeight;
+                    const mtUnits = (options.styles.notesMarginTop ?? 4);
+                    const mt = (partIndex > 0 ? (options.styles.notesMarginTopExtra ?? 4) : mtUnits) * 4;
+                    const padding = (options.styles.notesPadding ?? 4) * 4; // Top + Bottom = padding * 2
+                    const totalPaddingH = padding * 2;
 
-                    const mt = options.styles.notesMarginTop ?? 16;
-                    let availableHeight = CONTENT_HEIGHT_PX - currentHeight - mt;
+                    const titleMt = options.styles.sectionTitleMT ?? 8;
+                    const titleMb = options.styles.sectionTitleMB ?? 8;
+
+                    // Add minimal buffer for page footer (2px is enough since margin-to-footer is 38px)
+                    const footerBuffer = 2;
+                    let availableHeight = CONTENT_HEIGHT_PX - currentHeight - mt - footerBuffer;
+
+                    // Header on EVERY part (User requirement)
+                    const headerFullH = headerHeight + titleMt + titleMb;
 
                     // Check if we need to wrap to new page immediately
-                    // Case: Not enough space for Header + 1st Line + Padding (16px pt-4)
-                    const minNeeded = currentHeaderH + singleLineHeight + 16;
+                    const minNeeded = headerFullH + singleLineHeight + 16 + totalPaddingH;
 
                     if (availableHeight < minNeeded) {
                         pushPage();
-                        availableHeight = CONTENT_HEIGHT_PX - mt;
+                        availableHeight = CONTENT_HEIGHT_PX - mt - footerBuffer;
                     }
 
                     // Calculate how many lines fit
-                    // available = header + gap (16) + lines * lineH
-                    const spaceForLines = availableHeight - currentHeaderH - 16;
-                    let linesThisPage = Math.floor(spaceForLines / singleLineHeight);
+                    // available = header (full with margins) + pt-4 (16) + lines * lineH + container padding
+                    const spaceForLines = availableHeight - headerFullH - 16 - totalPaddingH;
+                    let linesThisPage = Math.floor((spaceForLines + lineGapPx) / singleLineHeight);
 
                     // Clamp to remaining
                     if (linesThisPage > remainingLines) linesThisPage = remainingLines;
@@ -1632,11 +1827,13 @@ export default function WorkbookPage() {
                         fieldName: 'notes',
                         notesLines: linesThisPage,
                         notesLineSpacing,
-                        partIndex: partIndex
+                        partIndex: partIndex,
+                        titleStyle: { mt: titleMt, mb: titleMb } // Pass precise margins
                     });
 
                     // Update tracking
-                    const blockHeight = currentHeaderH + 16 + (linesThisPage * singleLineHeight);
+                    const totalLinesHeight = linesThisPage > 0 ? ((linesThisPage - 1) * lineGapPx + linesThisPage) : 0;
+                    const blockHeight = headerFullH + 16 + totalLinesHeight + totalPaddingH;
                     currentHeight += blockHeight + mt;
                     remainingLines -= linesThisPage;
                     partIndex++;
@@ -1651,14 +1848,18 @@ export default function WorkbookPage() {
                 const additionalPages = options.styles.notesAdditionalPages || 0;
                 for (let i = 0; i < additionalPages; i++) {
                     pushPage();
-                    const mtExtra = (options.styles.notesMarginTopExtra ?? 4) * 4; // 4px per unit
-                    let availableHeight = CONTENT_HEIGHT_PX - mtExtra;
+                    const mtExtra = (options.styles.notesMarginTopExtra ?? 4) * 4;
+                    const padding = (options.styles.notesPadding ?? 4) * 4;
+                    const totalPaddingH = padding * 2;
+                    const footerBuffer = 2;
+
+                    let availableHeight = CONTENT_HEIGHT_PX - mtExtra - footerBuffer;
 
                     const currentHeaderH = headerHeight;
-                    const spaceForLines = availableHeight - currentHeaderH - 16;
+                    const spaceForLines = availableHeight - currentHeaderH - 16 - totalPaddingH;
 
                     // Use notesLinesExtra if > 0, otherwise fill page
-                    const maxLinesOnPage = Math.floor(spaceForLines / singleLineHeight);
+                    const maxLinesOnPage = Math.floor((spaceForLines + lineGapPx) / singleLineHeight);
                     let linesThisPage = (options.styles.notesLinesExtra > 0)
                         ? Math.min(options.styles.notesLinesExtra, maxLinesOnPage)
                         : maxLinesOnPage;
@@ -1749,7 +1950,7 @@ export default function WorkbookPage() {
 
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setZoomMode(zoomMode === 'fit-page' ? 'fit-width' : 'fit-page')}
+                        onClick={() => handleZoomModeToggle()}
                         className={clsx(
                             "p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800",
                             zoomMode === 'fit-width' && "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30"
@@ -1765,6 +1966,9 @@ export default function WorkbookPage() {
                             "p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium",
                             showSettings ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30" : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
                         )}
+                        aria-expanded={showSettings ? "true" : "false"}
+                        aria-label={showSettings ? "Optionen schließen" : "Optionen öffnen"}
+                        title={showSettings ? "Optionen schließen" : "Optionen öffnen"}
                     >
                         <SettingsIcon size={18} />
                         <span className="hidden md:block">Optionen</span>
@@ -1776,6 +1980,8 @@ export default function WorkbookPage() {
                             isFullscreen ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30" : "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-800"
                         )}
                         title={isFullscreen ? "Vorschau verkleinern" : "Vollbild-Vorschau"}
+                        aria-label={isFullscreen ? "Vorschau verkleinern" : "Vollbild-Vorschau"}
+                        aria-pressed={isFullscreen ? "true" : "false"}
                     >
                         {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                         <span className="hidden md:block">{isFullscreen ? "Standard" : "Vollbild"}</span>
@@ -1784,6 +1990,7 @@ export default function WorkbookPage() {
                         onClick={handlePrint}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg transition-colors ml-2"
                         title="Als PDF herunterladen oder drucken"
+                        aria-label="Als PDF speichern"
                     >
                         <Printer size={18} />
                         <span className="hidden sm:inline">PDF</span>
@@ -1822,6 +2029,8 @@ export default function WorkbookPage() {
                         <button
                             onClick={() => setShowSettings(false)}
                             className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-800 rounded-lg text-zinc-400 transition-colors"
+                            aria-label="Optionen schließen"
+                            title="Optionen schließen"
                         >
                             <X size={20} />
                         </button>
@@ -1833,22 +2042,25 @@ export default function WorkbookPage() {
                                 <span className="text-sm font-bold text-indigo-900 dark:text-indigo-200">Als Standard speichern</span>
                                 <span className="text-[10px] text-indigo-600 dark:text-indigo-400">Änderungen werden dauerhaft gespeichert</span>
                             </div>
-                            <div
+                            <button
                                 onClick={() => {
                                     const nextState = !saveAsDefault;
                                     setSaveAsDefault(nextState);
                                     localStorage.setItem('workbook_creator_default_toggle', String(nextState));
                                 }}
                                 className={clsx(
-                                    "w-10 h-5 rounded-full relative transition-colors cursor-pointer",
+                                    "w-10 h-5 rounded-full relative transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
                                     saveAsDefault ? "bg-indigo-600" : "bg-zinc-200 dark:bg-slate-700"
                                 )}
+                                aria-label="Als Standard speichern"
+                                aria-pressed={saveAsDefault ? "true" : "false"}
+                                title="Als Standard speichern"
                             >
                                 <div className={clsx(
                                     "absolute top-1 w-3 h-3 bg-white rounded-full transition-transform",
                                     saveAsDefault ? "left-6" : "left-1"
                                 )} />
-                            </div>
+                            </button>
                         </div>
 
 
@@ -1858,7 +2070,7 @@ export default function WorkbookPage() {
                             { id: 'sectionheaders', label: 'Überschriften (Global)', toggleKey: null }, // Global Headers
                             { id: 'einführung', label: 'Einleitung', toggleKey: 'showIntro' },
                             { id: 'bibeltext', label: 'Bibeltext', toggleKey: 'showBibleText' },
-                            { id: 'infos', label: 'Infos & Medien', toggleKey: 'showFacts', isAccordion: true },
+                            { id: 'infos', label: 'Infos', toggleKey: 'showFacts', isAccordion: true },
                             { id: 'fragen', label: 'Fragen', toggleKey: 'showQuestions' },
                             { id: 'lernvers', label: 'Lernvers', toggleKey: 'showMemoryVerses' },
                             { id: 'notizen', label: 'Notizen', toggleKey: 'showNotes' }, // Added Notes toggle
@@ -1877,6 +2089,9 @@ export default function WorkbookPage() {
                                                         "p-1 hover:bg-zinc-200 dark:hover:bg-slate-700 rounded-md transition-transform",
                                                         isOpen ? "rotate-90 text-indigo-600" : "rotate-0 text-zinc-400"
                                                     )}
+                                                    aria-label={isOpen ? "Sektion einklappen" : "Sektion ausklappen"}
+                                                    title={isOpen ? "Einklappen" : "Ausklappen"}
+                                                    aria-expanded={isOpen ? "true" : "false"}
                                                 >
                                                     <ChevronRight size={16} />
                                                 </button>
@@ -1885,7 +2100,7 @@ export default function WorkbookPage() {
                                                 </span>
                                             </div>
                                             {section.toggleKey && (
-                                                <div
+                                                <button
                                                     onClick={() => {
                                                         setOptions((prev: any) => {
                                                             const newValue = !prev[section.toggleKey!];
@@ -1918,15 +2133,18 @@ export default function WorkbookPage() {
                                                         });
                                                     }}
                                                     className={clsx(
-                                                        "w-10 h-5 rounded-full relative transition-colors cursor-pointer",
+                                                        "w-10 h-5 rounded-full relative transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
                                                         options[section.toggleKey as keyof typeof options] ? "bg-indigo-600" : "bg-zinc-200 dark:bg-slate-700"
                                                     )}
+                                                    aria-label={`${section.label} umschalten`}
+                                                    aria-pressed={options[section.toggleKey as keyof typeof options] ? "true" : "false"}
+                                                    title={`${section.label} umschalten`}
                                                 >
                                                     <div className={clsx(
                                                         "absolute top-1 w-3 h-3 bg-white rounded-full transition-transform",
                                                         options[section.toggleKey as keyof typeof options] ? "left-6" : "left-1"
                                                     )} />
-                                                </div>
+                                                </button>
                                             )}
 
                                         </div>
@@ -1947,6 +2165,16 @@ export default function WorkbookPage() {
                                                                     className="w-full text-xs p-2 rounded-lg bg-zinc-100 dark:bg-slate-800 border-none focus:ring-1 focus:ring-indigo-500"
                                                                     placeholder="z.B. Fragen"
                                                                 />
+                                                            </div>
+                                                        )}
+                                                        {section.id === 'lernvers' && (
+                                                            <div className="flex justify-between items-center gap-2 mb-4">
+                                                                <span className="text-[10px] font-medium text-zinc-500 flex items-center gap-1"><ArrowUp size={10} /> Abstand Oben (Überschrift)</span>
+                                                                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-slate-800 rounded px-1">
+                                                                    <button onClick={() => handleStyleChange('HeaderMT', Math.max(-20, (options.styles.memoryHeaderMT || 0) - 2), 'memory')} className="p-1 hover:bg-zinc-200 rounded" title="Verringern"><Minus size={10} /></button>
+                                                                    <span className="text-[10px] font-bold w-6 text-center">{(options.styles.memoryHeaderMT || 0)}</span>
+                                                                    <button onClick={() => handleStyleChange('HeaderMT', Math.min(100, (options.styles.memoryHeaderMT || 0) + 2), 'memory')} className="p-1 hover:bg-zinc-200 rounded" title="Erhöhen"><Plus size={10} /></button>
+                                                                </div>
                                                             </div>
                                                         )}
                                                         {renderStyleControls(fmtKey, true)}
@@ -1991,20 +2219,25 @@ export default function WorkbookPage() {
                                                                                         "p-1 hover:bg-zinc-200 dark:hover:bg-slate-700 rounded-md transition-transform",
                                                                                         isOpen ? "rotate-90 text-indigo-600" : "rotate-0 text-zinc-400"
                                                                                     )}
+                                                                                    aria-label={isOpen ? "Einklappen" : "Ausklappen"}
+                                                                                    title={isOpen ? "Einklappen" : "Ausklappen"}
+                                                                                    aria-expanded={isOpen ? "true" : "false"}
                                                                                 >
                                                                                     <ChevronRight size={14} />
                                                                                 </button>
                                                                                 <media.icon size={14} className="text-zinc-500 dark:text-zinc-400" />
-                                                                                <span
-                                                                                    className="text-xs font-bold uppercase text-zinc-600 dark:text-zinc-300 cursor-pointer select-none"
+                                                                                <button
+                                                                                    className="text-xs font-bold uppercase text-zinc-600 dark:text-zinc-300 hover:text-indigo-600 transition-colors cursor-pointer select-none"
                                                                                     onClick={() => setOpenSections(prev => ({ ...prev, [openKey]: !prev[openKey] }))}
+                                                                                    aria-label={isOpen ? `${media.label} einklappen` : `${media.label} ausklappen`}
+                                                                                    aria-expanded={isOpen ? "true" : "false"}
                                                                                 >
                                                                                     {media.label}
-                                                                                </span>
+                                                                                </button>
                                                                             </div>
 
                                                                             {/* Visibility Toggle */}
-                                                                            <div
+                                                                            <button
                                                                                 onClick={() => setOptions((prev: any) => ({
                                                                                     ...prev,
                                                                                     mediaFilters: {
@@ -2013,15 +2246,18 @@ export default function WorkbookPage() {
                                                                                     }
                                                                                 }))}
                                                                                 className={clsx(
-                                                                                    "w-8 h-4 rounded-full relative transition-colors cursor-pointer",
+                                                                                    "w-8 h-4 rounded-full relative transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
                                                                                     options.mediaFilters[media.id as keyof typeof options.mediaFilters] ? "bg-indigo-600" : "bg-zinc-200 dark:bg-slate-700"
                                                                                 )}
+                                                                                aria-label={`${media.label} Sichtbarkeit umschalten`}
+                                                                                aria-pressed={options.mediaFilters[media.id as keyof typeof options.mediaFilters] ? "true" : "false"}
+                                                                                title={`${media.label} umschalten`}
                                                                             >
                                                                                 <div className={clsx(
                                                                                     "absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform",
                                                                                     options.mediaFilters[media.id as keyof typeof options.mediaFilters] ? "left-4.5" : "left-0.5"
                                                                                 )} />
-                                                                            </div>
+                                                                            </button>
                                                                         </div>
 
                                                                         {/* Expanded Formatting Controls */}
@@ -2139,25 +2375,25 @@ export default function WorkbookPage() {
                                 <h4 className="text-[10px] uppercase font-bold text-zinc-400 mb-2">Texttrennung (Experimentell)</h4>
                                 <div className="flex flex-col gap-2">
                                     <button
-                                        onClick={() => setSplitStrategy('paragraph')}
+                                        onClick={() => handleSplitStrategyChange('paragraph')}
                                         className={clsx("p-2 text-xs font-medium rounded-lg text-left transition-all", splitStrategy === 'paragraph' ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 dark:text-zinc-300 dark:hover:bg-slate-800")}
                                     >
                                         Nach Absätzen
                                     </button>
                                     <button
-                                        onClick={() => setSplitStrategy('sentence')}
+                                        onClick={() => handleSplitStrategyChange('sentence')}
                                         className={clsx("p-2 text-xs font-medium rounded-lg text-left transition-all", splitStrategy === 'sentence' ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 dark:text-zinc-300 dark:hover:bg-slate-800")}
                                     >
                                         Nach Satzende
                                     </button>
                                     <button
-                                        onClick={() => setSplitStrategy('hyphens')}
+                                        onClick={() => handleSplitStrategyChange('hyphens')}
                                         className={clsx("p-2 text-xs font-medium rounded-lg text-left transition-all", splitStrategy === 'hyphens' ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 dark:text-zinc-300 dark:hover:bg-slate-800")}
                                     >
                                         Nach Silbentrennung
                                     </button>
                                     <button
-                                        onClick={() => setSplitStrategy('smart')}
+                                        onClick={() => handleSplitStrategyChange('smart')}
                                         className={clsx("p-2 text-xs font-medium rounded-lg text-left transition-all", splitStrategy === 'smart' ? "bg-indigo-600 text-white" : "hover:bg-indigo-50 dark:text-zinc-300 dark:hover:bg-slate-800")}
                                     >
                                         Smart (Standard)
@@ -2168,7 +2404,7 @@ export default function WorkbookPage() {
                             <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-slate-800/50 rounded-xl">
                                 <span className="text-sm font-semibold">Seitenbreite füllen</span>
                                 <div
-                                    onClick={() => setZoomMode(zoomMode === 'fit-width' ? 'fit-page' : 'fit-width')}
+                                    onClick={() => handleZoomModeToggle()}
                                     className={clsx(
                                         "w-10 h-5 rounded-full relative transition-colors cursor-pointer",
                                         zoomMode === 'fit-width' ? "bg-indigo-600" : "bg-zinc-200 dark:bg-slate-700"
@@ -2202,10 +2438,9 @@ export default function WorkbookPage() {
 
                     {/* Scale Container to prevent horizontal scrollbars */}
                     <div
-                        className="transition-all duration-500 relative z-10"
+                        className="transition-all duration-500 relative z-10 h-auto"
                         style={{
-                            width: (isFullscreen || zoomMode === 'fit-width') ? (559.37 * scaleFactor) : 'min(100%, 559.37px)',
-                            height: 'auto'
+                            width: (isFullscreen || zoomMode === 'fit-width') ? (559.37 * scaleFactor) : 'min(100%, 559.37px)'
                         }}
                     >
                         <div
@@ -2252,15 +2487,12 @@ export default function WorkbookPage() {
                                                 return {
                                                     width: `${(options.styles as any)[`${p}Width`] ?? 100}%`,
                                                     padding: `${padUnits * 0.25}rem`,
-                                                    marginTop: `${mtUnits * 0.25}rem`,
-                                                    marginBottom: 0,
-                                                    marginLeft: 'auto',
-                                                    marginRight: 'auto'
+                                                    marginTop: `${mtUnits * 0.25}rem`
                                                 };
                                             };
 
                                             if (section.type === 'title') return (
-                                                <div key={stableKey} className={`relative group z-[50] hover:z-[100] !overflow-visible ${commonClasses('title')}`} style={getContainerStyle('title')}>
+                                                <div key={stableKey} className={clsx("relative group z-[50] hover:z-[100] !overflow-visible mx-auto mb-0", commonClasses('title'))} style={getContainerStyle('title')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'title')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'title')}
@@ -2303,7 +2535,7 @@ export default function WorkbookPage() {
                                             );
 
                                             if (section.type === 'intro') return (
-                                                <div key={stableKey} className={`relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('intro')}`} style={getContainerStyle('intro')}>
+                                                <div key={stableKey} className={clsx("relative group z-[20] hover:z-[100] !overflow-visible mx-auto mb-0", commonClasses('intro'))} style={getContainerStyle('intro')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'intro')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'intro')}
@@ -2348,7 +2580,7 @@ export default function WorkbookPage() {
                                             );
 
                                             if (section.type === 'bible') return (
-                                                <div key={stableKey} className={`relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('bible')}`} style={getContainerStyle('bible')}>
+                                                <div key={stableKey} className={clsx("relative group z-[20] hover:z-[100] !overflow-visible mx-auto mb-0", commonClasses('bible'))} style={getContainerStyle('bible')}>
                                                     <SectionToolbar
                                                         onScale={(val) => handleStyleChange('fontSize', val, 'bible')}
                                                         onLineHeight={(val) => handleStyleChange('lineHeight', val, 'bible')}
@@ -2412,15 +2644,99 @@ export default function WorkbookPage() {
                                                 const fKey = factTypeMap[section.mediaType] || 'factsText';
                                                 const getFs = (s: string) => (options.styles as any)[`${fKey}${s}`] ?? (options.styles as any)[`facts${s}`];
 
+                                                // --- Word Study Logic ---
+                                                // Check explicit flag first (new data), then content-based detection (legacy)
+                                                let isWortstudie = section.isWordStudy || false;
+                                                const sourceTitle = section.originalTitle || '';
+
+                                                // Fallback: Content-based detection for legacy data
+                                                if (!isWortstudie) {
+                                                    const contentLower = (section.content || '').toLowerCase();
+                                                    if ((sourceTitle && sourceTitle.toLowerCase().includes('wortstudie')) ||
+                                                        /###\s*wortstudie/i.test(contentLower) ||
+                                                        (contentLower.includes('bedeutung') && (contentLower.includes('wortwurzel') || contentLower.includes('wuzel'))) ||
+                                                        contentLower.includes('synonyme') ||
+                                                        // Also detect the gray box HTML pattern
+                                                        (section.content.includes('bg-zinc') && section.content.includes('Strong')) ||
+                                                        // Detect Greek letters with Strong number
+                                                        (/[α-ωΑ-Ωά-ώἀ-ῶ]/.test(section.content) && /strong/i.test(section.content))) {
+                                                        isWortstudie = true;
+                                                    }
+                                                }
+
+                                                let displayedContent = section.isUnified ? section.content : section.content.replace(/^### .*?(\n+|$)/, '').replace(/^\s*\*\*[^*]+\*\*(\n*)/, '');
+
+                                                // Use plainText field if available (new data), otherwise clean HTML (old data)
+                                                if (isWortstudie && section.plainText) {
+                                                    displayedContent = section.plainText;
+                                                } else if (isWortstudie) {
+                                                    try {
+                                                        // Step 1: Strip ALL HTML - no exceptions
+                                                        let cleanContent = displayedContent
+                                                            .replace(/<[^>]*>/g, ' ')           // Remove ALL HTML tags
+                                                            .replace(/&nbsp;/g, ' ')
+                                                            .replace(/&[a-z]+;/gi, ' ')
+                                                            .replace(/###\s*[^\n]+/g, '')       // Remove markdown headers
+                                                            .replace(/\*\*/g, '')               // Remove bold markers
+                                                            .replace(/[GH]\d{4,5}/gi, '')       // Remove Strong numbers like G4473, H1234
+                                                            .replace(/Strong:?\s*[GH]?\d*/gi, '') // Remove Strong: labels
+                                                            .replace(/Synonyme[\s\S]*/i, '')    // Remove Synonyme section
+                                                            .replace(/\s+/g, ' ')               // Collapse whitespace
+                                                            .trim();
+
+                                                        // Step 2: Remove standalone Greek word + transliteration at start
+                                                        cleanContent = cleanContent.replace(/^[α-ωΑ-Ωά-ώἀ-ῶ]+\s+[a-zA-Z]+\s*/i, '');
+
+                                                        // Step 3: Try to extract structured sections
+                                                        let result = '';
+
+                                                        const bedeutungMatch = cleanContent.match(/Bedeutung:?\s*([^]*?)(?=Wortwurzel|Verwendung|$)/i);
+                                                        if (bedeutungMatch && bedeutungMatch[1].trim()) {
+                                                            result += `**Bedeutung:** ${bedeutungMatch[1].trim()}\n`;
+                                                        }
+
+                                                        const wurzelMatch = cleanContent.match(/Wortwurzel:?\s*([^]*?)(?=Verwendung|$)/i);
+                                                        if (wurzelMatch && wurzelMatch[1].trim()) {
+                                                            result += `**Wortwurzel:** ${wurzelMatch[1].trim()}`;
+                                                        }
+
+                                                        // Step 4: ALWAYS use cleaned content - never original with HTML
+                                                        if (result.trim().length > 15) {
+                                                            displayedContent = result.trim();
+                                                        } else {
+                                                            // Fallback: use plain cleaned text without any HTML
+                                                            displayedContent = cleanContent;
+                                                        }
+
+                                                    } catch (e) {
+                                                        console.error("Failed to parse Word Study content", e);
+                                                        // Even on error, strip HTML
+                                                        displayedContent = displayedContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                                                    }
+                                                }
+                                                // ------------------------
+
+                                                // Skip rendering if Word Study section is essentially empty after cleaning
+                                                // (only Greek word/transliteration or very short content)
+                                                if (isWortstudie && displayedContent.length < 50 && !displayedContent.includes('Bedeutung') && !displayedContent.includes('Wortwurzel')) {
+                                                    return null;
+                                                }
+
+                                                const computedStyle = {
+                                                    ...getContainerStyle(fKey, isSubsequent),
+                                                    width: isWortstudie ? '100%' : `${(options.styles as any)[`${fKey}Width`] ?? 100}%`,
+                                                    // Allow manual height override for resizing
+                                                    height: section.manualHeight ? `${section.manualHeight}px` : (isWortstudie ? 'auto' : undefined)
+                                                };
+
                                                 return (
                                                     <div key={stableKey}
-                                                        className={`fact-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses(fKey)}`}
-                                                        style={{
-                                                            ...getContainerStyle(fKey, isSubsequent),
-                                                            paddingBottom: section.manualHeight ? '24px' : (getContainerStyle(fKey, isSubsequent).padding),
-                                                            height: section.manualHeight ? `${section.manualHeight}px` : undefined,
-                                                            overflow: section.manualHeight ? 'hidden' : 'visible'
-                                                        }}
+                                                        className={clsx(
+                                                            "fact-item relative group z-[20] hover:z-[100] !overflow-visible mx-auto mb-0",
+                                                            isWortstudie ? '' : commonClasses(fKey),
+                                                            section.manualHeight ? "pb-[24px] overflow-hidden" : "pb-[8px] overflow-visible"
+                                                        )}
+                                                        style={computedStyle}
                                                     >
                                                         <SectionToolbar
                                                             onScale={(val) => handleStyleChange('fontSize', val, 'facts')}
@@ -2444,16 +2760,16 @@ export default function WorkbookPage() {
                                                             hasPageBreak={sectionPageBreaks[getSectionKey(page.lesson.id, 'facts', section.fIdx, 0)]} // Always check start of block
                                                             onTogglePageBreak={() => togglePageBreak(getSectionKey(page.lesson.id, 'facts', section.fIdx, 0))}
                                                         />
-                                                        {/* Section Header for Facts - Only above first fact */}
-                                                        {(options.styles.factsHeader && section.fIdx === 0 && section.partIndex === 0) && (
+                                                        {/* Section Header for Facts - Only above first fact AND ONLY if first fact has no title (to avoid redundancy) */}
+                                                        {(options.styles.factsHeader && section.fIdx === 0 && section.partIndex === 0 && !section.originalTitle) && (
                                                             <InlineEditor
-                                                                value={editingField?.lessonId === page.lesson.id && editingField?.field === 'factsHeader' && editingField?.index === section.fIdx ? editingField.tempValue : (options.styles.factsHeader || 'Infos & Medien')}
+                                                                value={editingField?.lessonId === page.lesson.id && editingField?.field === 'factsHeader' && editingField?.index === section.fIdx ? editingField.tempValue : (options.styles.factsHeader || 'Infos')}
                                                                 isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'factsHeader' && editingField?.index === section.fIdx}
                                                                 isEditing={editingField?.field || null}
                                                                 onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
                                                                 onEditToggle={(isEditing) => {
                                                                     if (isEditing) {
-                                                                        setEditingField({ lessonId: page.lesson.id, field: 'factsHeader', index: section.fIdx, tempValue: options.styles.factsHeader || 'Infos & Medien' });
+                                                                        setEditingField({ lessonId: page.lesson.id, field: 'factsHeader', index: section.fIdx, tempValue: options.styles.factsHeader || 'Infos' });
                                                                     } else {
                                                                         if (editingField?.tempValue !== undefined) {
                                                                             handleStyleChange('Header', editingField.tempValue, 'facts');
@@ -2476,28 +2792,36 @@ export default function WorkbookPage() {
                                                                 }}
                                                             >
                                                                 <Info size={14} className="shrink-0" />
-                                                                <span>{options.styles.factsHeader || 'Infos & Medien'}</span>
+                                                                <span>{options.styles.factsHeader || 'Infos'}</span>
                                                             </InlineEditor>
                                                         )}
                                                         {section.isFact && section.originalTitle && section.partIndex === 0 && !section.isUnified && (
-                                                            <div className="uppercase tracking-wide font-bold" style={{
-                                                                // If it's a subsequent fact item, we set header margin to 0 to respect the absolute blockSpacing
-                                                                marginTop: isSubsequent ? 0 : `${options.styles.sectionTitleMT || 16}px`,
-                                                                marginBottom: `${options.styles.sectionTitleMB ?? 0}px`,
-                                                                fontSize: `${options.styles.sectionTitle}pt`,
-                                                                lineHeight: options.styles.sectionTitleLH,
-                                                                fontFamily: getFontFamily(options.styles.sectionTitleFont),
-                                                                fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
-                                                                fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
-                                                                textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
-                                                                textAlign: options.styles.sectionTitleAlign as any,
-                                                                color: options.styles.sectionTitleColor || '#6366f1'
-                                                            }}>
-                                                                {section.originalTitle.replace(/^###\s*/, '')}
-                                                            </div>
+                                                            <InlineEditor
+                                                                value={editingField?.lessonId === page.lesson.id && editingField?.field === 'factTitle' && editingField?.index === section.fIdx ? editingField.tempValue : section.originalTitle.replace(/^###\s*/, '')}
+                                                                isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'factTitle' && editingField?.index === section.fIdx}
+                                                                isEditing={editingField?.field || null}
+                                                                onEditToggle={(active) => setEditingField(active ? { lessonId: page.lesson.id, field: 'factTitle', index: section.fIdx, tempValue: section.originalTitle.replace(/^###\s*/, '') } : null)}
+                                                                onChange={(val) => setEditingField(prev => prev ? { ...prev, tempValue: val } : null)}
+                                                                className="uppercase tracking-wide flex items-center gap-2"
+                                                                style={{
+                                                                    marginTop: isSubsequent ? 0 : `${options.styles.sectionTitleMT || 16}px`,
+                                                                    marginBottom: `${options.styles.sectionTitleMB ?? 8}px`,
+                                                                    fontSize: `${options.styles.sectionTitle}pt`,
+                                                                    lineHeight: options.styles.sectionTitleLH,
+                                                                    fontFamily: getFontFamily(options.styles.sectionTitleFont),
+                                                                    fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
+                                                                    fontStyle: options.styles.sectionTitleItalic ? 'italic' : 'normal',
+                                                                    textDecoration: options.styles.sectionTitleUnderline ? 'underline' : 'none',
+                                                                    textAlign: options.styles.sectionTitleAlign as any,
+                                                                    color: options.styles.sectionTitleColor || '#6366f1'
+                                                                }}
+                                                            >
+                                                                {isWortstudie ? <Languages size={14} className="shrink-0" /> : <Info size={14} className="shrink-0" />}
+                                                                <span>{section.originalTitle.replace(/^###\s*/, '')}</span>
+                                                            </InlineEditor>
                                                         )}
                                                         <InlineEditor
-                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx ? editingField.tempValue : (section.isUnified ? section.content : section.content.replace(/^### .*?(\n+|$)/, '').replace(/^\s*\*\*[^*]+\*\*(\n*)/, ''))}
+                                                            value={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx ? editingField.tempValue : displayedContent}
                                                             isActive={editingField?.lessonId === page.lesson.id && editingField?.field === 'facts' && editingField?.index === section.fIdx}
                                                             isEditing={editingField?.field || null}
                                                             onEditToggle={(active) => setEditingField(active ? { lessonId: page.lesson.id, field: 'facts', index: section.fIdx, tempValue: section.content } : null)}
@@ -2574,7 +2898,7 @@ export default function WorkbookPage() {
                                                 return (
                                                     <div
                                                         key={stableKey}
-                                                        className={`question-item relative group z-[20] hover:z-[100] !overflow-visible ${commonClasses('questions')}`}
+                                                        className={clsx("question-item relative group z-[20] hover:z-[100] !overflow-visible mx-auto mb-0", commonClasses('questions'))}
                                                         style={getContainerStyle('questions', isSubsequent)}
                                                     >
                                                         <SectionToolbar
@@ -2729,7 +3053,7 @@ export default function WorkbookPage() {
                                                             onLayoutCorrection={(val) => setSectionLayouts(prev => ({ ...prev, [getSectionKey(page.lesson.id, 'memory', section.index, section.partIndex)]: val }))}
                                                         />
                                                         <div className="uppercase tracking-wide flex items-center gap-2" style={{
-                                                            marginTop: `${options.styles.sectionTitleMT || 0}px`,
+                                                            marginTop: `${options.styles.memoryHeaderMT ?? (options.styles.sectionTitleMT || 0)}px`,
                                                             marginBottom: `${options.styles.sectionTitleMB || 8}px`,
                                                             fontSize: `${options.styles.sectionTitle}pt`,
                                                             lineHeight: options.styles.sectionTitleLH,
@@ -2741,7 +3065,7 @@ export default function WorkbookPage() {
                                                             color: options.styles.sectionTitleColor || '#6366f1'
                                                         }}>
                                                             <Star size={14} className="shrink-0" />
-                                                            <span>Lernvers</span>
+                                                            <span>Lernvers{page.lesson.memoryVerses[section.index]?.verse_ref ? `: ${page.lesson.memoryVerses[section.index].verse_ref}` : ''}</span>
                                                         </div>
                                                         <InlineEditor
                                                             value={editingField?.lessonId === page.lesson.id && editingField?.field === 'memoryVerses' ? editingField.tempValue : section.content}
@@ -2828,8 +3152,8 @@ export default function WorkbookPage() {
                                                             }}
                                                             className="uppercase tracking-wide flex items-center gap-2"
                                                             style={{
-                                                                marginTop: `${(section.index === 0 && (section.partIndex || 0) === 0) ? (options.styles.sectionTitleMT ?? 0) : (options.styles.sectionTitleMT ?? 8)}px`,
-                                                                marginBottom: `${options.styles.sectionTitleMB || 8}px`,
+                                                                marginTop: `${section.titleStyle?.mt ?? (options.styles.sectionTitleMT ?? 8)}px`,
+                                                                marginBottom: `${section.titleStyle?.mb ?? (options.styles.sectionTitleMB ?? 8)}px`,
                                                                 fontSize: `${options.styles.sectionTitle}pt`,
                                                                 lineHeight: options.styles.sectionTitleLH,
                                                                 fontWeight: options.styles.sectionTitleBold ? '800' : 'normal',
@@ -2880,6 +3204,8 @@ export default function WorkbookPage() {
                         "p-4 bg-white dark:bg-slate-800 rounded-full shadow-2xl text-indigo-600 border border-indigo-100 dark:border-slate-700 hover:scale-110 active:scale-95 transition-all",
                         showSettings && "rotate-90"
                     )}
+                    aria-label={showSettings ? "Optionen schließen" : "Optionen öffnen"}
+                    title={showSettings ? "Optionen schließen" : "Optionen öffnen"}
                 >
                     <SettingsIcon size={24} />
                 </button>

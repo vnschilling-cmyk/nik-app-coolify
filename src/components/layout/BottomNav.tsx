@@ -4,24 +4,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Home, GraduationCap, Settings, Library } from "lucide-react";
 import clsx from "clsx";
+import { usePermissions, PageId } from "@/hooks/usePermissions";
 
 const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: Home },
-    { label: "Bibel", href: "/bible", icon: BookOpen },
-    { label: "Studium", href: "/study", icon: GraduationCap },
-    { label: "Bibliothek", href: "/library", icon: Library },
-    { label: "Setup", href: "/setup", icon: Settings },
+    { label: "Dashboard", href: "/dashboard", icon: Home, id: "dashboard" as PageId },
+    { label: "Bibel", href: "/bible", icon: BookOpen, id: "bible" as PageId },
+    { label: "Studium", href: "/study", icon: GraduationCap, id: "study" as PageId },
+    { label: "Bibliothek", href: "/library", icon: Library, id: "library" as PageId },
+    { label: "Setup", href: "/setup", icon: Settings, id: "setup" as PageId },
 ];
 
 export default function BottomNav() {
     const pathname = usePathname();
+    const { canAccessPage } = usePermissions();
 
     if (pathname === "/setup/workbook") return null;
+
+    // Filter items based on permissions
+    const visibleItems = navItems.filter(item => canAccessPage(item.id));
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center p-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pointer-events-none">
             <div className="flex justify-between items-center gap-2 w-full max-w-sm px-4 py-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-2xl pointer-events-auto">
-                {navItems.map((item) => {
+                {visibleItems.map((item) => {
                     const isActive = pathname.startsWith(item.href);
                     const Icon = item.icon;
 

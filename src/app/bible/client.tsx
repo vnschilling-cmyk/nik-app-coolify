@@ -12,7 +12,8 @@ import { Search, BookOpen, Lightbulb, HelpCircle, X, GraduationCap } from "lucid
 import SearchModal from "@/components/features/SearchModal";
 import { useSearchParams, useRouter } from "next/navigation";
 import AnalysisModal from "@/components/features/AnalysisModal";
-import { Sparkles as SparklesIcon, Users, User } from "lucide-react";
+import { Sparkles as SparklesIcon, Users, User, Shield } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface BookSummary {
     id: string;
@@ -27,37 +28,47 @@ interface BiblePageClientProps {
     verses: VerseData[];
     lessons: LinkedLesson[];
     textStudies: any[];
-    facts: ChapterFact[];
-    questions: ChapterQuestion[];
     book: BookSummary;
     chapter: number;
     allBooks: BookSummary[];
 }
 
-export default function BiblePageClient({ verses, lessons, textStudies, facts, questions, book, chapter, allBooks }: BiblePageClientProps) {
+export default function BiblePageClient({ verses, lessons, textStudies, book, chapter, allBooks }: BiblePageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { canAccessPage } = usePermissions();
     const searchQuery = searchParams.get('q') || undefined;
 
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+
+    if (!canAccessPage("bible")) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-3xl flex items-center justify-center text-red-600 dark:text-red-400 mb-6 shadow-xl shadow-red-500/10 scale-110">
+                    <Shield size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-3 uppercase tracking-tight">Zugriff verweigert</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                    Du hast keine Berechtigung, die Bibel zu lesen. Bitte wende dich an die Jugendleitung.
+                </p>
+                <Link
+                    href="/dashboard"
+                    className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-all active:scale-95"
+                >
+                    Zum Dashboard
+                </Link>
+            </div>
+        );
+    }
     const [selectorMode, setSelectorMode] = useState<'books' | 'chapters'>('books');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
-    const [selectedFact, setSelectedFact] = useState<ChapterFact | null>(null);
-    const [selectedQuestion, setSelectedQuestion] = useState<ChapterQuestion | null>(null);
     const [analysisConfig, setAnalysisConfig] = useState<{
         isOpen: boolean;
         type: 'chapter' | 'verse';
         category?: 'KI' | 'Andere' | 'Eigene';
         verse?: number
     }>({ isOpen: false, type: 'chapter' });
-    const [showLessons, setShowLessons] = useState(true);
-
-    // Separate facts and questions into chapter-specific (bubbles) vs global (textboxes)
-    const chapterFacts = facts.filter(f => !f.isGlobal);
-    const chapterQuestions = questions.filter(q => !q.isGlobal);
-    const globalFacts = facts.filter(f => f.isGlobal);
-    const globalQuestions = questions.filter(q => q.isGlobal);
 
     // 1. Redirection to last read position
     useEffect(() => {
@@ -202,18 +213,6 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <User size={18} />
                         </button>
 
-                        <button
-                            onClick={() => setShowLessons(!showLessons)}
-                            className={clsx(
-                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
-                                showLessons
-                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
-                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400"
-                            )}
-                            title={showLessons ? "Lektionen ausblenden" : "Lektionen einblenden"}
-                        >
-                            <GraduationCap size={18} />
-                        </button>
 
                         <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
 
@@ -230,8 +229,8 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
 
             <BibleReader
                 verses={verses}
-                lessons={showLessons ? lessons : []}
                 wordStudies={lessons.filter(l => l.category === 'Wortstudie')}
+                textStudies={textStudies}
                 onWordClick={handleWordClick}
                 onVerseClick={(v) => setAnalysisConfig({ isOpen: true, type: 'verse', verse: v })}
                 searchQuery={searchQuery}
@@ -295,6 +294,9 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                         testament={book.testament}
                         bookId={book.id}
                         onClose={() => setSelectedWord(null)}
+                        onSave={() => {
+                            router.refresh();
+                        }}
                     />
                 )
             }
@@ -304,122 +306,7 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                 onClose={() => setIsSearchOpen(false)}
             />
 
-            {/* Global Content Section (for whole-book lessons) */}
-            {(globalFacts.length > 0 || globalQuestions.length > 0) && (
-                <section className="px-4 pb-8 max-w-prose mx-auto">
-                    <h2 className="text-lg font-bold mb-4 text-zinc-800 dark:text-zinc-200">Zum Buch {book.name}</h2>
-                    <div className="space-y-3">
-                        {[...globalFacts.map(f => ({ ...f, _type: 'fact' as const })), ...globalQuestions.map(q => ({ ...q, _type: 'question' as const }))]
-                            .sort((a, b) => a.order - b.order)
-                            .map(item => (
-                                item._type === 'fact' ? (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => setSelectedFact(item as ChapterFact)}
-                                        className="w-full text-left p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg shrink-0">
-                                                <Lightbulb size={16} className="text-amber-600 dark:text-amber-400" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-sm text-amber-900 dark:text-amber-100">{(item as ChapterFact).title || 'Info'}</p>
-                                                <p className="text-xs text-amber-700 dark:text-amber-300 line-clamp-2 mt-1">{(item as ChapterFact).content}</p>
-                                            </div>
-                                        </div>
-                                    </button>
-                                ) : (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => setSelectedQuestion(item as ChapterQuestion)}
-                                        className="w-full text-left p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg shrink-0">
-                                                <HelpCircle size={16} className="text-emerald-600 dark:text-emerald-400" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-sm text-emerald-900 dark:text-emerald-100">{(item as ChapterQuestion).question}</p>
-                                            </div>
-                                        </div>
-                                    </button>
-                                )
-                            ))}
-                    </div>
-                </section>
-            )}
 
-            {/* Fact Detail Modal */}
-            {selectedFact && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedFact(null)}>
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-slate-700 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <button
-                            onClick={() => setSelectedFact(null)}
-                            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                            title="Schließen"
-                        >
-                            <X size={20} />
-                        </button>
-
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
-                                <Lightbulb size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg">{selectedFact.title || 'Info'}</h3>
-                                {selectedFact.category && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                                        {selectedFact.category}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedFact.content}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Question Detail Modal */}
-            {selectedQuestion && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedQuestion(null)}>
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-slate-700 relative animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <button
-                            onClick={() => setSelectedQuestion(null)}
-                            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                            title="Schließen"
-                        >
-                            <X size={20} />
-                        </button>
-
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
-                                <HelpCircle size={20} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg">Frage</h3>
-                                {selectedQuestion.category && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                                        {selectedQuestion.category}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <p className="text-zinc-900 dark:text-zinc-100 font-medium">{selectedQuestion.question}</p>
-                            {selectedQuestion.answer && (
-                                <div className="pt-3 border-t border-zinc-200 dark:border-slate-700">
-                                    <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">Antwort</p>
-                                    <p className="text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{selectedQuestion.answer}</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div >
     );
 }

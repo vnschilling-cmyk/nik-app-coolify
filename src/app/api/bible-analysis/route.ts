@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { THEOLOGICAL_CONSTRAINTS } from '@/lib/theology';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export async function POST(request: NextRequest) {
         if (type === 'chapter') {
             prompt = `Du bist ein Bibelexperte und Historiker. Analysiere das Kapitel ${book} ${chapter} (${testament === 'NT' ? 'Neues Testament' : 'Altes Testament'}).
             
+            ${THEOLOGICAL_CONSTRAINTS}
+
             Gib mir folgende Informationen im JSON-Format:
             {
               "title": "Titel des Kapitels",
@@ -39,6 +42,8 @@ export async function POST(request: NextRequest) {
         } else if (type === 'verse') {
             prompt = `Du bist ein Bibelexperte. Analysiere den folgenden Vers: ${book} ${chapter}, Vers ${verse} (${testament === 'NT' ? 'Neues Testament' : 'Altes Testament'}).
             
+            ${THEOLOGICAL_CONSTRAINTS}
+
             Gib mir folgende Informationen im JSON-Format:
             {
               "verse": "${book} ${chapter}:${verse}",

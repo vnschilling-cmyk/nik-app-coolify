@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Sparkles, BookOpen, History, Lightbulb, Info, Share2, Download, Check, Users, User } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
+import { usePermissions } from "@/hooks/usePermissions";
 import clsx from "clsx";
 
 import RichTextDisplay from "@/components/ui/RichTextDisplay";
@@ -33,6 +34,8 @@ interface AnalysisModalProps {
 }
 
 export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', book, chapter, verse, testament, existingAnalyses }: AnalysisModalProps) {
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
     const [loading, setLoading] = useState(true);
     const [analyses, setAnalyses] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,12 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                 setAnalyses(existingAnalyses);
                 setLoading(false);
             } else if (category === 'KI') {
-                fetchAnalysis();
+                if (!hasAIPermission) {
+                    setLoading(false);
+                    setError("Du hast keine Berechtigung, KI-Funktionen zu nutzen.");
+                } else {
+                    fetchAnalysis();
+                }
             } else {
                 setAnalyses([]);
                 setLoading(false);
@@ -307,13 +315,6 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
 
                 {/* Footer Buttons */}
                 <footer className="px-6 py-4 border-t border-zinc-100 dark:border-slate-700 flex items-center gap-3 bg-zinc-50/30 dark:bg-slate-800/30">
-                    <button
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-                        disabled={loading}
-                    >
-                        <Share2 size={16} />
-                        Teilen
-                    </button>
                     {(!existingAnalyses || existingAnalyses.length === 0) && (
                         <button
                             onClick={handleSave}
@@ -321,7 +322,7 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                                 "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50",
                                 saved
                                     ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                                    : "bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-slate-600"
+                                    : "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700"
                             )}
                             disabled={loading || saved}
                         >
@@ -338,6 +339,13 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                             )}
                         </button>
                     )}
+                    <button
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-slate-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-sm font-bold hover:bg-zinc-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        <Share2 size={16} />
+                        Teilen
+                    </button>
                 </footer>
             </div>
 

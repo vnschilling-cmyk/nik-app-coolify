@@ -373,7 +373,12 @@ export default function DashboardPage() {
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-lg">Neue Frage stellen</h3>
-                                <button onClick={() => setShowQuestionModal(false)} className="text-zinc-400 hover:text-zinc-600">
+                                <button
+                                    onClick={() => setShowQuestionModal(false)}
+                                    className="text-zinc-400 hover:text-zinc-600"
+                                    aria-label="Schließen"
+                                    title="Schließen"
+                                >
                                     <X size={20} />
                                 </button>
                             </div>
@@ -409,8 +414,9 @@ export default function DashboardPage() {
 
                                 {/* Lesson Selector */}
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lektion *</label>
+                                    <label htmlFor="lesson_select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lektion *</label>
                                     <select
+                                        id="lesson_select"
                                         required
                                         value={questionForm.lesson_id}
                                         onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
@@ -427,8 +433,9 @@ export default function DashboardPage() {
                                 {questionForm.category === "bibeltext" && selectedLesson && (
                                     <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                            <label htmlFor="verse_start" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
                                             <select
+                                                id="verse_start"
                                                 value={questionForm.verse_start}
                                                 onChange={e => {
                                                     const newVal = parseInt(e.target.value) || 1;
@@ -446,8 +453,9 @@ export default function DashboardPage() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                            <label htmlFor="verse_end" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
                                             <select
+                                                id="verse_end"
                                                 value={questionForm.verse_end}
                                                 onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
                                                 className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
@@ -462,8 +470,9 @@ export default function DashboardPage() {
 
                                 {/* Question Text */}
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deine Frage *</label>
+                                    <label htmlFor="question_textarea" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deine Frage *</label>
                                     <textarea
+                                        id="question_textarea"
                                         required
                                         value={questionForm.question}
                                         onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}

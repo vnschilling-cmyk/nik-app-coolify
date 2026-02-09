@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, BookOpen, Languages, Hash, Quote, Sparkles, StickyNote, Save } from "lucide-react";
 import { pb } from "@/lib/pocketbase";
+import { usePermissions } from "@/hooks/usePermissions";
 import RichTextDisplay from "@/components/ui/RichTextDisplay";
 import clsx from "clsx";
 
@@ -26,9 +27,12 @@ interface WordMeaningPopupProps {
     testament: 'OT' | 'NT';
     bookId?: string;
     onClose: () => void;
+    onSave?: (word: string) => void;
 }
 
-export default function WordMeaningPopup({ word, context, testament, bookId, onClose }: WordMeaningPopupProps) {
+export default function WordMeaningPopup({ word, context, testament, bookId, onClose, onSave }: WordMeaningPopupProps) {
+    const { canAccessSection } = usePermissions();
+    const hasAIPermission = canAccessSection("ai_features");
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -79,9 +83,20 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                 </div>
             `.trim();
 
+            // Generate plain text version for workbook (no HTML, no Strong numbers, no Greek)
+            const plainTextParts: string[] = [];
+            if (data.meaning) {
+                plainTextParts.push(`**Bedeutung:** ${data.meaning}`);
+            }
+            if (data.rootMeaning) {
+                plainTextParts.push(`**Wortwurzel:** ${data.rootMeaning}`);
+            }
+            const plainText = plainTextParts.join('\n');
+
             await pb.collection('facts').create({
                 title: `Wortstudie: ${word}`,
                 description: formattedDescription,
+                plainText: plainText,
                 category: "Wortstudie",
                 fact_kind: "word_study",
                 word: word,
@@ -94,6 +109,7 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                 verse_end: 0
             });
             setSaved(true);
+            if (onSave) onSave(word);
         } catch (e: any) {
             console.error("Failed to save word study:", e);
             alert("Fehler beim Speichern: " + e.message);
@@ -133,6 +149,10 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
             }
 
             // 2. Fetch AI meaning if no manual study found
+            if (!hasAIPermission) {
+                throw new Error('Du hast keine Berechtigung für die KI Wortanalyse.');
+            }
+
             const aiRes = await fetch('/api/word-meaning', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

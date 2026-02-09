@@ -1,6 +1,6 @@
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { THEOLOGICAL_CONSTRAINTS } from "@/lib/theology";
 
 // Ensure API key is present
 const API_KEY = process.env.GOOGLE_AI_API_KEY;
@@ -33,6 +33,8 @@ export async function POST(req: Request) {
 
         const prompt = `
             Du bist ein Experte für theologische Bildung. Erstelle ${count} anspruchsvolle Multiple-Choice-Fragen (Lerntest) basierend auf einer Bibellektion.
+
+            ${THEOLOGICAL_CONSTRAINTS}
 
             KONTEXT DER LEKTION:
             ---

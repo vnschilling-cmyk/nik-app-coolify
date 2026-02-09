@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import NextImage from "next/image";
+import Link from "next/link";
 import LessonsTab from "@/components/study/LessonsTab";
 import InfosTab from "@/components/study/InfosTab";
 import QuestionsTab from "@/components/setup/QuestionsTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
-import { BookOpen, Lightbulb, HelpCircle, ChevronLeft, Brain, GraduationCap, Library, Languages, Quote, FileText, Palette, Ruler } from "lucide-react";
+import { BookOpen, Lightbulb, HelpCircle, ChevronLeft, Brain, GraduationCap, Library, Languages, Quote, FileText, Palette, Ruler, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import MeasuresTab from "@/components/study/MeasuresTab";
 
 type Tab = "lessons" | "facts" | "questions" | "memory_verses" | "learning_tests" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "measures";
@@ -101,7 +103,7 @@ const mainTiles = [
     },
     {
         id: "measures" as Tab,
-        label: "Einheiten",
+        label: "Bibel-Maße & Gewichte",
         description: "Antike Maße & Gewichte",
         icon: Ruler,
         color: "cyan",
@@ -111,7 +113,28 @@ const mainTiles = [
 
 export default function LibraryPage() {
     const { user } = useAuth();
+    const { canAccessPage, canAccessSection } = usePermissions();
     const [activeTab, setActiveTab] = useState<Tab | null>(null);
+
+    if (!canAccessPage("library")) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-3xl flex items-center justify-center text-red-600 dark:text-red-400 mb-6 shadow-xl shadow-red-500/10 scale-110">
+                    <Shield size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-3 uppercase tracking-tight">Zugriff verweigert</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                    Du hast keine Berechtigung, die Bibliothek zu sehen. Bitte wende dich an die Jugendleitung.
+                </p>
+                <Link
+                    href="/dashboard"
+                    className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition-all active:scale-95"
+                >
+                    Zum Dashboard
+                </Link>
+            </div>
+        );
+    }
 
     const getTabContent = () => {
         switch (activeTab) {
@@ -174,6 +197,8 @@ export default function LibraryPage() {
     );
 
     if (!activeTab) {
+        const accessibleMainTiles = mainTiles.filter(tile => canAccessSection(tile.id as any));
+
         return (
             <div className="min-h-[100dvh] pb-32">
                 {/* Header Section */}
@@ -193,7 +218,7 @@ export default function LibraryPage() {
                 </header>
 
                 <div className="p-4">
-                    {renderGrid(mainTiles)}
+                    {renderGrid(accessibleMainTiles)}
                 </div>
             </div>
         );

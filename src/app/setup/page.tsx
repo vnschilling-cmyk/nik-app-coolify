@@ -11,16 +11,18 @@ import DesignTab from "@/components/setup/DesignTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
 import GroupsTab from "@/components/setup/GroupsTab";
-import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText } from "lucide-react";
+import PermissionsTab from "@/components/setup/PermissionsTab";
+import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "permissions";
 
 // 1. Content Management Sub-Tiles (Not used in Setup anymore, but preserved type for consistency if needed)
 const contentTiles: any[] = [];
 
 // 2. Main Menu Tiles for Setup
-const mainTiles = [
+const initialMainTiles = [
     {
         id: "groups" as Tab,
         label: "Gruppen",
@@ -41,13 +43,43 @@ const mainTiles = [
 
 export default function SetupPage() {
     const { user } = useAuth();
+    const { isLeader, canAccessSection } = usePermissions();
     const [activeTab, setActiveTab] = useState<Tab | null>(null);
+
+    // Filter tiles based on permissions
+    const mainTiles = [
+        ...(canAccessSection("groups") ? [{
+            id: "groups" as Tab,
+            label: "Gruppen",
+            description: "Gruppenverwaltung & Import",
+            icon: Users,
+            color: "amber",
+            gradient: "from-amber-400 to-orange-500"
+        }] : []),
+        {
+            id: "user" as Tab,
+            label: "Benutzer",
+            description: "Profil, Design & Einstellungen",
+            icon: User,
+            color: "purple",
+            gradient: "from-purple-500 to-pink-600"
+        },
+        ...(canAccessSection("permissions") ? [{
+            id: "permissions" as Tab,
+            label: "Rechte",
+            description: "Berechtigungen verwalten",
+            icon: Shield,
+            color: "emerald",
+            gradient: "from-emerald-500 to-teal-600"
+        }] : [])
+    ];
 
     const getTabContent = () => {
         switch (activeTab) {
             case "user": return <UserTab />;
             case "design": return <DesignTab />;
-            case "groups": return <GroupsTab />;
+            case "groups": return (canAccessSection("groups") ? <GroupsTab /> : null);
+            case "permissions": return (canAccessSection("permissions") ? <PermissionsTab /> : null);
             default: return null;
         }
     };
