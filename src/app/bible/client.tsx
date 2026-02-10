@@ -216,9 +216,6 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <User size={18} />
                         </button>
 
-
-                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
-
                         <button
                             onClick={() => setShowLessons(!showLessons)}
                             className={clsx(
@@ -232,7 +229,8 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <GraduationCap size={20} />
                         </button>
 
-                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
+
+
 
                         <button
                             onClick={() => setIsSearchOpen(true)}

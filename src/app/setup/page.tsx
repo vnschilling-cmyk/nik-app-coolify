@@ -77,8 +77,8 @@ export default function SetupPage() {
         }] : []),
         {
             id: "user_feedback" as Tab,
-            label: isLeader() ? "Meldungen verwalten" : "Feedback & Mitteilungen",
-            description: isLeader() ? "Eingegangenes Feedback einsehen" : "Lob, Kritik oder Fehler mitteilen",
+            label: isLeader() ? "Meldungen verwalten" : "Feedback & Fragen",
+            description: isLeader() ? "Eingegangenes Feedback einsehen" : "Ideen, Fehler oder Fragen mitteilen",
             icon: MessageSquare,
             color: "indigo",
             gradient: "from-indigo-500 to-purple-600"

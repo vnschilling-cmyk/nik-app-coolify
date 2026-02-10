@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import AskQuestionModal from "@/components/modals/AskQuestionModal";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,25 +14,11 @@ interface LastReadPosition {
     chapter: number;
 }
 
-interface Lesson {
-    id: string;
-    title: string;
-    book_id: string;
-    chapter_start: number;
-    verse_start: number;
-    verse_end: number;
-}
-
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
-import { calculateGrade, getGradeColor } from "@/lib/grades";
+import { calculateGrade } from "@/lib/grades";
 import { StatsRing } from "@/components/ui/StatsRing";
-
-const CATEGORIES = [
-    { id: "bibeltext", label: "Bibeltext-Frage", icon: BookOpen, color: "indigo" },
-    { id: "allgemein", label: "Allgemeine Frage", icon: HelpCircle, color: "emerald" },
-];
 
 /**
  *## Refactoring & UX: Bug-Reporting
@@ -50,22 +37,14 @@ export default function DashboardPage() {
     const [mounted, setMounted] = useState(false);
     const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
     const [showQuestionModal, setShowQuestionModal] = useState(false);
-    const [lessons, setLessons] = useState<Lesson[]>([]);
-    const [bibleBooks, setBibleBooks] = useState<any[]>([]);
-    const [questionForm, setQuestionForm] = useState({
-        question: "",
-        lesson_id: "",
-        category: "allgemein",
-        book_id: "",
-        chapter: 1,
-        verse_start: 1,
-        verse_end: 1
-    });
-    const [saving, setSaving] = useState(false);
-    const [maxVerses, setMaxVerses] = useState(50);
+
+    // Removed redundant state for manual form handling:
+    // lessons, bibleBooks, questionForm, saving, maxVerses
+
     const [showMyQuestionsModal, setShowMyQuestionsModal] = useState(false);
     const [userQuestions, setUserQuestions] = useState<any[]>([]);
     const [loadingQuestions, setLoadingQuestions] = useState(false);
+    const [editingQuestion, setEditingQuestion] = useState<any>(null); // To handle editing from "My Questions"
 
     const [memoryVerse, setMemoryVerse] = useState<any>(null);
     const [stats, setStats] = useState({
@@ -93,20 +72,11 @@ export default function DashboardPage() {
             }
         }
         loadMemoryVerse();
-        loadBibleBooks();
-        loadStats();
         if (showMyQuestionsModal) loadUserQuestions();
         console.log("[Dashboard] User changed, reloading stats. Role:", user?.role);
     }, [user]);
 
-    const loadBibleBooks = async () => {
-        try {
-            const res = await pb.collection('bible_books').getFullList({ sort: 'order' });
-            setBibleBooks(res);
-        } catch (e) {
-            console.error("Failed to load bible books:", e);
-        }
-    };
+    // Removed loadBibleBooks as it's no longer needed here
 
     const loadStats = async () => {
         if (!user) return;
@@ -261,92 +231,8 @@ export default function DashboardPage() {
         }
     };
 
-    useEffect(() => {
-        // Load lessons when modal opens
-        if (showQuestionModal && lessons.length === 0) {
-            loadLessons();
-        }
-    }, [showQuestionModal]);
-
-    // Update max verses when lesson changes (for bibeltext category)
-    useEffect(() => {
-        if (questionForm.lesson_id && questionForm.category === "bibeltext") {
-            const lesson = lessons.find(l => l.id === questionForm.lesson_id);
-            if (lesson && lesson.book_id) {
-                updateMaxVerses(lesson);
-            }
-        }
-    }, [questionForm.lesson_id, questionForm.category, lessons]);
-
-    const loadLessons = async () => {
-        try {
-            const res = await pb.collection('lessons').getFullList({ sort: 'title' });
-            setLessons(res.map(r => ({
-                id: r.id,
-                title: r.title || "(Ohne Titel)",
-                book_id: r.book_id || "",
-                chapter_start: r.chapter_start || 1,
-                verse_start: r.verse_start || 1,
-                verse_end: r.verse_end || 10
-            })));
-        } catch (e) {
-            console.error("Failed to load lessons:", e);
-        }
-    };
-
-    const updateMaxVerses = async (lesson: Lesson) => {
-        try {
-            const record = await pb.collection('verses').getList(1, 1, {
-                filter: `book="${lesson.book_id}" && chapter=${lesson.chapter_start}`,
-                sort: '-verse',
-                fields: 'verse'
-            });
-            if (record.items.length > 0) {
-                setMaxVerses(record.items[0].verse);
-            } else {
-                setMaxVerses(lesson.verse_end || 50);
-            }
-        } catch (e) {
-            console.error("Error fetching verse count:", e);
-            setMaxVerses(lesson.verse_end || 50);
-        }
-    };
-
-    const handleQuestionSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!questionForm.question.trim()) return;
-        if (questionForm.category === "bibeltext" && (!questionForm.book_id || !questionForm.chapter)) return;
-
-        setSaving(true);
-        try {
-            const data: any = {
-                question: questionForm.question,
-                category: questionForm.category,
-                lesson_id: questionForm.lesson_id,
-                is_answered: false,
-                user: user?.id,
-                created_by_name: user?.name,
-                order: 0
-            };
-
-            if (questionForm.category === "bibeltext") {
-                data.book_id = questionForm.book_id;
-                data.chapter = questionForm.chapter;
-                data.verse_start = questionForm.verse_start;
-                data.verse_end = questionForm.verse_end;
-            }
-
-            await pb.collection('questions').create(data);
-            setShowQuestionModal(false);
-            setQuestionForm({ question: "", lesson_id: "", category: "allgemein", book_id: "", chapter: 1, verse_start: 1, verse_end: 1 });
-            alert("Frage wurde gespeichert!");
-        } catch (e: any) {
-            console.error("Failed to save question:", e);
-            alert("Fehler: " + e.message);
-        } finally {
-            setSaving(false);
-        }
-    };
+    // Removed loadLessons, updateMaxVerses, handleQuestionSubmit
+    // Logic is now in AskQuestionModal
 
     const continueReadingLink = lastRead
         ? `/bible?book=${lastRead.bookShortName}&chapter=${lastRead.chapter}`
@@ -355,8 +241,6 @@ export default function DashboardPage() {
     const continueReadingLabel = lastRead
         ? `${lastRead.bookName} Kapitel ${lastRead.chapter}`
         : "1. Mose Kapitel 1";
-
-    const selectedLesson = lessons.find(l => l.id === questionForm.lesson_id);
 
     return (
         <div className="min-h-screen pb-24">
@@ -544,153 +428,31 @@ export default function DashboardPage() {
                 </section>
 
                 {/* Question Modal */}
-                {showQuestionModal && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-lg">Neue Frage stellen</h3>
-                                <button
-                                    onClick={() => setShowQuestionModal(false)}
-                                    className="text-zinc-400 hover:text-zinc-600"
-                                    aria-label="Schließen"
-                                    title="Schließen"
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-                            <form onSubmit={handleQuestionSubmit} className="space-y-4">
-                                {/* Category Selector */}
-                                <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie *</label>
-                                    <div className="grid grid-cols-2 gap-2 mt-1">
-                                        {CATEGORIES.map(cat => {
-                                            const Icon = cat.icon;
-                                            const isSelected = questionForm.category === cat.id;
+                <AskQuestionModal
+                    isOpen={showQuestionModal}
+                    onClose={() => setShowQuestionModal(false)}
+                    onSaved={() => {
+                        // Optionally refresh questions if showing my questions
+                        if (showMyQuestionsModal) loadUserQuestions();
+                        alert("Deine Frage wurde gesendet!");
+                    }}
+                />
+                {/* Edit Question Modal (for existing questions) */}
+                <AskQuestionModal
+                    isOpen={!!editingQuestion}
+                    onClose={() => setEditingQuestion(null)}
+                    initialData={editingQuestion}
+                    onSaved={() => {
+                        loadUserQuestions();
+                        alert("Änderungen gespeichert!");
+                    }}
+                />
 
-                                            // Volltonfarben
-                                            const activeClass = cat.id === "bibeltext"
-                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
-                                                : "bg-emerald-600 text-white border-emerald-600 shadow-md";
-                                            const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
-
-                                            return (
-                                                <button
-                                                    key={cat.id}
-                                                    type="button"
-                                                    onClick={() => setQuestionForm({ ...questionForm, category: cat.id })}
-                                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${isSelected ? activeClass : inactiveClass}`}
-                                                >
-                                                    <Icon size={18} />
-                                                    <span className="text-sm font-bold uppercase tracking-tight">{cat.label}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Bibeltext-Auswahl (nur für bibeltext) */}
-                                {questionForm.category === "bibeltext" && (
-                                    <div className="space-y-4 animate-fadeIn">
-                                        <div>
-                                            <label htmlFor="book_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Bibelbuch *</label>
-                                            <select
-                                                id="book_select"
-                                                required
-                                                value={questionForm.book_id}
-                                                onChange={e => setQuestionForm({ ...questionForm, book_id: e.target.value, chapter: 1 })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                            >
-                                                <option value="">Buch wählen...</option>
-                                                {bibleBooks.map(b => (
-                                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <div>
-                                                <label htmlFor="chapter_input" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Kapitel *</label>
-                                                <input
-                                                    id="chapter_input"
-                                                    type="number"
-                                                    min="1"
-                                                    required
-                                                    value={questionForm.chapter}
-                                                    onChange={e => setQuestionForm({ ...questionForm, chapter: parseInt(e.target.value) || 1 })}
-                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="verse_start" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Von Vers</label>
-                                                <input
-                                                    id="verse_start"
-                                                    type="number"
-                                                    min="1"
-                                                    value={questionForm.verse_start}
-                                                    onChange={e => setQuestionForm({ ...questionForm, verse_start: parseInt(e.target.value) || 1 })}
-                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="verse_end" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Bis Vers</label>
-                                                <input
-                                                    id="verse_end"
-                                                    type="number"
-                                                    min="1"
-                                                    value={questionForm.verse_end}
-                                                    onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
-                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Question Text */}
-                                <div>
-                                    <label htmlFor="question_textarea" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Deine Frage *</label>
-                                    <textarea
-                                        id="question_textarea"
-                                        required
-                                        value={questionForm.question}
-                                        onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}
-                                        className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px] text-sm"
-                                        placeholder="Was möchtest du wissen?"
-                                    />
-                                </div>
-
-                                {questionForm.category === "bibeltext" && (
-                                    <div className="animate-fadeIn">
-                                        <label htmlFor="lesson_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Lektionsbezug (Optional)</label>
-                                        <select
-                                            id="lesson_select"
-                                            value={questionForm.lesson_id}
-                                            onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
-                                            className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                        >
-                                            <option value="">Kein Lektionsbezug</option>
-                                            {lessons.map(l => (
-                                                <option key={l.id} value={l.id}>{l.title}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={saving || !questionForm.question.trim() || (questionForm.category === "bibeltext" && !questionForm.book_id)}
-                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    <Save size={18} /> {saving ? "Speichern..." : "Frage absenden"}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                )}
-                {/* My Questions Modal */}
+                {/* My Questions Modal List */}
                 {showMyQuestionsModal && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
                         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl max-h-[85vh] flex flex-col">
+                            {/* Header */}
                             <div className="flex justify-between items-center mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -731,7 +493,12 @@ export default function DashboardPage() {
                                 ) : (
                                     <div className="space-y-4">
                                         {userQuestions.map((q: any) => (
-                                            <div key={q.id} className="bg-zinc-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-zinc-100 dark:border-white/5 transition-all hover:shadow-md">
+                                            <div
+                                                key={q.id}
+                                                className="bg-zinc-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-zinc-100 dark:border-white/5 transition-all hover:shadow-md cursor-pointer group hover:border-indigo-200 dark:hover:border-indigo-500/30"
+                                                onClick={() => setEditingQuestion(q)}
+                                                title="Anklicken zum Bearbeiten"
+                                            >
                                                 <div className="flex items-start justify-between gap-4 mb-3">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -776,7 +543,7 @@ export default function DashboardPage() {
                                                         <p className="text-zinc-600 dark:text-slate-300 text-sm italic">{q.answer}</p>
                                                     </div>
                                                 ) : (
-                                                    <p className="mt-2 text-xs text-zinc-400 font-medium italic">Wartet auf eine Antwort...</p>
+                                                    <p className="mt-2 text-xs text-zinc-400 font-medium italic group-hover:text-indigo-500 transition-colors">Wartet auf eine Antwort... (Klicken zum Bearbeiten)</p>
                                                 )}
                                             </div>
                                         ))}

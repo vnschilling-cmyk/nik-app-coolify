@@ -57,6 +57,7 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
 
         setSaving(true);
         try {
+            console.log("UnifiedFeedbackModal: Submitting feedback", { type, description: description.substring(0, 20), hasScreenshot: !!screenshot, userId: user?.id });
             const formData = new FormData();
             formData.append("description", description);
             if (screenshot) {
@@ -78,7 +79,8 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
 
             onClose();
         } catch (error: any) {
-            console.error("Fehler beim Senden:", error);
+            console.error("UnifiedFeedbackModal: Error submitting:", error);
+            console.error("UnifiedFeedbackModal: Error details:", error.response);
             alert("Fehler beim Senden: " + error.message);
         } finally {
             setSaving(false);
@@ -92,62 +94,66 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center gap-3">
-                        <div className={clsx(
-                            "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                            type === "bug" ? "bg-red-50 dark:bg-red-900/30" : "bg-blue-50 dark:bg-blue-900/30"
-                        )}>
-                            {type === "bug" ? (
-                                <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
-                            ) : (
-                                <Lightbulb className="text-blue-600 dark:text-blue-400" size={20} />
-                            )}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
+                {/* Header - Fixed */}
+                <div className="p-6 pb-4 shrink-0 border-b border-zinc-100 dark:border-white/5">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className={clsx(
+                                "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                                type === "bug" ? "bg-red-50 dark:bg-red-900/30" : "bg-blue-50 dark:bg-blue-900/30"
+                            )}>
+                                {type === "bug" ? (
+                                    <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
+                                ) : (
+                                    <Lightbulb className="text-blue-600 dark:text-blue-400" size={20} />
+                                )}
+                            </div>
+                            <h3 className="font-heading font-bold text-xl text-slate-900 dark:text-white">
+                                {initialData?.id ? "Mitteilung bearbeiten" : "Feedback & Support"}
+                            </h3>
                         </div>
-                        <h3 className="font-heading font-bold text-xl text-slate-900 dark:text-white">
-                            {initialData?.id ? "Mitteilung bearbeiten" : "Feedback & Support"}
-                        </h3>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
+                            aria-label="Schließen"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
-                        aria-label="Schließen"
-                    >
-                        <X size={20} />
-                    </button>
+
+                    {!initialData?.id && (
+                        <div className="bg-zinc-100 dark:bg-slate-900/50 p-1 rounded-2xl flex gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setType("bug")}
+                                className={clsx(
+                                    "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                                    type === "bug"
+                                        ? "bg-white dark:bg-slate-700 shadow-sm text-red-600 dark:text-red-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                <AlertTriangle size={14} /> Fehler
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setType("idea")}
+                                className={clsx(
+                                    "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                                    type === "idea"
+                                        ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                <Lightbulb size={14} /> Idee
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {!initialData?.id && (
-                    <div className="bg-zinc-100 dark:bg-slate-900/50 p-1 rounded-2xl flex gap-1 mb-6">
-                        <button
-                            type="button"
-                            onClick={() => setType("bug")}
-                            className={clsx(
-                                "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                                type === "bug"
-                                    ? "bg-white dark:bg-slate-700 shadow-sm text-red-600 dark:text-red-400"
-                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                            )}
-                        >
-                            <AlertTriangle size={14} /> Fehler
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setType("idea")}
-                            className={clsx(
-                                "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                                type === "idea"
-                                    ? "bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400"
-                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                            )}
-                        >
-                            <Lightbulb size={14} /> Idee
-                        </button>
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Content - Scrollable */}
+                <form id="feedback-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6 min-h-0 custom-scrollbar">
                     <div>
                         <label htmlFor="feedback_description" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">
                             {type === "bug" ? "Fehlerbeschreibung *" : "Deine Vision / Idee *"}
@@ -158,7 +164,7 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={type === "bug" ? "Was ist passiert? Was hätte passieren sollen?" : "Beschreibe deine Idee so genau wie möglich..."}
-                            className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700/50 border border-zinc-200 dark:border-white/5 rounded-2xl min-h-[120px] text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                            className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-700/50 border border-zinc-200 dark:border-white/5 rounded-2xl min-h-[120px] text-sm focus:ring-2 focus:ring-indigo-500 transition-all outline-none resize-y"
                         />
                     </div>
 
@@ -205,9 +211,13 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
                             )}
                         </div>
                     </div>
+                </form>
 
+                {/* Footer - Fixed */}
+                <div className="p-6 pt-4 shrink-0 border-t border-zinc-100 dark:border-white/5 bg-white dark:bg-slate-800 z-10">
                     <button
                         type="submit"
+                        form="feedback-form"
                         disabled={saving || !description.trim()}
                         className={clsx(
                             "w-full py-4 text-white rounded-2xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]",
@@ -222,7 +232,7 @@ export default function UnifiedFeedbackModal({ isOpen, onClose, initialData }: U
                             </>
                         )}
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     );
