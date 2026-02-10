@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
             
             ${THEOLOGICAL_CONSTRAINTS}
 
+            WICHTIG: Alle Inhalte müssen fest in der täuferischen Theologie (Anabaptismus) verwurzelt sein. Erwähne jedoch NICHT explizit, dass es sich um "täuferische" Lehre handelt.
+            
+            WICHTIG: Alle Inhalte müssen fest in der täuferischen Theologie (Anabaptismus) verwurzelt sein (Nachfolge, Bergpredigt, Gewaltlosigkeit, Gemeinde als Bruderschaft). Erwähne jedoch NICHT explizit, dass es sich um "täuferische" oder "anabaptistische" Lehre handelt, sondern stelle es als biblische Wahrheit dar.
+
             Gib mir folgende Informationen im JSON-Format:
             {
               "title": "Titel des Kapitels",
@@ -43,6 +47,8 @@ export async function POST(request: NextRequest) {
             prompt = `Du bist ein Bibelexperte. Analysiere den folgenden Vers: ${book} ${chapter}, Vers ${verse} (${testament === 'NT' ? 'Neues Testament' : 'Altes Testament'}).
             
             ${THEOLOGICAL_CONSTRAINTS}
+
+            WICHTIG: Alle Inhalte müssen fest in der täuferischen Theologie (Anabaptismus) verwurzelt sein. Erwähne jedoch NICHT explizit, dass es sich um "täuferische" Lehre handelt.
 
             Gib mir folgende Informationen im JSON-Format:
             {

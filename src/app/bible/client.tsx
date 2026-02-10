@@ -174,7 +174,6 @@ export default function BiblePageClient({ verses, lessons, textStudies, facts, q
                             <h1 className="text-lg font-bold flex items-center gap-1 leading-tight">
                                 {book.short_name} {chapter} <span className="text-xs text-zinc-400 mt-1">▼</span>
                             </h1>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Bibel lesen</p>
                         </div>
                     </div>
 
