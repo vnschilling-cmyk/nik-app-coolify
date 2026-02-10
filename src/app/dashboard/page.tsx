@@ -40,10 +40,13 @@ export default function DashboardPage() {
     const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
     const [showQuestionModal, setShowQuestionModal] = useState(false);
     const [lessons, setLessons] = useState<Lesson[]>([]);
+    const [bibleBooks, setBibleBooks] = useState<any[]>([]);
     const [questionForm, setQuestionForm] = useState({
         question: "",
         lesson_id: "",
         category: "allgemein",
+        book_id: "",
+        chapter: 1,
         verse_start: 1,
         verse_end: 1
     });
@@ -77,7 +80,17 @@ export default function DashboardPage() {
         }
         loadMemoryVerse();
         loadStats();
+        loadBibleBooks();
     }, [user]);
+
+    const loadBibleBooks = async () => {
+        try {
+            const res = await pb.collection('bible_books').getFullList({ sort: 'order' });
+            setBibleBooks(res);
+        } catch (e) {
+            console.error("Failed to load bible books:", e);
+        }
+    };
 
     const loadStats = async () => {
         if (!user) return;
@@ -252,7 +265,8 @@ export default function DashboardPage() {
 
     const handleQuestionSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!questionForm.question.trim() || !questionForm.lesson_id) return;
+        if (!questionForm.question.trim()) return;
+        if (questionForm.category === "bibeltext" && (!questionForm.book_id || !questionForm.chapter)) return;
 
         setSaving(true);
         try {
@@ -261,17 +275,21 @@ export default function DashboardPage() {
                 category: questionForm.category,
                 lesson_id: questionForm.lesson_id,
                 is_answered: false,
+                user: user?.id,
+                created_by_name: user?.name,
                 order: 0
             };
 
             if (questionForm.category === "bibeltext") {
+                data.book_id = questionForm.book_id;
+                data.chapter = questionForm.chapter;
                 data.verse_start = questionForm.verse_start;
                 data.verse_end = questionForm.verse_end;
             }
 
             await pb.collection('questions').create(data);
             setShowQuestionModal(false);
-            setQuestionForm({ question: "", lesson_id: "", category: "allgemein", verse_start: 1, verse_end: 1 });
+            setQuestionForm({ question: "", lesson_id: "", category: "allgemein", book_id: "", chapter: 1, verse_start: 1, verse_end: 1 });
             alert("Frage wurde gespeichert!");
         } catch (e: any) {
             console.error("Failed to save question:", e);
@@ -377,45 +395,47 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Group Stats */}
-                        <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
-                                <TrendingUp size={16} className="text-emerald-500" />
-                            </div>
-                            <div className="flex items-center justify-around gap-2 px-2">
-                                <StatsRing
-                                    percentage={stats.group.avg}
-                                    label={stats.group.avgGrade > 0 ? `Note ${stats.group.avgGrade}` : "--"}
-                                    subLabel="Schnitt"
-                                    colorClass={stats.group.avgGrade > 0 ? calculateGrade(stats.group.avg).color : "text-zinc-300"}
-                                    size={95}
-                                />
-                                <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
-                                <StatsRing
-                                    percentage={stats.group.top}
-                                    label={stats.group.topGrade > 0 ? `Note ${stats.group.topGrade}` : "--"}
-                                    subLabel="Top"
-                                    colorClass={stats.group.topGrade > 0 ? calculateGrade(stats.group.top).color : "text-zinc-300"}
-                                    size={95}
-                                />
-                            </div>
+                        {canAccessSection("group_statistics") && (
+                            <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
+                                    <TrendingUp size={16} className="text-emerald-500" />
+                                </div>
+                                <div className="flex items-center justify-around gap-2 px-2">
+                                    <StatsRing
+                                        percentage={stats.group.avg}
+                                        label={stats.group.avgGrade > 0 ? `Note ${stats.group.avgGrade}` : "--"}
+                                        subLabel="Schnitt"
+                                        colorClass={stats.group.avgGrade > 0 ? calculateGrade(stats.group.avg).color : "text-zinc-300"}
+                                        size={95}
+                                    />
+                                    <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
+                                    <StatsRing
+                                        percentage={stats.group.top}
+                                        label={stats.group.topGrade > 0 ? `Note ${stats.group.topGrade}` : "--"}
+                                        subLabel="Top"
+                                        colorClass={stats.group.topGrade > 0 ? calculateGrade(stats.group.top).color : "text-zinc-300"}
+                                        size={95}
+                                    />
+                                </div>
 
-                            {/* Participant Details */}
-                            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
-                                <div>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.totalTests}</p>
-                                    <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
-                                </div>
-                                <div className="border-x border-slate-100 dark:border-slate-700/50">
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.avgParticipants}</p>
-                                    <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.group.lastTestParticipants}</p>
-                                    <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
+                                {/* Participant Details */}
+                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.totalTests}</p>
+                                        <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
+                                    </div>
+                                    <div className="border-x border-slate-100 dark:border-slate-700/50">
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.avgParticipants}</p>
+                                        <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.group.lastTestParticipants}</p>
+                                        <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </section>
 
@@ -481,78 +501,95 @@ export default function DashboardPage() {
                                         {CATEGORIES.map(cat => {
                                             const Icon = cat.icon;
                                             const isSelected = questionForm.category === cat.id;
+
+                                            // Volltonfarben
                                             const activeClass = cat.id === "bibeltext"
-                                                ? "bg-indigo-100 text-indigo-700 border-indigo-500 ring-1 ring-indigo-500"
-                                                : "bg-emerald-100 text-emerald-700 border-emerald-500 ring-1 ring-emerald-500";
-                                            const inactiveClass = cat.id === "bibeltext"
-                                                ? "bg-white text-indigo-600/70 border-zinc-200 hover:bg-indigo-50"
-                                                : "bg-white text-emerald-600/70 border-zinc-200 hover:bg-emerald-50";
+                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
+                                                : "bg-emerald-600 text-white border-emerald-600 shadow-md";
+                                            const inactiveClass = "bg-white dark:bg-slate-700 text-zinc-500 border-zinc-200 dark:border-slate-600 hover:bg-zinc-50 dark:hover:bg-slate-600";
 
                                             return (
                                                 <button
                                                     key={cat.id}
                                                     type="button"
                                                     onClick={() => setQuestionForm({ ...questionForm, category: cat.id })}
-                                                    className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${isSelected ? activeClass : inactiveClass}`}
+                                                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${isSelected ? activeClass : inactiveClass}`}
                                                 >
                                                     <Icon size={18} />
-                                                    <span className="text-sm font-medium">{cat.label}</span>
+                                                    <span className="text-sm font-bold uppercase tracking-tight">{cat.label}</span>
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
 
-                                {/* Lesson Selector */}
-                                <div>
-                                    <label htmlFor="lesson_select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lektion *</label>
-                                    <select
-                                        id="lesson_select"
-                                        required
-                                        value={questionForm.lesson_id}
-                                        onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
-                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
-                                    >
-                                        <option value="">Lektion wählen...</option>
-                                        {lessons.map(l => (
-                                            <option key={l.id} value={l.id}>{l.title}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Verse Range (only for bibeltext) */}
-                                {questionForm.category === "bibeltext" && selectedLesson && (
-                                    <div className="grid grid-cols-2 gap-2">
+                                {/* Bibeltext-Auswahl (nur für bibeltext) */}
+                                {questionForm.category === "bibeltext" && (
+                                    <div className="space-y-4 animate-fadeIn">
                                         <div>
-                                            <label htmlFor="verse_start" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                            <label htmlFor="book_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Bibelbuch *</label>
                                             <select
-                                                id="verse_start"
-                                                value={questionForm.verse_start}
-                                                onChange={e => {
-                                                    const newVal = parseInt(e.target.value) || 1;
-                                                    setQuestionForm({
-                                                        ...questionForm,
-                                                        verse_start: newVal,
-                                                        verse_end: Math.max(newVal, questionForm.verse_end)
-                                                    });
-                                                }}
-                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                id="book_select"
+                                                required
+                                                value={questionForm.book_id}
+                                                onChange={e => setQuestionForm({ ...questionForm, book_id: e.target.value, chapter: 1 })}
+                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
                                             >
-                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                    <option key={num} value={num}>{num}</option>
+                                                <option value="">Buch wählen...</option>
+                                                {bibleBooks.map(b => (
+                                                    <option key={b.id} value={b.id}>{b.name}</option>
                                                 ))}
                                             </select>
                                         </div>
+
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div>
+                                                <label htmlFor="chapter_input" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Kapitel *</label>
+                                                <input
+                                                    id="chapter_input"
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={questionForm.chapter}
+                                                    onChange={e => setQuestionForm({ ...questionForm, chapter: parseInt(e.target.value) || 1 })}
+                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="verse_start" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Von Vers</label>
+                                                <input
+                                                    id="verse_start"
+                                                    type="number"
+                                                    min="1"
+                                                    value={questionForm.verse_start}
+                                                    onChange={e => setQuestionForm({ ...questionForm, verse_start: parseInt(e.target.value) || 1 })}
+                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="verse_end" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Bis Vers</label>
+                                                <input
+                                                    id="verse_end"
+                                                    type="number"
+                                                    min="1"
+                                                    value={questionForm.verse_end}
+                                                    onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
+                                                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <label htmlFor="verse_end" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                            <label htmlFor="lesson_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Lektionsbezug (Optional)</label>
                                             <select
-                                                id="verse_end"
-                                                value={questionForm.verse_end}
-                                                onChange={e => setQuestionForm({ ...questionForm, verse_end: parseInt(e.target.value) || 1 })}
-                                                className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                                                id="lesson_select"
+                                                value={questionForm.lesson_id}
+                                                onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
+                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
                                             >
-                                                {Array.from({ length: maxVerses }, (_, i) => i + 1).map(num => (
-                                                    <option key={num} value={num}>{num}</option>
+                                                <option value="">Kein Lektionsbezug</option>
+                                                {lessons.map(l => (
+                                                    <option key={l.id} value={l.id}>{l.title}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -561,23 +598,23 @@ export default function DashboardPage() {
 
                                 {/* Question Text */}
                                 <div>
-                                    <label htmlFor="question_textarea" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deine Frage *</label>
+                                    <label htmlFor="question_textarea" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Deine Frage *</label>
                                     <textarea
                                         id="question_textarea"
                                         required
                                         value={questionForm.question}
                                         onChange={e => setQuestionForm({ ...questionForm, question: e.target.value })}
-                                        className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px]"
+                                        className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg min-h-[100px] text-sm"
                                         placeholder="Was möchtest du wissen?"
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
-                                    disabled={saving || !questionForm.question.trim() || !questionForm.lesson_id}
-                                    className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={saving || !questionForm.question.trim() || (questionForm.category === "bibeltext" && !questionForm.book_id)}
+                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
-                                    <Save size={16} /> {saving ? "Speichern..." : "Frage absenden"}
+                                    <Save size={18} /> {saving ? "Speichern..." : "Frage absenden"}
                                 </button>
                             </form>
                         </div>

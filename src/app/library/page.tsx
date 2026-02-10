@@ -8,12 +8,13 @@ import InfosTab from "@/components/study/InfosTab";
 import QuestionsTab from "@/components/setup/QuestionsTab";
 import MemoryVersesTab from "@/components/setup/MemoryVersesTab";
 import LearningTestsTab from "@/components/setup/LearningTestsTab";
-import { BookOpen, Lightbulb, HelpCircle, ChevronLeft, Brain, GraduationCap, Library, Languages, Quote, FileText, Palette, Ruler, Shield } from "lucide-react";
+import { BookOpen, Lightbulb, HelpCircle, ChevronLeft, Brain, GraduationCap, Library, Languages, Quote, FileText, Palette, Ruler, Shield, MessageCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import MeasuresTab from "@/components/study/MeasuresTab";
+import IncomingQuestionsTab from "@/components/setup/IncomingQuestionsTab";
 
-type Tab = "lessons" | "facts" | "questions" | "memory_verses" | "learning_tests" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "measures";
+type Tab = "lessons" | "facts" | "questions" | "memory_verses" | "learning_tests" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "measures" | "incoming_questions";
 
 // 1. Content Management Sub-Tiles (Question editing, tests etc. within Lessons)
 const contentTiles = [
@@ -109,6 +110,14 @@ const mainTiles = [
         color: "cyan",
         gradient: "from-cyan-500 to-teal-600"
     },
+    {
+        id: "incoming_questions" as Tab,
+        label: "Fragen-Eingang",
+        description: "Fragen von Jugendlichen",
+        icon: MessageCircle,
+        color: "indigo",
+        gradient: "from-indigo-400 to-blue-500"
+    },
 ];
 
 export default function LibraryPage() {
@@ -148,6 +157,7 @@ export default function LibraryPage() {
             case "memory_verses": return <MemoryVersesTab />;
             case "learning_tests": return <LearningTestsTab />;
             case "measures": return <MeasuresTab />;
+            case "incoming_questions": return <IncomingQuestionsTab />;
             default: return null;
         }
     };
