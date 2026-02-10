@@ -3,7 +3,7 @@ import { pb } from "@/lib/pocketbase";
 import { useAuth } from "./useAuth";
 
 export type PageId = "dashboard" | "bible" | "study" | "library" | "setup";
-export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "ai_features" | "dashboard_questions" | "incoming_questions" | "group_statistics" | "app_errors";
+export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "ai_features" | "dashboard_questions" | "incoming_questions" | "group_statistics" | "app_errors" | "app_ideas";
 
 export type UserRole = "leader" | "staff" | "youth";
 

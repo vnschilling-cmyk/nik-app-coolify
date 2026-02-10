@@ -13,12 +13,13 @@ import LearningTestsTab from "@/components/setup/LearningTestsTab";
 import GroupsTab from "@/components/setup/GroupsTab";
 import PermissionsTab from "@/components/setup/PermissionsTab";
 import AppErrorsTab from "@/components/setup/AppErrorsTab";
-import BugReportModal from "@/components/modals/BugReportModal";
-import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText, Shield, AlertCircle, AlertTriangle } from "lucide-react";
+import AppIdeasTab from "@/components/setup/AppIdeasTab";
+import UserFeedbackTab from "@/components/setup/UserFeedbackTab";
+import { BookOpen, Lightbulb, HelpCircle, User, Ruler, ChevronLeft, Palette, Settings, Brain, GraduationCap, Users, Library, Languages, Quote, FileText, Shield, AlertCircle, AlertTriangle, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
-type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "permissions" | "app_errors";
+type Tab = "lessons" | "facts" | "measures" | "questions" | "user" | "design" | "memory_verses" | "learning_tests" | "groups" | "content_management" | "word_studies" | "quotes" | "text_studies" | "illustrations" | "permissions" | "app_errors" | "app_ideas" | "user_feedback";
 
 // 1. Content Management Sub-Tiles (Not used in Setup anymore, but preserved type for consistency if needed)
 const contentTiles: any[] = [];
@@ -47,7 +48,6 @@ export default function SetupPage() {
     const { user } = useAuth();
     const { isLeader, canAccessSection } = usePermissions();
     const [activeTab, setActiveTab] = useState<Tab | null>(null);
-    const [isBugReportOpen, setIsBugReportOpen] = useState(false);
 
     // Filter tiles based on permissions
     const mainTiles = [
@@ -75,23 +75,14 @@ export default function SetupPage() {
             color: "emerald",
             gradient: "from-emerald-500 to-teal-600"
         }] : []),
-        ...(canAccessSection("app_errors") ? [{
-            id: "app_errors" as Tab,
-            label: "App-Fehler",
-            description: "Fehlermeldungen verwalten",
-            icon: AlertTriangle,
-            color: "red",
-            gradient: "from-red-500 to-rose-600"
-        }] : [
-            {
-                id: "bug_report" as any,
-                label: "Fehlermeldungen",
-                description: "Problem in der App mitteilen",
-                icon: AlertTriangle,
-                color: "red",
-                gradient: "from-red-500 to-rose-600"
-            }
-        ])
+        {
+            id: "user_feedback" as Tab,
+            label: isLeader() ? "Meldungen verwalten" : "Feedback & Mitteilungen",
+            description: isLeader() ? "Eingegangenes Feedback einsehen" : "Lob, Kritik oder Fehler mitteilen",
+            icon: MessageSquare,
+            color: "indigo",
+            gradient: "from-indigo-500 to-purple-600"
+        }
     ];
 
     const getTabContent = () => {
@@ -101,6 +92,8 @@ export default function SetupPage() {
             case "groups": return (canAccessSection("groups") ? <GroupsTab /> : null);
             case "permissions": return (canAccessSection("permissions") ? <PermissionsTab /> : null);
             case "app_errors": return (canAccessSection("app_errors") ? <AppErrorsTab /> : null);
+            case "app_ideas": return (canAccessSection("app_ideas") ? <AppIdeasTab /> : null);
+            case "user_feedback": return <UserFeedbackTab />;
             default: return null;
         }
     };
@@ -120,11 +113,7 @@ export default function SetupPage() {
                     <button
                         key={tile.id}
                         onClick={() => {
-                            if (tile.id === "bug_report") {
-                                setIsBugReportOpen(true);
-                            } else {
-                                setActiveTab(tile.id);
-                            }
+                            setActiveTab(tile.id);
                         }}
                         className="relative group bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-5 text-left transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 active:scale-95 overflow-hidden flex flex-col justify-start h-full"
                     >
@@ -174,11 +163,6 @@ export default function SetupPage() {
                 <div className="p-4">
                     {renderGrid(mainTiles)}
                 </div>
-
-                <BugReportModal
-                    isOpen={isBugReportOpen}
-                    onClose={() => setIsBugReportOpen(false)}
-                />
             </div>
         );
     }

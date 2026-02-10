@@ -103,17 +103,17 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                     <div class="space-y-4">
                         <section>
                             <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Hauptgedanke</p>
-                            <p class="italic text-zinc-700 dark:text-zinc-200">„${analysis.mainThought}“</p>
+                            <p class="italic text-zinc-800 dark:text-zinc-300">„${analysis.mainThought}“</p>
                         </section>
                         <section>
                             <p class="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Historische Fakten</p>
-                            <ul class="list-disc pl-5 space-y-1 text-sm text-zinc-600 dark:text-zinc-300">
+                            <ul class="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
                                 ${analysis.historicalFacts.map((f: string) => `<li>${f}</li>`).join('')}
                             </ul>
                         </section>
                         <section>
                             <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Kontext</p>
-                            <p class="text-sm text-zinc-600 dark:text-zinc-300">${analysis.context}</p>
+                            <p class="text-sm text-zinc-700 dark:text-zinc-300">${analysis.context}</p>
                         </section>
                     </div>
                 `.trim();
@@ -122,11 +122,11 @@ export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', 
                     <div class="space-y-4">
                         <section>
                             <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">Analyse</p>
-                            <p class="text-zinc-700 dark:text-zinc-200">${analysis.analysis}</p>
+                            <p class="text-zinc-800 dark:text-zinc-300">${analysis.analysis}</p>
                         </section>
                         <section>
                             <p class="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-2">Einblick & Anwendung</p>
-                            <p class="italic text-sm text-zinc-600 dark:text-zinc-300 border-l-4 border-amber-200 dark:border-amber-900/40 pl-4">${analysis.insight}</p>
+                            <p class="italic text-sm text-zinc-700 dark:text-zinc-400 border-l-4 border-amber-200 dark:border-amber-900/40 pl-4">${analysis.insight}</p>
                         </section>
                     </div>
                 `.trim();

@@ -14,10 +14,21 @@ export default function RichTextDisplay({ content, className = "" }: RichTextDis
     const isHtmlBlock = /^\s*<(div|p|section|article|header|footer|table|ul|ol|blockquote)(\s|>)/i.test(content);
 
     if (isHtmlBlock) {
+        // Fix legacy "invisible text" issue: absolute white-ish classes should be darkened in light mode.
+        // This ensures data saved with older, broken color logic remains visible.
+        const fixedContent = content
+            .replace(/text-zinc-100/g, 'text-zinc-800 dark:text-zinc-100')
+            .replace(/text-zinc-200/g, 'text-zinc-700 dark:text-zinc-200')
+            .replace(/text-slate-100/g, 'text-slate-800 dark:text-slate-100')
+            .replace(/text-white\b/g, (match, offset, fullText) => {
+                const prev = fullText.substring(Math.max(0, offset - 5), offset);
+                return prev === "dark:" ? match : "text-zinc-800 dark:text-white";
+            });
+
         return (
             <div
                 className={`prose prose-sm prose-zinc dark:prose-invert max-w-none ${className}`}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: fixedContent }}
             />
         );
     }

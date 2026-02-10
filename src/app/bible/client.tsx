@@ -28,18 +28,21 @@ interface BiblePageClientProps {
     verses: VerseData[];
     lessons: LinkedLesson[];
     textStudies: any[];
+    facts: ChapterFact[];
+    questions: ChapterQuestion[];
     book: BookSummary;
     chapter: number;
     allBooks: BookSummary[];
 }
 
-export default function BiblePageClient({ verses, lessons, textStudies, book, chapter, allBooks }: BiblePageClientProps) {
+export default function BiblePageClient({ verses, lessons, textStudies, facts, questions, book, chapter, allBooks }: BiblePageClientProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { canAccessPage } = usePermissions();
     const searchQuery = searchParams.get('q') || undefined;
 
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+    const [showLessons, setShowLessons] = useState(true);
 
     if (!canAccessPage("bible")) {
         return (
@@ -217,6 +220,21 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
                         <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
 
                         <button
+                            onClick={() => setShowLessons(!showLessons)}
+                            className={clsx(
+                                "p-2.5 rounded-xl transition-all active:scale-90 shrink-0",
+                                showLessons
+                                    ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40"
+                                    : "text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400"
+                            )}
+                            title={showLessons ? "Lektions-Links ausblenden" : "Lektions-Links einblenden"}
+                        >
+                            <GraduationCap size={20} />
+                        </button>
+
+                        <div className="w-px h-6 bg-zinc-200 dark:bg-slate-700 mx-1 shrink-0" />
+
+                        <button
                             onClick={() => setIsSearchOpen(true)}
                             className="p-2.5 text-zinc-400 bg-zinc-50 dark:bg-slate-800/50 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl transition-all active:scale-90 shrink-0"
                             title="Suche öffnen"
@@ -230,10 +248,15 @@ export default function BiblePageClient({ verses, lessons, textStudies, book, ch
             <BibleReader
                 verses={verses}
                 wordStudies={lessons.filter(l => l.category === 'Wortstudie')}
+                lessons={lessons.filter(l => l.category !== 'Wortstudie')}
                 textStudies={textStudies}
+                facts={facts}
+                questions={questions}
                 onWordClick={handleWordClick}
                 onVerseClick={(v) => setAnalysisConfig({ isOpen: true, type: 'verse', verse: v })}
                 searchQuery={searchQuery}
+                showLessons={showLessons}
+                chapter={chapter}
             />
 
             {/* AI Analysis Modal */}

@@ -22,12 +22,14 @@ interface BibleReaderProps {
     textStudies?: any[];
     onWordClick: (word: string) => void;
     onVerseClick?: (verse: number) => void;
-    onFactClick?: (fact: ChapterFact) => void;
+    onFactClick?: (fact: any) => void;
     onQuestionClick?: (question: ChapterQuestion) => void;
     searchQuery?: string;
+    showLessons?: boolean;
+    chapter?: number;
 }
 
-export default function BibleReader({ verses, lessons = [], wordStudies = [], facts = [], questions = [], textStudies = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery }: BibleReaderProps) {
+export default function BibleReader({ verses, lessons = [], wordStudies = [], facts = [], questions = [], textStudies = [], onWordClick, onVerseClick, onFactClick, onQuestionClick, searchQuery, showLessons = true, chapter = 1 }: BibleReaderProps) {
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const [selectedMeasure, setSelectedMeasure] = useState<{ unit: Unit, originalWord: string, quantity: number } | null>(null);
     const lastScrollY = useRef(0);
@@ -154,6 +156,17 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
     return (
         <article className="w-full px-4 py-6 dark:text-zinc-200 relative bible-text" lang="de">
             {verses.map((v) => {
+                const hasKIAnalysis = textStudies.some(s => s.verse_start === v.verse && s.category === 'KI');
+                // Filter lessons that start at this specific verse
+                const startingLessons = showLessons ? lessons.filter(l => {
+                    // Regular lesson starting here
+                    const isNormalStart = l.chapter_start === chapter && l.verse_start === v.verse;
+                    // Global book lesson (chapter_start=0) starts at Chap 1, Vers 1
+                    const isGlobalStart = l.chapter_start === 0 && chapter === 1 && v.verse === 1;
+
+                    return isNormalStart || isGlobalStart;
+                }) : [];
+
                 return (
                     <div key={v.verse} id={`v${v.verse}`} className="relative group mb-6 scroll-mt-20">
                         <p
@@ -163,24 +176,40 @@ export default function BibleReader({ verses, lessons = [], wordStudies = [], fa
                                 textJustify: 'auto'
                             }}
                         >
-                            {(() => {
-                                const hasKIAnalysis = textStudies.some(s => s.verse_start === v.verse && s.category === 'KI');
+                            {/* Lesson Links (Floating Right Stack) */}
+                            {startingLessons.length > 0 && (
+                                <div className="float-right flex flex-col gap-2 ml-4 mb-2 mt-1 relative z-10">
+                                    {startingLessons.map(lesson => (
+                                        <Link
+                                            key={lesson.id}
+                                            href={`/study/${lesson.id}`}
+                                            className="flex items-center justify-center w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full shadow-sm hover:shadow-md hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-all group/lesson scale-90 sm:scale-100"
+                                            title={`Lektion: ${lesson.title}`}
+                                        >
+                                            <GraduationCap size={20} className="group-hover/lesson:scale-110 transition-transform" />
+                                            <div className="absolute right-full mr-3 px-2 py-1 bg-zinc-900 text-white text-[10px] rounded opacity-0 group-hover/lesson:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
+                                                {lesson.title} öffnen
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
 
-                                return (
-                                    <button
-                                        onClick={() => onVerseClick?.(v.verse)}
-                                        className={clsx(
-                                            "text-sm font-black mr-2 p-3 -m-3 select-none align-top pt-1 inline-block hover:scale-125 active:scale-90 transition-all cursor-pointer",
-                                            hasKIAnalysis
-                                                ? "bg-indigo-600 text-white rounded-lg px-2.5 py-1 -mt-1 shadow-lg shadow-indigo-600/30"
-                                                : "text-indigo-500/80 dark:text-indigo-400/80"
-                                        )}
-                                        title={hasKIAnalysis ? `Analyse anzeigen (Vers ${v.verse})` : `Vers ${v.verse} analysieren`}
-                                    >
-                                        {v.verse}
-                                    </button>
-                                );
-                            })()}
+                            <div className="flex items-center gap-1.5 align-top pt-1 inline-block">
+                                {/* Vers Number and Analysis Button */}
+                                <button
+                                    onClick={() => onVerseClick?.(v.verse)}
+                                    className={clsx(
+                                        "text-sm font-black p-3 -m-3 select-none hover:scale-125 active:scale-90 transition-all cursor-pointer",
+                                        hasKIAnalysis
+                                            ? "bg-indigo-600 text-white rounded-lg px-2.5 py-1 -mt-1 shadow-lg shadow-indigo-600/30"
+                                            : "text-indigo-500/80 dark:text-indigo-400/80"
+                                    )}
+                                    title={hasKIAnalysis ? `Analyse anzeigen (Vers ${v.verse})` : `Vers ${v.verse} analysieren`}
+                                >
+                                    {v.verse}
+                                </button>
+                            </div>
                             {renderInteractiveText(v.text)}
                         </p>
                     </div>

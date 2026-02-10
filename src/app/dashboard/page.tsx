@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import Link from 'next/link';
 import Image from 'next/image';
-import { BookOpen, MessageCircleQuestion, Bookmark, TrendingUp, X, Save, HelpCircle, Trophy, MessagesSquare, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { BookOpen, MessageCircleQuestion, Bookmark, TrendingUp, X, Save, HelpCircle, Trophy, MessagesSquare, CheckCircle2, Clock, AlertTriangle, Trash2 } from 'lucide-react';
 import { pb } from "@/lib/pocketbase";
 
 interface LastReadPosition {
@@ -46,7 +46,7 @@ const CATEGORIES = [
  */
 export default function DashboardPage() {
     const { user } = useAuth();
-    const { canAccessSection } = usePermissions();
+    const { canAccessSection, isLeader } = usePermissions();
     const [mounted, setMounted] = useState(false);
     const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
     const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -202,6 +202,16 @@ export default function DashboardPage() {
             console.error("Error loading my questions:", e);
         } finally {
             setLoadingQuestions(false);
+        }
+    };
+
+    const deleteQuestion = async (id: string) => {
+        if (!confirm("Frage wirklich löschen?")) return;
+        try {
+            await pb.collection('questions').delete(id);
+            setUserQuestions(prev => prev.filter(q => q.id !== id));
+        } catch (e: any) {
+            alert("Fehler beim Löschen: " + e.message);
         }
     };
 
@@ -499,7 +509,7 @@ export default function DashboardPage() {
                             <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
                         </Link>
 
-                        {canAccessSection("dashboard_questions") && (
+                        {!isLeader() && canAccessSection("dashboard_questions") && (
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShowQuestionModal(true)}
@@ -519,6 +529,9 @@ export default function DashboardPage() {
                                         <MessagesSquare className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
                                     </div>
                                     <p className="font-heading text-sm font-bold text-slate-900 dark:text-white">Meine Fragen</p>
+                                    {userQuestions.some(q => !q.is_answered) && (
+                                        <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full" />
+                                    )}
                                 </button>
                             </div>
                         )}
@@ -734,7 +747,7 @@ export default function DashboardPage() {
                                                         </div>
                                                         <p className="text-slate-900 dark:text-white font-bold leading-snug">{q.question}</p>
                                                     </div>
-                                                    <div className="shrink-0">
+                                                    <div className="shrink-0 flex items-center gap-1">
                                                         {q.is_answered ? (
                                                             <div className="bg-emerald-500/10 text-emerald-600 p-1 rounded-full" title="Beantwortet">
                                                                 <CheckCircle2 size={18} />
@@ -744,6 +757,16 @@ export default function DashboardPage() {
                                                                 <Clock size={18} />
                                                             </div>
                                                         )}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteQuestion(q.id);
+                                                            }}
+                                                            className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                                            title="Frage löschen"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
                                                     </div>
                                                 </div>
 

@@ -59,13 +59,13 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                     
                     <div>
                         <p class="text-xs font-bold uppercase tracking-wider text-amber-600 mb-2">Bedeutung</p>
-                        <p>${data.meaning || '—'}</p>
+                        <p class="text-zinc-800 dark:text-zinc-300">${data.meaning || '—'}</p>
                     </div>
 
                     ${data.rootMeaning ? `
                     <div>
                         <p class="text-xs font-bold uppercase tracking-wider text-purple-600 mb-2">Wortwurzel</p>
-                        <p class="text-sm">${data.rootMeaning}</p>
+                        <p class="text-sm text-zinc-700 dark:text-zinc-400">${data.rootMeaning}</p>
                     </div>` : ''}
 
                     ${data.synonyms?.length ? `
@@ -78,7 +78,7 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
 
                     ${data.usage ? `
                     <div class="pt-2 border-t border-zinc-100 dark:border-slate-700">
-                        <p class="text-sm text-zinc-100"><span class="font-bold text-amber-400">Verwendung:</span> ${data.usage}</p>
+                        <p class="text-sm text-zinc-800 dark:text-zinc-300"><span class="font-bold text-amber-600 dark:text-amber-400">Verwendung:</span> ${data.usage}</p>
                     </div>` : ''}
                 </div>
             `.trim();
@@ -301,7 +301,7 @@ export default function WordMeaningPopup({ word, context, testament, bookId, onC
                             {/* Usage */}
                             {data.usage && (
                                 <div className="border-t border-zinc-100 dark:border-slate-700 pt-4">
-                                    <p className="text-sm text-zinc-700 dark:text-zinc-100">
+                                    <p className="text-sm text-zinc-800 dark:text-zinc-300">
                                         <span className="font-semibold text-amber-600 dark:text-amber-400">Verwendung:</span> {data.usage}
                                     </p>
                                 </div>
