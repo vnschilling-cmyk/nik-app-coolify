@@ -77,6 +77,7 @@ export default function PermissionsTab() {
             items: [
                 { id: "groups", label: "Gruppen verwalten", isPage: false },
                 { id: "ai_features", label: "KI-Funktionen", isPage: false },
+                { id: "dashboard_questions", label: "Frage stellen (Dashboard)", isPage: false },
                 { id: "design", label: "Design & Stil", isPage: false },
                 { id: "permissions", label: "Berechtigungen", isPage: false },
             ]

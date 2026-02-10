@@ -31,13 +31,14 @@ export const StatsRing: React.FC<StatsRingProps> = ({
                 width={size}
                 height={size}
                 viewBox={`0 0 ${size} ${size}`}
-                className="transform -rotate-90"
+                className={`transform -rotate-90 ${colorClass}`}
             >
                 {/* Background Circle */}
                 <circle
                     className="text-slate-100 dark:text-slate-800"
                     strokeWidth={strokeWidth}
                     stroke="currentColor"
+                    strokeOpacity={0.2}
                     fill="transparent"
                     r={radius}
                     cx={size / 2}
@@ -45,7 +46,7 @@ export const StatsRing: React.FC<StatsRingProps> = ({
                 />
                 {/* Progress Circle */}
                 <circle
-                    className={`${colorClass} transition-all duration-1000 ease-out`}
+                    className="transition-all duration-1000 ease-out"
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
                     style={{ strokeDashoffset: offset }}

@@ -23,6 +23,7 @@ interface Lesson {
 }
 
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 import { calculateGrade, getGradeColor } from "@/lib/grades";
 import { StatsRing } from "@/components/ui/StatsRing";
@@ -34,6 +35,7 @@ const CATEGORIES = [
 
 export default function DashboardPage() {
     const { user } = useAuth();
+    const { canAccessSection } = usePermissions();
     const [mounted, setMounted] = useState(false);
     const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
     const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -51,7 +53,15 @@ export default function DashboardPage() {
     const [memoryVerse, setMemoryVerse] = useState<any>(null);
     const [stats, setStats] = useState({
         personal: { last: 0, avg: 0, lastGrade: 0, avgGrade: 0 },
-        group: { last: 0, avg: 0, lastGrade: 0, avgGrade: 0 }
+        group: {
+            avg: 0,
+            top: 0,
+            avgGrade: 0,
+            topGrade: 0,
+            totalTests: 0,
+            avgParticipants: 0,
+            lastTestParticipants: 0
+        }
     });
 
     useEffect(() => {
@@ -72,23 +82,78 @@ export default function DashboardPage() {
     const loadStats = async () => {
         if (!user) return;
         try {
-            const results = await pb.collection('quiz_results').getFullList({
+            // Persönliche Stats laden
+            const personalResults = await pb.collection('quiz_results').getFullList({
                 filter: `user="${user.id}"`,
                 sort: '-created'
             });
 
-            if (results.length > 0) {
-                const last = results[0].percentage || 0;
-                const lastGrade = results[0].grade || 0;
-                const totalPct = results.reduce((acc, r) => acc + (r.percentage || 0), 0);
-                const avg = Math.round(totalPct / results.length);
+            let personal = { last: 0, avg: 0, lastGrade: 0, avgGrade: 0 };
+            if (personalResults.length > 0) {
+                const last = personalResults[0].percentage || 0;
+                const lastGrade = personalResults[0].grade || 0;
+                const totalPct = personalResults.reduce((acc, r) => acc + (r.percentage || 0), 0);
+                const avg = Math.round(totalPct / personalResults.length);
+                const { grade: avgGrade } = calculateGrade(avg);
+                personal = { last, avg, lastGrade, avgGrade };
+            }
+
+            // Alle Ergebnisse für Gruppen-Stats laden
+            const allResults = await pb.collection('quiz_results').getFullList({
+                sort: '-created'
+            });
+
+            let group = {
+                avg: 0,
+                top: 0,
+                avgGrade: 0,
+                topGrade: 0,
+                totalTests: 0,
+                avgParticipants: 0,
+                lastTestParticipants: 0
+            };
+
+            if (allResults.length > 0) {
+                // Schnitt berechnen
+                const totalPct = allResults.reduce((acc, r) => acc + (r.percentage || 0), 0);
+                const avg = Math.round(totalPct / allResults.length);
                 const { grade: avgGrade } = calculateGrade(avg);
 
-                setStats(s => ({
-                    ...s,
-                    personal: { last, avg, lastGrade, avgGrade }
-                }));
+                // Top Ergebnis (beste Note ist kleinste Zahl, z.B. 1)
+                const sortedByPercentage = [...allResults].sort((a, b) => (b.percentage || 0) - (a.percentage || 0));
+                const top = sortedByPercentage[0].percentage || 0;
+                const topGrade = sortedByPercentage[0].grade || 0;
+
+                // Teilnehmer-Statistiken
+                // Wir zählen eindeutige Quiz-Teilnahmen (Quiz-ID + Datum/Uhrzeit oder einfach Quiz-ID bei Gruppenarbeiten)
+                // Da quiz_results meist pro Benutzer pro Quiz ist, gruppieren wir nach Quiz-ID
+                const quizGroups = new Map<string, Set<string>>();
+                allResults.forEach(r => {
+                    if (r.quiz) {
+                        if (!quizGroups.has(r.quiz)) quizGroups.set(r.quiz, new Set());
+                        quizGroups.get(r.quiz)?.add(r.user);
+                    }
+                });
+
+                const totalParticipantsAcrossQuizzes = Array.from(quizGroups.values()).reduce((acc, set) => acc + set.size, 0);
+                const avgParticipants = Math.round(totalParticipantsAcrossQuizzes / (quizGroups.size || 1));
+
+                // Letzter Test Teilnehmer (vom aktuellsten Ergebnis)
+                const lastQuizId = allResults[0].quiz;
+                const lastTestParticipants = lastQuizId ? (quizGroups.get(lastQuizId)?.size || 0) : 0;
+
+                group = {
+                    avg,
+                    top,
+                    avgGrade,
+                    topGrade,
+                    totalTests: allResults.length,
+                    avgParticipants,
+                    lastTestParticipants
+                };
             }
+
+            setStats({ personal, group });
         } catch (e) {
             console.error("Error loading stats:", e);
         }
@@ -96,12 +161,38 @@ export default function DashboardPage() {
 
     const loadMemoryVerse = async () => {
         try {
-            const res = await pb.collection('memory_verses').getList(1, 1, {
+            const now = new Date().toISOString();
+
+            // 1. Suche die aktuellste Lektion (vergangen oder heute)
+            const latestLessons = await pb.collection('lessons').getList(1, 1, {
+                filter: `start_date <= "${now}" && active = true`,
+                sort: '-start_date',
+                fields: 'id,title'
+            });
+
+            if (latestLessons.items.length > 0) {
+                const lessonId = latestLessons.items[0].id;
+
+                // 2. Suche den Lernvers für diese Lektion
+                const verseRes = await pb.collection('memory_verses').getList(1, 1, {
+                    filter: `lesson_id = "${lessonId}"`,
+                    expand: 'book_id',
+                    sort: '-created' // Falls es mehrere gibt, den neuesten
+                });
+
+                if (verseRes.items.length > 0) {
+                    setMemoryVerse(verseRes.items[0]);
+                    return;
+                }
+            }
+
+            // Fallback: Einfach den neuesten Lernvers laden, falls keine passende Lektion/kein Vers gefunden wurde
+            const fallbackRes = await pb.collection('memory_verses').getList(1, 1, {
                 sort: '-created',
                 expand: 'book_id'
             });
-            if (res.items.length > 0) {
-                setMemoryVerse(res.items[0]);
+            if (fallbackRes.items.length > 0) {
+                setMemoryVerse(fallbackRes.items[0]);
             }
         } catch (e) {
             console.error("Error loading memory verse:", e);
@@ -293,18 +384,18 @@ export default function DashboardPage() {
                             </div>
                             <div className="flex items-center justify-around gap-2 px-2">
                                 <StatsRing
-                                    percentage={82}
-                                    label="Note 2"
+                                    percentage={stats.group.avg}
+                                    label={stats.group.avgGrade > 0 ? `Note ${stats.group.avgGrade}` : "--"}
                                     subLabel="Schnitt"
-                                    colorClass="text-emerald-500"
+                                    colorClass={stats.group.avgGrade > 0 ? calculateGrade(stats.group.avg).color : "text-zinc-300"}
                                     size={95}
                                 />
                                 <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
                                 <StatsRing
-                                    percentage={95}
-                                    label="Note 1"
+                                    percentage={stats.group.top}
+                                    label={stats.group.topGrade > 0 ? `Note ${stats.group.topGrade}` : "--"}
                                     subLabel="Top"
-                                    colorClass="text-indigo-500"
+                                    colorClass={stats.group.topGrade > 0 ? calculateGrade(stats.group.top).color : "text-zinc-300"}
                                     size={95}
                                 />
                             </div>
@@ -312,20 +403,18 @@ export default function DashboardPage() {
                             {/* Participant Details */}
                             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">12</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.totalTests}</p>
                                     <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
                                 </div>
                                 <div className="border-x border-slate-100 dark:border-slate-700/50">
-                                    <p className="text-sm font-bold text-slate-900 dark:text-white">8</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.avgParticipants}</p>
                                     <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">14</p>
+                                    <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.group.lastTestParticipants}</p>
                                     <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
                                 </div>
                             </div>
-
-                            <p className="text-[9px] text-center text-zinc-500 mt-4 uppercase tracking-tighter italic">Testdaten (Echtzeit-Anbindung in Arbeit)</p>
                         </div>
                     </div>
                 </section>
@@ -348,18 +437,20 @@ export default function DashboardPage() {
                         <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
                     </Link>
 
-                    <button
-                        onClick={() => setShowQuestionModal(true)}
-                        className="w-full flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
-                    >
-                        <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                            <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
-                        </div>
-                        <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
-                    </button>
+                    {canAccessSection("dashboard_questions") && (
+                        <button
+                            onClick={() => setShowQuestionModal(true)}
+                            className="w-full flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                        >
+                            <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                                <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
+                            </div>
+                            <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
+                        </button>
+                    )}
                 </section>
 
                 {/* Install Prompt */}

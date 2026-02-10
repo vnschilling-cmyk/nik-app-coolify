@@ -2,12 +2,29 @@
 
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText, Sparkles, Brain, Quote, Type, Search, Check, HelpCircle, ChevronLeft, Scroll } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, X, Save, BookOpen, ChevronDown, ChevronRight, Download, FileText, Sparkles, Brain, Quote, Type, Search, Check, HelpCircle, ChevronLeft, Scroll, GripVertical } from "lucide-react";
 import clsx from "clsx";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import { exportLessonsToExcel } from "@/lib/exportUtils";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/hooks/usePermissions";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 interface BibleBook {
     id: string;
     name: string;
@@ -33,7 +50,57 @@ interface Lesson {
     active: boolean;
 }
 
-const CATEGORIES = ["Bibelarbeit", "Gruppenarbeit", "Exkurs", "Thema"];
+const CATEGORIES = ["Bibelarbeit", "Gruppenarbeit", "Exkurs", "Thema", "Workshop", "Vortrag", "Sonstiges"];
+
+interface SortableItemProps {
+    item: any;
+    idx: number;
+}
+
+function SortableContentItem({ item, idx }: SortableItemProps) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: item.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 2 : 0,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-slate-700/50 border border-zinc-100 dark:border-slate-700 rounded-lg group"
+        >
+            <div
+                {...attributes}
+                {...listeners}
+                className="p-1 cursor-grab active:cursor-grabbing text-zinc-400 hover:text-indigo-600 transition-colors"
+                title="Ziehen zum Sortieren"
+            >
+                <GripVertical size={16} />
+            </div>
+            <div className={`w-1 h-8 rounded-full ${item._itemType === 'fact' ? 'bg-amber-400' : 'bg-emerald-400'}`} title={item._itemType === 'fact' ? 'Info' : 'Frage'} />
+            <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-zinc-400 uppercase leading-tight">
+                    {item._itemType === 'fact' ? 'Info' : 'Frage'}
+                    {(item.verse_start > 0 || (item._itemType === 'fact' && item.chapter > 0)) && ` • ${item.chapter > 0 ? `${item.chapter}:` : ''}${item.verse_start}`}
+                </p>
+                <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200 truncate">
+                    {item._itemType === 'fact' ? item.title : item.question}
+                </p>
+            </div>
+        </div>
+    );
+}
 
 export default function LessonsTab() {
     const router = useRouter();
@@ -136,6 +203,17 @@ export default function LessonsTab() {
     const [parsedItems, setParsedItems] = useState<{ title: string, content: string, factKind: string, category: string, isQuestion?: boolean }[]>([]);
     const [currentItemIdx, setCurrentItemIdx] = useState(0);
     const [isImporting, setIsImporting] = useState(false);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     const toggleSelection = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -335,31 +413,46 @@ export default function LessonsTab() {
         }
     };
 
-    const moveItem = async (index: number, direction: 'up' | 'down') => {
-        const newItems = [...contentItems];
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
 
-        const temp = newItems[index];
-        newItems[index] = newItems[targetIndex];
-        newItems[targetIndex] = temp;
+        if (over && active.id !== over.id) {
+            const oldIndex = contentItems.findIndex((item) => item.id === active.id);
+            const newIndex = contentItems.findIndex((item) => item.id === over.id);
 
-        // Set local state immediately for snappy UI
-        setContentItems([...newItems]);
+            const newItems = arrayMove(contentItems, oldIndex, newIndex);
 
-        // Persist to DB
-        try {
-            for (let i = 0; i < newItems.length; i++) {
-                const item = newItems[i];
-                const collection = item._itemType === 'fact' ? 'facts' : 'questions';
-                if (item.order !== i) {
-                    await pb.collection(collection).update(item.id, { order: i });
-                    item.order = i;
+            // Sofortiges UI-Update für bessere UX
+            setContentItems(newItems);
+
+            // DB-Persistenz
+            try {
+                // Wir aktualisieren nur die betroffenen Elemente oder alle, um sicher zu gehen
+                // In PocketBase ist ein Batch-Update effizienter, hier machen wir es sequentiell für die Einfachheit
+                for (let i = 0; i < newItems.length; i++) {
+                    const item = newItems[i];
+                    const collection = item._itemType === 'fact' ? 'facts' : 'questions';
+                    if (item.order !== i) {
+                        await pb.collection(collection).update(item.id, { order: i });
+                        item.order = i;
+                    }
                 }
+            } catch (e) {
+                console.error("Fehler beim Speichern der Reihenfolge:", e);
+                // Optional: Fallback bei Fehler
             }
-        } catch (e) {
-            console.error("Failed to save order:", e);
         }
+    };
+
+    const moveItem = async (index: number, direction: 'up' | 'down') => {
+        // Redundant durch Drag-and-Drop, aber wir lassen die Logik für Kompatibilität 
+        // oder löschen sie später wenn sichergestellt ist dass Drag-Drop überall funktioniert.
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= contentItems.length) return;
+
+        const active = { id: contentItems[index].id } as any;
+        const over = { id: contentItems[targetIndex].id } as any;
+        handleDragEnd({ active, over } as any);
     };
 
     const handleGenerateSummary = async () => {
@@ -854,42 +947,22 @@ export default function LessonsTab() {
                                     ) : contentItems.length === 0 ? (
                                         <p className="text-xs text-zinc-500 italic text-center py-4">Keine Infos oder Fragen verknüpft.</p>
                                     ) : (
-                                        <div className="space-y-2">
-                                            {contentItems.map((item, idx) => (
-                                                <div key={item.id} className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-slate-700/50 border border-zinc-100 dark:border-slate-700 rounded-lg group">
-                                                    <div className={`w-1.5 h-full self-stretch rounded-full ${item._itemType === 'fact' ? 'bg-amber-400' : 'bg-emerald-400'}`} title={item._itemType === 'fact' ? 'Info' : 'Frage'} />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-[10px] font-bold text-zinc-400 uppercase leading-tight">
-                                                            {item._itemType === 'fact' ? 'Info' : 'Frage'}
-                                                            {(item.verse_start > 0 || (item._itemType === 'fact' && item.chapter > 0)) && ` • ${item.chapter > 0 ? `${item.chapter}:` : ''}${item.verse_start}`}
-                                                        </p>
-                                                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200 truncate">
-                                                            {item._itemType === 'fact' ? item.title : item.question}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            type="button"
-                                                            disabled={idx === 0}
-                                                            onClick={() => moveItem(idx, 'up')}
-                                                            className="p-1 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-none h-auto w-auto bg-transparent border-none"
-                                                            title="Element nach oben verschieben"
-                                                        >
-                                                            <ChevronRight size={14} className="-rotate-90" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={idx === contentItems.length - 1}
-                                                            onClick={() => moveItem(idx, 'down')}
-                                                            className="p-1 text-zinc-400 hover:text-indigo-600 disabled:opacity-20 transition-all shadow-none h-auto w-auto bg-transparent border-none"
-                                                            title="Element nach unten verschieben"
-                                                        >
-                                                            <ChevronRight size={14} className="rotate-90" />
-                                                        </button>
-                                                    </div>
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={contentItems.map(item => item.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <div className="space-y-2">
+                                                    {contentItems.map((item, idx) => (
+                                                        <SortableContentItem key={item.id} item={item} idx={idx} />
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            </SortableContext>
+                                        </DndContext>
                                     )}
                                     <p className="text-[9px] text-zinc-400 mt-3 italic">
                                         💡 Hier kannst du die Reihenfolge von Infos und Fragen festlegen. Dies ist besonders wichtig für Lektionen ohne direkten Bibeltext.

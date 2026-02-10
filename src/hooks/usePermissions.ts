@@ -3,7 +3,7 @@ import { pb } from "@/lib/pocketbase";
 import { useAuth } from "./useAuth";
 
 export type PageId = "dashboard" | "bible" | "study" | "library" | "setup";
-export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "ai_features";
+export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "ai_features" | "dashboard_questions";
 
 export type UserRole = "leader" | "staff" | "youth";
 
@@ -20,11 +20,11 @@ export interface RoleConfig {
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, { pages: PageId[], sections: SectionId[] }> = {
     leader: {
         pages: ["dashboard", "bible", "study", "library", "setup"],
-        sections: ["groups", "content_management", "design", "permissions", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features"]
+        sections: ["groups", "content_management", "design", "permissions", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features", "dashboard_questions"]
     },
     staff: {
         pages: ["dashboard", "bible", "study", "library", "setup"],
-        sections: ["content_management", "design", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features"]
+        sections: ["content_management", "design", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features", "dashboard_questions"]
     },
     youth: {
         pages: ["dashboard", "bible", "study"],
