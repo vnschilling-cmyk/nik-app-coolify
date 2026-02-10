@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { pb } from "@/lib/pocketbase";
 import Link from "next/link";
-import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLink, Map as MapIcon, BookOpen, HelpCircle, StickyNote, Plus, X, Save, Trash2, Edit, Brain, GraduationCap, Trophy, ChevronRight, Languages, Quote } from "lucide-react";
+import { ChevronLeft, FileText, Lightbulb, Image as ImageIcon, Video, ExternalLink, Map as MapIcon, BookOpen, HelpCircle, StickyNote, Plus, X, Save, Trash2, Edit, Brain, GraduationCap, Trophy, ChevronRight, Languages, Quote, Check } from "lucide-react";
 import RichTextDisplay from "@/components/ui/RichTextDisplay";
 import WordMeaningPopup from "@/components/features/WordMeaningPopup";
 import QuizOverlay from "@/components/features/QuizOverlay";
@@ -213,6 +213,8 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
     const [savingNote, setSavingNote] = useState(false);
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
+    const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(new Set());
+
     useEffect(() => {
         loadLessonData();
     }, [id]);
@@ -232,6 +234,19 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 pb.collection('quizzes').getFullList({ filter: `lesson_id="${id}"` }).catch(() => []),
                 pb.collection('notes').getFullList({ filter: `lesson_id="${id}"`, sort: '-created' }).catch(() => [])
             ]);
+
+            // Check for completed quizzes
+            if (pb.authStore.isValid && pb.authStore.model) {
+                try {
+                    const completedRes = await pb.collection('quiz_results').getFullList({
+                        filter: `user="${pb.authStore.model.id}" && quiz.lesson_id="${id}"`,
+                        fields: 'quiz'
+                    });
+                    setCompletedQuizIds(new Set(completedRes.map(r => r.quiz)));
+                } catch (e) {
+                    console.error("Failed to load completed quizzes:", e);
+                }
+            }
 
             const loadedLesson: Lesson = {
                 id: lessonRes.id,
@@ -834,24 +849,55 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                                 Teste dein Wissen zu dieser Lektion mit einem interaktiven Quiz.
                             </p>
                             <div className="space-y-3">
-                                {quizzes.map(quiz => (
-                                    <button
-                                        key={quiz.id}
-                                        onClick={() => setActiveQuiz(quiz)}
-                                        className="w-full bg-white dark:bg-slate-700 p-4 rounded-lg border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-between hover:shadow-md transition-all group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-fuchsia-100 dark:bg-fuchsia-900/30 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400 font-bold">
-                                                {quiz.questions.length}
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="font-bold text-zinc-900 dark:text-white">{quiz.title || "Wissenstest"}</p>
-                                                <p className="text-xs text-zinc-500">20 Sek. pro Frage</p>
-                                            </div>
-                                        </div>
-                                        <ChevronRight className="text-zinc-300 group-hover:text-fuchsia-500 transition-colors" />
-                                    </button>
-                                ))}
+                                <div className="space-y-3">
+                                    {quizzes.map(quiz => {
+                                        const isCompleted = completedQuizIds.has(quiz.id);
+                                        return (
+                                            <button
+                                                key={quiz.id}
+                                                onClick={() => {
+                                                    if (isCompleted) {
+                                                        alert("Du hast diesen Test bereits absolviert. Super gemacht!");
+                                                        return;
+                                                    }
+                                                    setActiveQuiz(quiz);
+                                                }}
+                                                className={clsx(
+                                                    "w-full p-4 rounded-lg border flex items-center justify-between transition-all group",
+                                                    isCompleted
+                                                        ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 cursor-default"
+                                                        : "bg-white dark:bg-slate-700 border-fuchsia-200 dark:border-fuchsia-800 hover:shadow-md cursor-pointer"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={clsx(
+                                                        "w-10 h-10 rounded-full flex items-center justify-center font-bold",
+                                                        isCompleted
+                                                            ? "bg-emerald-100 dark:bg-emerald-800 text-emerald-600 dark:text-emerald-300"
+                                                            : "bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-600 dark:text-fuchsia-400"
+                                                    )}>
+                                                        {isCompleted ? <Check size={20} /> : quiz.questions.length}
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <p className={clsx(
+                                                            "font-bold",
+                                                            isCompleted ? "text-emerald-900 dark:text-emerald-100" : "text-zinc-900 dark:text-white"
+                                                        )}>
+                                                            {quiz.title || "Wissenstest"}
+                                                        </p>
+                                                        <p className={clsx(
+                                                            "text-xs",
+                                                            isCompleted ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500"
+                                                        )}>
+                                                            {isCompleted ? "Bereits absolviert" : "20 Sek. pro Frage"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {!isCompleted && <ChevronRight className="text-zinc-300 group-hover:text-fuchsia-500 transition-colors" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -907,7 +953,10 @@ export default function LessonDetailPage({ params }: { params: { id: string } })
                 activeQuiz && (
                     <QuizOverlay
                         quiz={activeQuiz}
-                        onClose={() => setActiveQuiz(null)}
+                        onClose={() => {
+                            setActiveQuiz(null);
+                            loadLessonData();
+                        }}
                     />
                 )
             }

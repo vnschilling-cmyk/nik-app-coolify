@@ -72,6 +72,7 @@ export default function DashboardPage() {
             }
         }
         loadMemoryVerse();
+        loadStats();
         if (showMyQuestionsModal) loadUserQuestions();
         console.log("[Dashboard] User changed, reloading stats. Role:", user?.role);
     }, [user]);

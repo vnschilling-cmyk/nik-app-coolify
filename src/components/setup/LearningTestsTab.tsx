@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { pb } from "@/lib/pocketbase";
-import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Sparkles, Save, Check, X, GraduationCap, ChevronDown, ChevronRight, Pencil, RefreshCw, BarChart, FileText, User } from "lucide-react";
 import clsx from "clsx";
 import { usePermissions } from "@/hooks/usePermissions";
+import { calculateGrade, getGradeColor } from "@/lib/grades";
 
 interface Question {
     question: string;
@@ -28,6 +29,19 @@ interface Lesson {
     chapter_start: number;
     verse_start: number;
     verse_end: number;
+}
+
+interface QuizResult {
+    id: string;
+    created: string;
+    score: number;
+    total: number;
+    percentage: number;
+    grade: number;
+    expand?: {
+        user?: { name: string; email: string };
+        quiz?: { title: string };
+    };
 }
 
 export default function LearningTestsTab() {
@@ -57,9 +71,34 @@ export default function LearningTestsTab() {
 
     const [books, setBooks] = useState<{ id: string, name: string, order: number }[]>([]);
 
+    // View Mode State
+    const [viewMode, setViewMode] = useState<"tests" | "results">("tests");
+    const [results, setResults] = useState<QuizResult[]>([]);
+    const [loadingResults, setLoadingResults] = useState(false);
+
     useEffect(() => {
-        loadData();
-    }, []);
+        if (viewMode === "tests") {
+            loadData();
+        } else {
+            loadResults();
+        }
+    }, [viewMode]);
+
+    const loadResults = async () => {
+        setLoadingResults(true);
+        try {
+            const res = await pb.collection('quiz_results').getFullList({
+                sort: '-created',
+                expand: 'user,quiz'
+            });
+            // Type assertion to ensure expanded properties are accessible
+            setResults(res as unknown as QuizResult[]);
+        } catch (e) {
+            console.error("Error loading results:", e);
+        } finally {
+            setLoadingResults(false);
+        }
+    };
 
     const loadData = async () => {
         setLoading(true);
@@ -277,17 +316,99 @@ export default function LearningTestsTab() {
 
     return (
         <div className="px-4 pb-20 space-y-6 text-zinc-900 dark:text-zinc-100">
-            <div className="flex justify-start items-center mb-6">
-                {!isCreating && (
-                    <button
-                        onClick={() => setIsCreating(true)}
-                        className="flex items-center justify-center w-11 h-11 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
-                        title="Neuer Test"
-                    >
-                        <Plus size={22} />
-                    </button>
-                )}
-            </div>
+            {!isCreating && (
+                <div className="flex justify-between items-center mb-6">
+                    <div className="bg-zinc-100 dark:bg-white/5 p-1 rounded-xl inline-flex">
+                        <button
+                            onClick={() => setViewMode("tests")}
+                            className={clsx(
+                                "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                                viewMode === "tests"
+                                    ? "bg-white dark:bg-slate-700 shadow-sm text-zinc-900 dark:text-white"
+                                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
+                            )}
+                        >
+                            <FileText size={16} />
+                            Tests verwalten
+                        </button>
+                        <button
+                            onClick={() => setViewMode("results")}
+                            className={clsx(
+                                "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                                viewMode === "results"
+                                    ? "bg-white dark:bg-slate-700 shadow-sm text-zinc-900 dark:text-white"
+                                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
+                            )}
+                        >
+                            <BarChart size={16} />
+                            Ergebnisse
+                        </button>
+                    </div>
+                    {viewMode === "tests" && (
+                        <button
+                            onClick={() => setIsCreating(true)}
+                            className="flex items-center justify-center w-11 h-11 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                            title="Neuer Test"
+                        >
+                            <Plus size={22} />
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {viewMode === "results" && (
+                <div className="space-y-4 animate-fadeIn">
+                    {loadingResults ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                            <p className="text-zinc-500 font-medium">Lade Ergebnisse...</p>
+                        </div>
+                    ) : results.length === 0 ? (
+                        <div className="text-center py-20 bg-zinc-50 dark:bg-slate-800/20 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                            <BarChart size={48} className="mx-auto text-zinc-300 mb-4" />
+                            <p className="text-zinc-500 font-medium">Noch keine Testergebnisse vorhanden.</p>
+                        </div>
+                    ) : (
+                        results.map((result) => {
+                            const gradeInfo = calculateGrade(result.percentage);
+                            return (
+                                <div key={result.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-zinc-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className={clsx("w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold border", getGradeColor(gradeInfo.grade))}>
+                                            {gradeInfo.grade}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-zinc-900 dark:text-zinc-100">
+                                                {result.expand?.quiz?.title || "Gelöschter Test"}
+                                            </h4>
+                                            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                                                <User size={12} />
+                                                <span>{result.expand?.user?.name || result.expand?.user?.email || "Unbekannter Nutzer"}</span>
+                                                <span className="mx-1">•</span>
+                                                <span>{new Date(result.created).toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-6 pl-16 sm:pl-0">
+                                        <div className="text-center">
+                                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Punkte</p>
+                                            <p className="font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                                                {result.score} <span className="text-zinc-400 text-xs">/ {result.total}</span>
+                                            </p>
+                                        </div>
+                                        <div className="text-center min-w-[60px]">
+                                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Prozent</p>
+                                            <p className={clsx("font-bold", gradeInfo.color)}>
+                                                {result.percentage}%
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            )}
 
             {isCreating && (
                 <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-6 shadow-2xl animate-fadeIn mb-8 text-zinc-900 dark:text-zinc-100">
@@ -490,7 +611,7 @@ export default function LearningTestsTab() {
                 </div>
             )}
 
-            {!isCreating && (
+            {!isCreating && viewMode === "tests" && (
                 <div className="space-y-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
