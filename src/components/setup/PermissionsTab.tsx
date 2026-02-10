@@ -147,10 +147,10 @@ export default function PermissionsTab() {
             await pb.collection('role_permissions').update(roleId, {
                 permissions: updatedPermissions
             });
-
             setRoleConfigs(prev => prev.map(c => c.id === roleId ? { ...c, permissions: updatedPermissions } : c));
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error updating role permission:", e);
+            alert("Fehler beim Speichern der Berechtigung: " + e.message);
         } finally {
             setSaving(null);
         }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import Link from 'next/link';
 import Image from 'next/image';
-import { BookOpen, MessageCircleQuestion, Bookmark, TrendingUp, X, Save, HelpCircle, Trophy } from 'lucide-react';
+import { BookOpen, MessageCircleQuestion, Bookmark, TrendingUp, X, Save, HelpCircle, Trophy, MessagesSquare, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { pb } from "@/lib/pocketbase";
 
 interface LastReadPosition {
@@ -33,6 +33,17 @@ const CATEGORIES = [
     { id: "allgemein", label: "Allgemeine Frage", icon: HelpCircle, color: "emerald" },
 ];
 
+/**
+ *## Refactoring & UX: Bug-Reporting
+
+- [x] "Fehler melden" Kachel vom Dashboard entfernen
+- [x] "Fehler melden" Kachel zur Setup-Seite hinzufügen (für alle Nutzer)
+- [x] `BugReportModal` in `SetupPage` integrieren
+- [x] Schließen per Backdrop-Click ermöglicht
+- [x] Bildvorschau klickbar gemacht (zum Ändern)
+- [x] Bildvorschau-Hintergrund auf Dunkel gesetzt (App-Design)
+- [x] Verwirrende Lupe durch Pointer ersetzt
+ */
 export default function DashboardPage() {
     const { user } = useAuth();
     const { canAccessSection } = usePermissions();
@@ -52,6 +63,9 @@ export default function DashboardPage() {
     });
     const [saving, setSaving] = useState(false);
     const [maxVerses, setMaxVerses] = useState(50);
+    const [showMyQuestionsModal, setShowMyQuestionsModal] = useState(false);
+    const [userQuestions, setUserQuestions] = useState<any[]>([]);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
 
     const [memoryVerse, setMemoryVerse] = useState<any>(null);
     const [stats, setStats] = useState({
@@ -79,8 +93,10 @@ export default function DashboardPage() {
             }
         }
         loadMemoryVerse();
-        loadStats();
         loadBibleBooks();
+        loadStats();
+        if (showMyQuestionsModal) loadUserQuestions();
+        console.log("[Dashboard] User changed, reloading stats. Role:", user?.role);
     }, [user]);
 
     const loadBibleBooks = async () => {
@@ -171,6 +187,29 @@ export default function DashboardPage() {
             console.error("Error loading stats:", e);
         }
     };
+
+    const loadUserQuestions = async () => {
+        if (!user) return;
+        setLoadingQuestions(true);
+        try {
+            const res = await pb.collection('questions').getFullList({
+                filter: `user = "${user.id}"`,
+                sort: '-created',
+                expand: 'lesson_id,book_id'
+            });
+            setUserQuestions(res);
+        } catch (e) {
+            console.error("Error loading my questions:", e);
+        } finally {
+            setLoadingQuestions(false);
+        }
+    };
+
+    useEffect(() => {
+        if (showMyQuestionsModal) {
+            loadUserQuestions();
+        }
+    }, [showMyQuestionsModal]);
 
     const loadMemoryVerse = async () => {
         try {
@@ -364,114 +403,127 @@ export default function DashboardPage() {
 
 
                 {/* Statistics Section */}
-                <section className="px-4 mt-6">
-                    <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Deine Statistik</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Personal Stats */}
-                        <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                                    {user?.name ? user.name.split(' ')[0] : "Persönlich"}
-                                </span>
-                                <Trophy size={16} className="text-amber-500" />
-                            </div>
-                            <div className="flex items-center justify-around gap-2 px-2">
-                                <StatsRing
-                                    percentage={stats.personal.last}
-                                    label={stats.personal.lastGrade > 0 ? `${stats.personal.lastGrade}` : "--"}
-                                    subLabel="Letzter"
-                                    colorClass={stats.personal.lastGrade > 0 ? calculateGrade(stats.personal.last).color : "text-zinc-300"}
-                                    size={90}
-                                />
-                                <div className="w-px h-12 bg-zinc-100 dark:bg-slate-700" />
-                                <StatsRing
-                                    percentage={stats.personal.avg}
-                                    label={stats.personal.avgGrade > 0 ? `${stats.personal.avgGrade}` : "--"}
-                                    subLabel="Schnitt"
-                                    colorClass={stats.personal.avgGrade > 0 ? calculateGrade(stats.personal.avg).color : "text-zinc-300"}
-                                    size={90}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Group Stats */}
-                        {canAccessSection("group_statistics") && (
+                {mounted && (
+                    <section className="px-4 mt-6">
+                        <h3 className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">Deine Statistik</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Personal Stats */}
                             <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
-                                    <TrendingUp size={16} className="text-emerald-500" />
+                                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                                        {user?.name ? user.name.split(' ')[0] : "Persönlich"}
+                                    </span>
+                                    <Trophy size={16} className="text-amber-500" />
                                 </div>
                                 <div className="flex items-center justify-around gap-2 px-2">
                                     <StatsRing
-                                        percentage={stats.group.avg}
-                                        label={stats.group.avgGrade > 0 ? `Note ${stats.group.avgGrade}` : "--"}
+                                        percentage={stats.personal.avg}
+                                        label={stats.personal.avgGrade > 0 ? `${stats.personal.avgGrade}` : "--"}
                                         subLabel="Schnitt"
-                                        colorClass={stats.group.avgGrade > 0 ? calculateGrade(stats.group.avg).color : "text-zinc-300"}
-                                        size={95}
+                                        colorClass={stats.personal.avgGrade > 0 ? calculateGrade(stats.personal.avg).color : "text-zinc-300"}
+                                        size={90}
                                     />
-                                    <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
+                                    <div className="w-px h-12 bg-zinc-100 dark:bg-slate-700" />
                                     <StatsRing
-                                        percentage={stats.group.top}
-                                        label={stats.group.topGrade > 0 ? `Note ${stats.group.topGrade}` : "--"}
-                                        subLabel="Top"
-                                        colorClass={stats.group.topGrade > 0 ? calculateGrade(stats.group.top).color : "text-zinc-300"}
-                                        size={95}
+                                        percentage={stats.personal.last}
+                                        label={stats.personal.lastGrade > 0 ? `${stats.personal.lastGrade}` : "--"}
+                                        subLabel="Letzter"
+                                        colorClass={stats.personal.lastGrade > 0 ? calculateGrade(stats.personal.last).color : "text-zinc-300"}
+                                        size={90}
                                     />
-                                </div>
-
-                                {/* Participant Details */}
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
-                                    <div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.totalTests}</p>
-                                        <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
-                                    </div>
-                                    <div className="border-x border-slate-100 dark:border-slate-700/50">
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.avgParticipants}</p>
-                                        <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.group.lastTestParticipants}</p>
-                                        <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
-                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </section>
+
+                            {/* Group Stats */}
+                            {canAccessSection("group_statistics") && (
+                                <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-xl p-4 border border-slate-200 dark:border-white/5 shadow-sm transition-all hover:shadow-md animate-fadeIn">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Jugend Grünberg</span>
+                                        <TrendingUp size={16} className="text-emerald-500" />
+                                    </div>
+                                    <div className="flex items-center justify-around gap-2 px-2">
+                                        <StatsRing
+                                            percentage={stats.group.avg}
+                                            label={stats.group.avgGrade > 0 ? `Note ${stats.group.avgGrade}` : "--"}
+                                            subLabel="Schnitt"
+                                            colorClass={stats.group.avgGrade > 0 ? calculateGrade(stats.group.avg).color : "text-zinc-300"}
+                                            size={95}
+                                        />
+                                        <div className="w-px h-12 bg-zinc-100 dark:bg-zinc-800" />
+                                        <StatsRing
+                                            percentage={stats.group.top}
+                                            label={stats.group.topGrade > 0 ? `Note ${stats.group.topGrade}` : "--"}
+                                            subLabel="Top"
+                                            colorClass={stats.group.topGrade > 0 ? calculateGrade(stats.group.top).color : "text-zinc-300"}
+                                            size={95}
+                                        />
+                                    </div>
+
+                                    {/* Participant Details */}
+                                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/50 grid grid-cols-3 gap-2 text-center">
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.totalTests}</p>
+                                            <p className="text-[9px] text-zinc-500 uppercase">Tests Gesamt</p>
+                                        </div>
+                                        <div className="border-x border-slate-100 dark:border-slate-700/50">
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white">{stats.group.avgParticipants}</p>
+                                            <p className="text-[9px] text-zinc-500 uppercase">Ø Teilnehmer</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.group.lastTestParticipants}</p>
+                                            <p className="text-[9px] text-zinc-500 uppercase">Letzter Test</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
 
                 {/* Quick Actions */}
-                <section className="px-4 mt-6 space-y-3">
-                    <h3 className="font-heading text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
+                {mounted && (
+                    <section className="px-4 mt-6 space-y-3">
+                        <h3 className="font-heading text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schnellzugriff</h3>
 
-                    <Link
-                        href={continueReadingLink}
-                        className="flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
-                    >
-                        <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                            <BookOpen className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-heading text-lg text-slate-900 dark:text-white">Weiterlesen</p>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{continueReadingLabel}</p>
-                        </div>
-                        <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
-                    </Link>
-
-                    {canAccessSection("dashboard_questions") && (
-                        <button
-                            onClick={() => setShowQuestionModal(true)}
-                            className="w-full flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                        <Link
+                            href={continueReadingLink}
+                            className="flex items-center gap-4 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group"
                         >
-                            <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                                <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
+                            <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                                <BookOpen className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
                             </div>
                             <div className="flex-1">
-                                <p className="font-heading text-lg text-slate-900 dark:text-white">Frage stellen</p>
+                                <p className="font-heading text-lg text-slate-900 dark:text-white">Weiterlesen</p>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{continueReadingLabel}</p>
                             </div>
-                            <span className="text-slate-300 dark:text-slate-600 group-hover:text-emerald-600 transition-colors text-xl">›</span>
-                        </button>
-                    )}
-                </section>
+                            <span className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 transition-colors text-xl">›</span>
+                        </Link>
+
+                        {canAccessSection("dashboard_questions") && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowQuestionModal(true)}
+                                    className="flex flex-col items-center gap-2 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-center animate-fadeIn"
+                                >
+                                    <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                                        <MessageCircleQuestion className="w-6 h-6 text-emerald-700 dark:text-emerald-300" />
+                                    </div>
+                                    <p className="font-heading text-sm font-bold text-slate-900 dark:text-white">Frage stellen</p>
+                                </button>
+
+                                <button
+                                    onClick={() => setShowMyQuestionsModal(true)}
+                                    className="flex flex-col items-center gap-2 bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] group text-center animate-fadeIn"
+                                >
+                                    <div className="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                                        <MessagesSquare className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
+                                    </div>
+                                    <p className="font-heading text-sm font-bold text-slate-900 dark:text-white">Meine Fragen</p>
+                                </button>
+                            </div>
+                        )}
+                    </section>
+                )}
 
                 {/* Install Prompt */}
                 <section className="px-4 mt-8">
@@ -578,21 +630,6 @@ export default function DashboardPage() {
                                                 />
                                             </div>
                                         </div>
-
-                                        <div>
-                                            <label htmlFor="lesson_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Lektionsbezug (Optional)</label>
-                                            <select
-                                                id="lesson_select"
-                                                value={questionForm.lesson_id}
-                                                onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
-                                                className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
-                                            >
-                                                <option value="">Kein Lektionsbezug</option>
-                                                {lessons.map(l => (
-                                                    <option key={l.id} value={l.id}>{l.title}</option>
-                                                ))}
-                                            </select>
-                                        </div>
                                     </div>
                                 )}
 
@@ -609,6 +646,23 @@ export default function DashboardPage() {
                                     />
                                 </div>
 
+                                {questionForm.category === "bibeltext" && (
+                                    <div className="animate-fadeIn">
+                                        <label htmlFor="lesson_select" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1 block">Lektionsbezug (Optional)</label>
+                                        <select
+                                            id="lesson_select"
+                                            value={questionForm.lesson_id}
+                                            onChange={e => setQuestionForm({ ...questionForm, lesson_id: e.target.value })}
+                                            className="w-full px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg text-sm"
+                                        >
+                                            <option value="">Kein Lektionsbezug</option>
+                                            {lessons.map(l => (
+                                                <option key={l.id} value={l.id}>{l.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
                                 <button
                                     type="submit"
                                     disabled={saving || !questionForm.question.trim() || (questionForm.category === "bibeltext" && !questionForm.book_id)}
@@ -617,6 +671,95 @@ export default function DashboardPage() {
                                     <Save size={18} /> {saving ? "Speichern..." : "Frage absenden"}
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                )}
+                {/* My Questions Modal */}
+                {showMyQuestionsModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+                        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl max-h-[85vh] flex flex-col">
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                                        <MessagesSquare className="text-indigo-600 dark:text-indigo-400" size={20} />
+                                    </div>
+                                    <h3 className="font-heading font-bold text-xl text-slate-900 dark:text-white">Meine Fragen</h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowMyQuestionsModal(false)}
+                                    className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                {loadingQuestions ? (
+                                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                                        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <p className="text-sm font-medium text-zinc-500">Lade deine Fragen...</p>
+                                    </div>
+                                ) : userQuestions.length === 0 ? (
+                                    <div className="text-center py-12 px-6">
+                                        <div className="w-16 h-16 bg-zinc-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <HelpCircle className="text-zinc-300" size={32} />
+                                        </div>
+                                        <p className="text-zinc-500 dark:text-zinc-400 font-medium">Du hast noch keine Fragen gestellt.</p>
+                                        <button
+                                            onClick={() => {
+                                                setShowMyQuestionsModal(false);
+                                                setShowQuestionModal(true);
+                                            }}
+                                            className="mt-4 text-indigo-600 dark:text-indigo-400 font-bold text-sm hover:underline"
+                                        >
+                                            Jetzt die erste Frage stellen
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {userQuestions.map((q: any) => (
+                                            <div key={q.id} className="bg-zinc-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-zinc-100 dark:border-white/5 transition-all hover:shadow-md">
+                                                <div className="flex items-start justify-between gap-4 mb-3">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`text-[10px] font-black uppercase tracking-tight px-2 py-0.5 rounded-full ${q.category === 'bibeltext' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'}`}>
+                                                                {q.category === 'bibeltext' ? 'Bibeltext' : 'Allgemein'}
+                                                            </span>
+                                                            {q.verse_ref && (
+                                                                <span className="text-[10px] font-bold text-zinc-400 uppercase">{q.verse_ref}</span>
+                                                            )}
+                                                            {q.expand?.lesson_id && (
+                                                                <span className="text-[10px] font-bold text-zinc-400 uppercase">• {q.expand.lesson_id.title}</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-slate-900 dark:text-white font-bold leading-snug">{q.question}</p>
+                                                    </div>
+                                                    <div className="shrink-0">
+                                                        {q.is_answered ? (
+                                                            <div className="bg-emerald-500/10 text-emerald-600 p-1 rounded-full" title="Beantwortet">
+                                                                <CheckCircle2 size={18} />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-amber-500/10 text-amber-600 p-1 rounded-full" title="Noch offen">
+                                                                <Clock size={18} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {q.answer ? (
+                                                    <div className="mt-4 pt-4 border-t border-zinc-200/60 dark:border-white/5">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">Antwort des Leiters:</p>
+                                                        <p className="text-zinc-600 dark:text-slate-300 text-sm italic">{q.answer}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="mt-2 text-xs text-zinc-400 font-medium italic">Wartet auf eine Antwort...</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
