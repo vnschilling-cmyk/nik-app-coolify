@@ -58,7 +58,8 @@ interface InfosTabProps {
 
 export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const canUseIllustrationsAI = canAccessSection("ai_illustrations");
+    const canUseWordStudyAI = canAccessSection("ai_word_study");
     const [facts, setFacts] = useState<Fact[]>([]);
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -121,7 +122,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
     }, []);
 
     const handleIllustrationAISearch = async () => {
-        if (!hasAIPermission) return;
+        if (!canUseIllustrationsAI) return;
         if (!illustrationSearchQuery.trim()) {
             setAiIllustrationResults(null);
             return;
@@ -391,7 +392,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
 
     const handleWordImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!hasAIPermission) return;
+        if (!canUseIllustrationsAI) return;
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -662,7 +663,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                 >
                     <Plus size={20} />
                 </button>
-                {mode === 'illustration' && hasAIPermission && (
+                {mode === 'illustration' && canUseIllustrationsAI && (
                     <label
                         className="flex items-center justify-center w-10 h-10 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-all cursor-pointer border border-indigo-200 dark:border-indigo-800 shadow-sm group"
                         title="Illustrationen aus Word importieren"
@@ -688,7 +689,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                     : (mode === 'word_study' ? 'Neue Wortstudie' : mode === 'quote' ? 'Neues Zitat' : 'Neue Info')
                                 }
                             </h3>
-                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600" title="Schließen"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Type Selector (Only for general Info) */}
@@ -735,8 +736,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             {/* Topics (Only for general Info) */}
                             {mode === 'info' && (
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
+                                    <label htmlFor="category-theme-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie / Thema</label>
                                     <select
+                                        id="category-theme-select"
                                         value={formData.category}
                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
                                         className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
@@ -758,8 +760,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             {/* Category selector for Text Study & Illustration */}
                             {(mode === 'text_study' || mode === 'illustration') && (
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie</label>
+                                    <label htmlFor="category-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kategorie</label>
                                     <select
+                                        id="category-select"
                                         value={formData.category}
                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
                                         className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
@@ -796,7 +799,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                 <Search size={18} />
                                             </button>
                                         )}
-                                        {hasAIPermission && (
+                                        {canUseWordStudyAI && (
                                             <button
                                                 type="button"
                                                 onClick={handleGenerateAIStudy}
@@ -818,8 +821,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             {/* Dynamic Fields based on Type */}
                             {(formData.type === "image" || formData.type === "map") && (
                                 <div className={`p-3 rounded-lg border ${formData.type === 'map' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-800' : 'bg-purple-50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800'}`}>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">{formData.type === 'map' ? 'Karte (Bild) hochladen' : 'Bild hochladen'}</label>
+                                    <label htmlFor="file-upload" className="text-sm font-medium text-zinc-600 dark:text-zinc-400 block mb-2">{formData.type === 'map' ? 'Karte (Bild) hochladen' : 'Bild hochladen'}</label>
                                     <input
+                                        id="file-upload"
                                         type="file"
                                         accept="image/*"
                                         onChange={handleFileSelect}
@@ -830,10 +834,11 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
                             {(formData.type === "video" || formData.type === "link") && (
                                 <div>
-                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">URL / Link</label>
+                                    <label htmlFor="url-input" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">URL / Link</label>
                                     <div className="relative mt-1">
                                         <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                                         <input
+                                            id="url-input"
                                             type="url"
                                             value={formData.url}
                                             onChange={e => setFormData({ ...formData, url: e.target.value })}
@@ -846,8 +851,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
                             {/* Title below category/dynamic fields, above Description */}
                             <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
+                                <label htmlFor="title-input" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Titel *</label>
                                 <input
+                                    id="title-input"
                                     type="text"
                                     required
                                     value={formData.title}
@@ -858,9 +864,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
 
                             {/* Author Field */}
                             <div>
-                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Verfasser / Quelle</label>
+                                <label htmlFor="author-input" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Verfasser / Quelle</label>
                                 <div className="flex gap-2 mt-1">
                                     <input
+                                        id="author-input"
                                         type="text"
                                         value={formData.author}
                                         onChange={e => setFormData({ ...formData, author: e.target.value })}
@@ -910,8 +917,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             {formData.has_bible_ref && (
                                 <>
                                     <div>
-                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Buch</label>
+                                        <label htmlFor="book-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Buch</label>
                                         <select
+                                            id="book-select"
                                             value={formData.book_id}
                                             onChange={e => setFormData({ ...formData, book_id: e.target.value, chapter: 1 })}
                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
@@ -971,8 +979,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                             {formData.chapter !== 0 && (
                                                 <div className="grid grid-cols-3 gap-2">
                                                     <div>
-                                                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
+                                                        <label htmlFor="chapter-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Kapitel</label>
                                                         <select
+                                                            id="chapter-select"
                                                             value={formData.chapter}
                                                             onChange={e => setFormData({ ...formData, chapter: parseInt(e.target.value) || 1 })}
                                                             className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
@@ -985,8 +994,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                     {formData.verse_start !== 0 && (
                                                         <>
                                                             <div>
-                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
+                                                                <label htmlFor="verse-start-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Von Vers</label>
                                                                 <select
+                                                                    id="verse-start-select"
                                                                     value={formData.verse_start}
                                                                     onChange={e => {
                                                                         const newVal = parseInt(e.target.value) || 1;
@@ -1004,8 +1014,9 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                                                                 </select>
                                                             </div>
                                                             <div>
-                                                                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
+                                                                <label htmlFor="verse-end-select" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Bis Vers</label>
                                                                 <select
+                                                                    id="verse-end-select"
                                                                     value={formData.verse_end}
                                                                     onChange={e => setFormData({ ...formData, verse_end: parseInt(e.target.value) || 1 })}
                                                                     className="w-full mt-1 px-3 py-2 bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-lg"
@@ -1035,9 +1046,10 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                             <div className="p-3 bg-zinc-50 dark:bg-slate-700/50 rounded-lg border border-zinc-200 dark:border-slate-600">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Link size={16} className="text-zinc-500" />
-                                    <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Mit Lektion verknüpfen</label>
+                                    <label htmlFor="lesson-link-select" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Mit Lektion verknüpfen</label>
                                 </div>
                                 <select
+                                    id="lesson-link-select"
                                     value={formData.lesson_id}
                                     onChange={e => setFormData({ ...formData, lesson_id: e.target.value })}
                                     className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-lg"
@@ -1529,7 +1541,7 @@ export default function InfosTab({ mode = 'info' }: InfosTabProps) {
                         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-lg">Wort aus Bibeltext wählen</h3>
-                                <button onClick={() => setWordSelectorOpen(false)} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                                <button onClick={() => setWordSelectorOpen(false)} className="text-zinc-400 hover:text-zinc-600" title="Schließen"><X size={20} /></button>
                             </div>
 
                             <div className="bg-zinc-50 dark:bg-slate-700/50 rounded-xl p-4 border border-zinc-200 dark:border-slate-600 max-h-[60vh] overflow-y-auto">

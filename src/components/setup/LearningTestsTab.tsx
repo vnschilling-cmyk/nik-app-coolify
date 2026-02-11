@@ -11,6 +11,7 @@ interface Question {
     question: string;
     options: string[];
     correct_index: number;
+    difficulty?: string;
 }
 
 interface Quiz {
@@ -49,7 +50,7 @@ export default function LearningTestsTab() {
     const [lessons, setLessons] = useState<Lesson[]>([]);
     const [loading, setLoading] = useState(true);
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_quiz");
 
     // Create/Edit State
     const [isCreating, setIsCreating] = useState(false);
@@ -67,6 +68,7 @@ export default function LearningTestsTab() {
 
     // AI State
     const [aiCount, setAiCount] = useState(5);
+    const [aiDifficulty, setAiDifficulty] = useState("Hirte");
     const [generating, setGenerating] = useState(false);
 
     const [books, setBooks] = useState<{ id: string, name: string, order: number }[]>([]);
@@ -180,6 +182,7 @@ export default function LearningTestsTab() {
                 body: JSON.stringify({
                     text: lesson.content,
                     count: aiCount,
+                    difficulty: aiDifficulty,
                     lessonQuestions: lessonQuestions.map(q => ({
                         question: q.question,
                         answer: q.answer
@@ -205,12 +208,13 @@ export default function LearningTestsTab() {
                 return {
                     question: q.question,
                     options: optionsWithCorrect.map(o => o.text),
-                    correct_index: optionsWithCorrect.findIndex(o => o.isCorrect)
+                    correct_index: optionsWithCorrect.findIndex(o => o.isCorrect),
+                    difficulty: q.difficulty || aiDifficulty
                 };
             });
 
             setCurrentQuestions(shuffledQuestions);
-            setQuizTitle(`Test: ${lesson.title}`);
+            setQuizTitle(`Test: ${lesson.title} (${aiDifficulty})`);
         } catch (e: any) {
             alert("Fehler: " + e.message);
         } finally {
@@ -277,6 +281,7 @@ export default function LearningTestsTab() {
         const newQs = [...currentQuestions];
         if (field === "question") newQs[idx].question = value;
         if (field === "correct_index") newQs[idx].correct_index = value;
+        if (field === "difficulty") newQs[idx].difficulty = value;
         setCurrentQuestions(newQs);
     };
 
@@ -514,6 +519,19 @@ export default function LearningTestsTab() {
                                         <option value="10">10 Fragen</option>
                                     </select>
                                 </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-2">Schwierigkeit</label>
+                                    <select
+                                        value={aiDifficulty}
+                                        onChange={e => setAiDifficulty(e.target.value)}
+                                        className="w-full p-2 rounded-xl border border-purple-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/50 text-sm focus:ring-2 focus:ring-purple-500/20 outline-none text-zinc-900 dark:text-white"
+                                        title="Schwierigkeit auswählen"
+                                    >
+                                        <option value="Bauer">Bauer (Einfach)</option>
+                                        <option value="Hirte">Hirte (Mittel)</option>
+                                        <option value="Gamaliel">Gamaliel (Schwer)</option>
+                                    </select>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={handleGenerateAI}
@@ -533,6 +551,17 @@ export default function LearningTestsTab() {
                                 <div className="flex justify-between mb-3">
                                     <span className="font-bold text-xs text-zinc-500 dark:text-zinc-400">Frage {qIdx + 1}</span>
                                     <div className="flex items-center gap-2">
+                                        <select
+                                            value={q.difficulty || "Hirte"}
+                                            onChange={e => updateQuestion(qIdx, 'difficulty', e.target.value)}
+                                            className="px-2 py-1 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-zinc-600 dark:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                                            title="Schwierigkeitsgrad für diese Frage auswählen"
+                                        >
+                                            <option value="Bauer">Bauer (Einfach)</option>
+                                            <option value="Hirte">Hirte (Mittel)</option>
+                                            <option value="Gamaliel">Gamaliel (Schwer)</option>
+                                        </select>
+                                        <div className="w-px h-4 bg-zinc-300 dark:bg-slate-600 mx-1"></div>
                                         <button
                                             type="button"
                                             onClick={() => shuffleOptions(qIdx)}

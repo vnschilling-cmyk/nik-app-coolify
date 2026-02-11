@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { text, count = 5, lessonQuestions = [], lessonInfos = [] } = await req.json();
+        const { text, count = 5, lessonQuestions = [], lessonInfos = [], difficulty = "Hirte" } = await req.json();
 
         if (!text && lessonQuestions.length === 0 && lessonInfos.length === 0) {
             return NextResponse.json({ error: "No content provided" }, { status: 400 });
@@ -31,8 +31,37 @@ export async function POST(req: Request) {
 
         const questionsContext = contextStrings.join('\n\n---\n\n');
 
+        let difficultyInstruction = "";
+        switch (difficulty) {
+            case "Bauer":
+                difficultyInstruction = `
+                SCHWIERIGKEITSGRAD: LEICHT (Bauer)
+                - Fokus: Faktenwissen, direktes Abfragen von in der Lektion genannten Details.
+                - Sprache: Sehr einfach, kurze Sätze.
+                - Distraktoren: Eindeutig falsch, weniger subtil.
+                `;
+                break;
+            case "Gamaliel":
+                difficultyInstruction = `
+                SCHWIERIGKEITSGRAD: SCHWER (Gamaliel)
+                - Fokus: Tiefes Verständnis, Theologische Zusammenhänge, Transferleistung.
+                - Sprache: Anspruchsvoll, präzise.
+                - Distraktoren: Sehr plausibel, erfordern genaues Nachdenken.
+                `;
+                break;
+            case "Hirte":
+            default:
+                difficultyInstruction = `
+                SCHWIERIGKEITSGRAD: MITTEL (Hirte)
+                - Fokus: Verständnis der Kergedanken, Anwendung.
+                - Sprache: Normal, verständlich.
+                - Distraktoren: Plausibel, aber klar unterscheidbar für jemanden, der aufgepasst hat.
+                `;
+                break;
+        }
+
         const prompt = `
-            Du bist ein Experte für theologische Bildung. Erstelle ${count} anspruchsvolle Multiple-Choice-Fragen (Lerntest) basierend auf einer Bibellektion.
+            Du bist ein Experte für theologische Bildung. Erstelle ${count} Multiple-Choice-Fragen (Lerntest) basierend auf einer Bibellektion.
 
             ${THEOLOGICAL_CONSTRAINTS}
 
@@ -42,31 +71,27 @@ export async function POST(req: Request) {
             ---
 
             ANFORDERUNGEN AN DIE FRAGEN:
-            1. BEZUG: Die Fragen müssen sich eng an den zentralen Aussagen der Lektion (Beschreibung, Infos und Fragen) orientieren.
-            2. SPRACHE (WICHTIG): Verwende ausnahmslos **EINFACHE SPRACHE**. 
-               - Benutze kurze Sätze.
-               - Vermeide Fremdwörter und schwierige Begriffe. Wenn ein schwieriges Wort wichtig ist, erkläre es kurz.
-               - Die Fragestellung muss direkt und leicht verständlich sein.
-            3. SCHWIERIGKEITSGRAD: Trotz einfacher Sprache sollen es Transferfragen sein, die das Verständnis prüfen, nicht nur einfaches Ablesen.
-            4. DISTRAKTOREN (Falschantworten): 
+            1. BEZUG: Die Fragen müssen sich eng an den zentralen Aussagen der Lektion orientieren.
+            2. SPRACHE: Verwende klare und verständliche Sprache.
+            ${difficultyInstruction}
+            3. DISTRAKTOREN (Falschantworten): 
                - Erstelle 3 falsche Antwortmöglichkeiten pro Frage.
-               - Auch die Falschantworten müssen in EINFACHER SPRACHE verfasst sein.
-               - Die Distraktoren müssen PLAUSIBEL sein. Keine unsinnigen oder offensichtlich falschen Antworten. 
+               - Keine unsinnigen Antworten, sie müssen im Kontext möglich erscheinen.
                - Vermeide "Alles oben genannte" oder "Nichts davon".
-            5. RANDOMISIERUNG (ESSENZIELL): 
-               - Die Position der richtigen Antwort (\`correct_index\`) MUSS über alle Fragen hinweg zufällig verteilt sein.
-               - Vermeide Muster (z.B. nicht immer die 3. Option als richtig wählen).
-               - Achte darauf, dass jede Position (0, 1, 2, 3) ungefähr gleich oft als richtige Antwort vorkommt.
+            4. RANDOMISIERUNG (ESSENZIELL): 
+               - Die Position der richtigen Antwort (\`correct_index\`) MUSS zufällig sein.
+               - Achte auf Gleichverteilung der richtigen Position (0, 1, 2, 3).
 
             FORMATIERUNG: JSON Array.
             Jedes Objekt muss exakt diese Struktur haben:
             {
               "question": "String",
               "options": ["Option A", "Option B", "Option C", "Option D"],
-              "correct_index": Number (0-3)
+              "correct_index": Number (0-3),
+              "difficulty": "${difficulty}"
             }
 
-            Antworte NUR mit dem validen JSON Array, ohne Markdown-Formatierung oder zusätzliche Erklärungen.
+            Antworte NUR mit dem validen JSON Array.
         `;
 
         const result = await model.generateContent(prompt);

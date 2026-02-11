@@ -35,7 +35,7 @@ interface AnalysisModalProps {
 
 export default function AnalysisModal({ isOpen, onClose, type, category = 'KI', book, chapter, verse, testament, existingAnalyses }: AnalysisModalProps) {
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_analysis");
     const [loading, setLoading] = useState(true);
     const [analyses, setAnalyses] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);

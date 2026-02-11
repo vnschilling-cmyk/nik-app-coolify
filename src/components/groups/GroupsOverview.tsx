@@ -100,7 +100,10 @@ export default function GroupsOverview() {
                 })
             });
 
-            if (!res.ok) throw new Error("Sync failed");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ message: res.statusText }));
+                throw new Error(`Sync failed: ${res.status} - ${errorData.message}`);
+            }
 
             const data = await res.json();
             const ctMembers = data.data || [];
@@ -183,7 +186,10 @@ export default function GroupsOverview() {
                 })
             });
 
-            if (!res.ok) throw new Error("Sync failed");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ message: res.statusText }));
+                throw new Error(`Sync failed: ${res.status} - ${errorData.message}`);
+            }
             const data = await res.json();
             const allGroups = data.data || [];
             const ctGroups = allGroups.filter((g: any) => g.id === 19);

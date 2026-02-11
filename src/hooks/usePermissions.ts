@@ -3,7 +3,7 @@ import { pb } from "@/lib/pocketbase";
 import { useAuth } from "./useAuth";
 
 export type PageId = "dashboard" | "bible" | "study" | "library" | "setup";
-export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "ai_features" | "dashboard_questions" | "incoming_questions" | "group_statistics" | "app_errors" | "app_ideas";
+export type SectionId = "groups" | "content_management" | "design" | "permissions" | "word_studies" | "text_studies" | "facts" | "quotes" | "illustrations" | "measures" | "dashboard_questions" | "incoming_questions" | "group_statistics" | "app_errors" | "app_ideas" | "ai_lesson" | "ai_quiz" | "ai_word_study" | "ai_analysis" | "ai_facts" | "ai_quotes" | "ai_verses" | "ai_illustrations";
 
 export type UserRole = "leader" | "staff" | "youth";
 
@@ -20,11 +20,11 @@ export interface RoleConfig {
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, { pages: PageId[], sections: SectionId[] }> = {
     leader: {
         pages: ["dashboard", "bible", "study", "library", "setup"],
-        sections: ["groups", "content_management", "design", "permissions", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features", "dashboard_questions", "incoming_questions", "group_statistics"]
+        sections: ["groups", "content_management", "design", "permissions", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "dashboard_questions", "incoming_questions", "group_statistics", "ai_lesson", "ai_quiz", "ai_word_study", "ai_analysis", "ai_facts", "ai_quotes", "ai_verses", "ai_illustrations"]
     },
     staff: {
         pages: ["dashboard", "bible", "study", "library", "setup"],
-        sections: ["content_management", "design", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "ai_features", "dashboard_questions", "group_statistics"]
+        sections: ["content_management", "design", "word_studies", "text_studies", "facts", "quotes", "illustrations", "measures", "dashboard_questions", "group_statistics", "ai_lesson", "ai_quiz", "ai_word_study", "ai_analysis", "ai_facts", "ai_quotes", "ai_verses", "ai_illustrations"]
     },
     youth: {
         pages: ["dashboard", "bible", "study"],

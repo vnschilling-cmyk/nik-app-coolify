@@ -32,7 +32,7 @@ interface WordMeaningPopupProps {
 
 export default function WordMeaningPopup({ word, context, testament, bookId, onClose, onSave }: WordMeaningPopupProps) {
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_word_study");
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [saved, setSaved] = useState(false);

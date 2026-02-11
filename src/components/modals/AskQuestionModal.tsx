@@ -11,6 +11,7 @@ interface AskQuestionModalProps {
     onClose: () => void;
     onSaved?: () => void;
     initialData?: any; // If provided, we are in EDIT mode
+    title?: string; // Optional title override
 }
 
 const CATEGORIES = [
@@ -18,7 +19,7 @@ const CATEGORIES = [
     { id: "allgemein", label: "Allgemeine Frage", icon: HelpCircle, color: "emerald" },
 ];
 
-export default function AskQuestionModal({ isOpen, onClose, onSaved, initialData }: AskQuestionModalProps) {
+export default function AskQuestionModal({ isOpen, onClose, onSaved, initialData, title }: AskQuestionModalProps) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -199,12 +200,13 @@ export default function AskQuestionModal({ isOpen, onClose, onSaved, initialData
             <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-xl text-slate-900 dark:text-white">
-                        {initialData ? "Frage bearbeiten" : "Neue Frage stellen"}
+                        {title || (initialData ? "Frage bearbeiten" : "Neue Frage stellen")}
                     </h3>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-zinc-100 dark:hover:bg-slate-700 rounded-full transition-colors text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
                         aria-label="Schließen"
+                        title="Schließen"
                     >
                         <X size={20} />
                     </button>
@@ -235,6 +237,7 @@ export default function AskQuestionModal({ isOpen, onClose, onSaved, initialData
                                                     ? `bg-${cat.color}-50 dark:bg-${cat.color}-900/20 border-${cat.color}-500 text-${cat.color}-700 dark:text-${cat.color}-300 ring-2 ring-${cat.color}-500/20`
                                                     : "bg-zinc-50 dark:bg-slate-700/50 border-zinc-200 dark:border-white/5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-slate-700"
                                             )}
+                                            title={cat.label}
                                         >
                                             <Icon size={24} className={isSelected ? "" : "opacity-50"} />
                                             <span className="text-xs font-bold uppercase tracking-tight">{cat.label}</span>

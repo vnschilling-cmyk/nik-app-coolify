@@ -6,13 +6,7 @@ import { User, Shield, Check, X, Search, ChevronRight, ChevronDown, GraduationCa
 import { usePermissions, UserRole, RoleConfig, PageId, SectionId, DEFAULT_ROLE_PERMISSIONS } from "@/hooks/usePermissions";
 import clsx from "clsx";
 
-interface UserWithRole {
-    id: string;
-    email: string;
-    name: string;
-    is_admin: boolean;
-    role: UserRole;
-}
+
 
 const ROLES: { id: UserRole; label: string; description: string; icon: any; color: string }[] = [
     {
@@ -40,14 +34,19 @@ const ROLES: { id: UserRole; label: string; description: string; icon: any; colo
 
 export default function PermissionsTab() {
     const { isLeader } = usePermissions();
-    const [viewMode, setViewMode] = useState<'users' | 'roles'>('users');
-    const [users, setUsers] = useState<UserWithRole[]>([]);
     const [roleConfigs, setRoleConfigs] = useState<RoleConfig[]>([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [editingUserId, setEditingUserId] = useState<string | null>(null);
     const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+    const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const [saving, setSaving] = useState<string | null>(null);
+
+    const toggleCategory = (label: string) => {
+        setExpandedCategories(prev =>
+            prev.includes(label)
+                ? prev.filter(l => l !== label)
+                : [...prev, label]
+        );
+    };
 
     const PERMISSION_CATEGORIES: { label: string; items: { id: string; label: string; isPage?: boolean }[] }[] = [
         {
@@ -61,7 +60,7 @@ export default function PermissionsTab() {
             ]
         },
         {
-            label: "Bibliothek: Bereiche",
+            label: "Bibliothek: Inhalte",
             items: [
                 { id: "content_management", label: "Lektionen & Quiz", isPage: false },
                 { id: "word_studies", label: "Wortstudien", isPage: false },
@@ -73,15 +72,29 @@ export default function PermissionsTab() {
             ]
         },
         {
-            label: "Allgemeine Funktionen",
+            label: "KI-Funktionen",
+            items: [
+                { id: "ai_lesson", label: "Lektionen-Generator", isPage: false },
+                { id: "ai_quiz", label: "Quiz-Generator", isPage: false },
+                { id: "ai_word_study", label: "Wortstudien-Assistent", isPage: false },
+                { id: "ai_analysis", label: "Auslegungen-Assistent", isPage: false },
+                { id: "ai_facts", label: "Infos-Generator", isPage: false },
+                { id: "ai_quotes", label: "Zitate-Vorschläge", isPage: false },
+                { id: "ai_verses", label: "Vers-Vorschläge", isPage: false },
+                { id: "ai_illustrations", label: "Illustrationen-Suche", isPage: false },
+            ]
+        },
+        {
+            label: "Verwaltung & Sonstiges",
             items: [
                 { id: "groups", label: "Gruppen verwalten", isPage: false },
-                { id: "ai_features", label: "KI-Funktionen", isPage: false },
-                { id: "dashboard_questions", label: "Frage stellen (Dashboard)", isPage: false },
-                { id: "group_statistics", label: "Gruppenstatistik (Dashboard)", isPage: false },
-                { id: "incoming_questions", label: "Frage-Eingang (Bibliothek)", isPage: false },
                 { id: "design", label: "Design & Stil", isPage: false },
                 { id: "permissions", label: "Berechtigungen", isPage: false },
+                { id: "dashboard_questions", label: "Frage stellen (Dashboard)", isPage: false },
+                { id: "group_statistics", label: "Gruppenstatistik", isPage: false },
+                { id: "incoming_questions", label: "Frage-Eingang", isPage: false },
+                { id: "app_errors", label: "Fehler melden", isPage: false },
+                { id: "app_ideas", label: "Ideen einreichen", isPage: false },
             ]
         }
     ];
@@ -95,36 +108,12 @@ export default function PermissionsTab() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [usersRes, rolesRes] = await Promise.all([
-                pb.collection('users').getFullList({ sort: 'name,email' }),
-                pb.collection('role_permissions').getFullList<RoleConfig>().catch(() => [])
-            ]);
-
-            setUsers(usersRes.map(u => ({
-                id: u.id,
-                email: u.email,
-                name: u.name || "Unbekannter Benutzer",
-                is_admin: u.is_admin || false,
-                role: (u.role || "youth") as UserRole
-            })));
-
+            const rolesRes = await pb.collection('role_permissions').getFullList<RoleConfig>().catch(() => []);
             setRoleConfigs(rolesRes);
         } catch (e) {
             console.error("Error loading data:", e);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const updateRole = async (userId: string, newRole: UserRole) => {
-        setSaving(userId);
-        try {
-            await pb.collection('users').update(userId, { role: newRole });
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-        } catch (e) {
-            console.error("Error updating user role:", e);
-        } finally {
-            setSaving(null);
         }
     };
 
@@ -156,11 +145,6 @@ export default function PermissionsTab() {
         }
     };
 
-    const filteredUsers = users.filter(u =>
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.name.toLowerCase().includes(search.toLowerCase())
-    );
-
     if (!isLeader()) {
         return (
             <div className="p-8 text-center bg-red-50 dark:bg-red-900/10 rounded-3xl border border-red-100 dark:border-red-900/20">
@@ -181,216 +165,136 @@ export default function PermissionsTab() {
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            {/* View Toggle */}
-            <div className="flex p-1 bg-zinc-100 dark:bg-slate-800 rounded-2xl w-fit mx-auto sm:mx-0">
-                <button
-                    onClick={() => setViewMode('users')}
-                    className={clsx(
-                        "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-                        viewMode === 'users' ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
-                    )}
-                >
-                    Benutzer
-                </button>
-                <button
-                    onClick={() => setViewMode('roles')}
-                    className={clsx(
-                        "px-6 py-2 rounded-xl text-sm font-bold transition-all",
-                        viewMode === 'roles' ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
-                    )}
-                >
-                    Rollen konfigurieren
-                </button>
-            </div>
+            <div className="grid gap-6">
+                {/* Role Configuration */}
+                {ROLES.map(role => {
+                    const config = roleConfigs.find(c => c.role === role.id);
+                    const isExpanded = editingRoleId === role.id;
 
-            {viewMode === 'users' ? (
-                <>
-                    {/* Search */}
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Benutzer suchen..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition-all"
-                        />
-                    </div>
+                    return (
+                        <div key={role.id} className="bg-white dark:bg-slate-700 rounded-3xl border border-zinc-200 dark:border-slate-600 overflow-hidden shadow-sm">
+                            <button
+                                onClick={() => {
+                                    setEditingRoleId(isExpanded ? null : role.id);
+                                    setExpandedCategories([]); // Reset categories when switching roles
+                                }}
+                                className="w-full p-6 flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-5">
+                                    <div className={clsx("w-14 h-14 rounded-2xl flex items-center justify-center", role.color.split(' ')[2])}>
+                                        <role.icon className={role.color.split(' ')[0]} size={28} />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-xl font-bold">{role.label}</h3>
+                                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-0.5">{role.description}</p>
+                                    </div>
+                                </div>
+                                {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+                            </button>
 
-                    {/* Users List */}
-                    <div className="grid gap-4">
-                        {filteredUsers.length === 0 ? (
-                            <div className="text-center py-12 bg-zinc-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-slate-700">
-                                <User className="mx-auto text-zinc-300 mb-2" size={48} />
-                                <p className="text-zinc-500">Keine Benutzer gefunden.</p>
-                            </div>
-                        ) : (
-                            filteredUsers.map(user => (
-                                <div key={user.id} className="bg-white dark:bg-slate-700 rounded-3xl border border-zinc-200 dark:border-slate-600 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                    <button
-                                        onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}
-                                        className="w-full p-5 flex items-center justify-between group"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-                                                <User size={24} />
-                                            </div>
-                                            <div className="text-left">
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="font-bold text-lg">{user.name}</h3>
-                                                    {user.is_admin && <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full uppercase tracking-widest font-black">Admin</span>}
-                                                </div>
-                                                <p className="text-xs text-zinc-500">{user.email} • <span className="font-bold text-indigo-500 uppercase tracking-tight">{ROLES.find(r => r.id === user.role)?.label}</span></p>
-                                            </div>
-                                        </div>
-                                        {editingUserId === user.id ? <ChevronDown size={20} className="text-zinc-400" /> : <ChevronRight size={20} className="text-zinc-400" />}
-                                    </button>
-
-                                    {editingUserId === user.id && (
-                                        <div className="p-6 border-t border-zinc-100 dark:border-slate-600 bg-zinc-50/50 dark:bg-slate-800/30 space-y-4 animate-slideDown">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2 font-heading">Rolle zuweisen</h4>
-                                            <div className="grid gap-3">
-                                                {ROLES.map(roleOption => {
-                                                    const isSelected = user.role === roleOption.id;
-                                                    const Icon = roleOption.icon;
-                                                    return (
+                            {isExpanded && (
+                                <div className="p-8 border-t border-zinc-100 dark:border-slate-600 bg-zinc-50/50 dark:bg-slate-800/30 space-y-8 animate-slideDown">
+                                    {config ? (
+                                        <>
+                                            {PERMISSION_CATEGORIES.map(category => {
+                                                const isCatExpanded = expandedCategories.includes(category.label);
+                                                return (
+                                                    <div key={category.label}>
                                                         <button
-                                                            key={roleOption.id}
-                                                            disabled={saving === user.id}
-                                                            onClick={() => updateRole(user.id, roleOption.id)}
-                                                            className={clsx(
-                                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all text-left",
-                                                                isSelected
-                                                                    ? `${roleOption.color} shadow-sm`
-                                                                    : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-500 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 hover:border-zinc-300",
-                                                                (user.is_admin || saving === user.id) && "opacity-50 cursor-not-allowed"
-                                                            )}
+                                                            onClick={() => toggleCategory(category.label)}
+                                                            className="w-full flex items-center justify-between text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-4 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors group/cat"
                                                         >
-                                                            <div className={clsx(
-                                                                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                                                isSelected ? "bg-white/50 dark:bg-white/10" : "bg-zinc-100 dark:bg-zinc-800"
-                                                            )}>
-                                                                <Icon size={20} />
+                                                            <div className="flex items-center gap-2">
+                                                                <Shield size={14} className="group-hover/cat:text-indigo-500 transition-colors text-zinc-400 dark:text-zinc-500" /> {category.label}
                                                             </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="font-bold text-sm tracking-tight">{roleOption.label}</span>
-                                                                    {isSelected && <Check size={16} className="shrink-0" />}
-                                                                </div>
-                                                                <p className="text-[10px] leading-tight mt-0.5 opacity-80">{roleOption.description}</p>
-                                                            </div>
+                                                            {isCatExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                                         </button>
-                                                    );
-                                                })}
-                                            </div>
 
-                                            {user.is_admin && (
-                                                <p className="text-[10px] text-zinc-500 font-bold bg-zinc-100 dark:bg-slate-800 p-4 rounded-xl border border-zinc-200 dark:border-slate-600">
-                                                    Als Administrator hast du permanenten Vollzugriff. Du kannst deine Rolle hier jedoch anpassen, damit sie korrekt im System angezeigt wird.
+                                                        {isCatExpanded && (
+                                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 animate-fadeIn mb-8">
+                                                                {category.items.map(item => {
+                                                                    const type = item.isPage ? 'pages' : 'sections';
+                                                                    const hasAccess = role.id === "leader" || (config.permissions[type] as string[]).includes(item.id);
+                                                                    const isDisabled = role.id === "leader" || saving === config.id;
+
+                                                                    return (
+                                                                        <label
+                                                                            key={item.id}
+                                                                            className={clsx(
+                                                                                "flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none group",
+                                                                                hasAccess
+                                                                                    ? "bg-emerald-100/30 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
+                                                                                    : "bg-white dark:bg-slate-700 border-zinc-300 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-slate-500",
+                                                                                isDisabled && "opacity-50 cursor-not-allowed"
+                                                                            )}
+                                                                        >
+                                                                            <div className="relative flex items-center justify-center">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={hasAccess}
+                                                                                    disabled={isDisabled}
+                                                                                    onChange={() => toggleRolePermission(config.id!, type as any, item.id)}
+                                                                                    className="sr-only"
+                                                                                />
+                                                                                <div className={clsx(
+                                                                                    "w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center",
+                                                                                    hasAccess
+                                                                                        ? "bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/20"
+                                                                                        : "bg-white dark:bg-slate-800 border-zinc-400 dark:border-slate-500 group-hover:border-indigo-500"
+                                                                                )}>
+                                                                                    {hasAccess && <Check size={12} strokeWidth={4} />}
+                                                                                </div>
+                                                                            </div>
+                                                                            <span className={clsx(
+                                                                                "text-sm font-bold tracking-tight",
+                                                                                hasAccess ? "text-emerald-900 dark:text-emerald-300" : "text-zinc-600 dark:text-zinc-400"
+                                                                            )}>
+                                                                                {item.label}
+                                                                            </span>
+                                                                        </label>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {role.id === "leader" && (
+                                                <p className="text-sm text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-100 dark:bg-slate-800/80 p-5 rounded-2xl border border-zinc-200 dark:border-slate-600 flex items-start gap-3">
+                                                    <Shield size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                                                    <span>Die Rolle "Jugendleiter" hat permanent Vollzugriff auf alle Bereiche, um System-Blockaden zu verhindern.</span>
                                                 </p>
                                             )}
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <p className="text-sm text-zinc-500 mb-4">Keine Konfiguration für diese Rolle in der Datenbank gefunden.</p>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const defaults = DEFAULT_ROLE_PERMISSIONS[role.id];
+                                                        const newRec = await pb.collection('role_permissions').create({
+                                                            role: role.id,
+                                                            permissions: defaults
+                                                        });
+                                                        setRoleConfigs(prev => [...prev, newRec as any]);
+                                                    } catch (e) {
+                                                        alert("Fehler: Konntest du die Collection 'role_permissions' bereits erstellen?");
+                                                    }
+                                                }}
+                                                className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold"
+                                            >
+                                                Standard-Werte anlegen
+                                            </button>
                                         </div>
                                     )}
                                 </div>
-                            ))
-                        )}
-                    </div>
-                </>
-            ) : (
-                <div className="grid gap-6">
-                    {/* Role Configuration */}
-                    {ROLES.map(role => {
-                        const config = roleConfigs.find(c => c.role === role.id);
-                        const isExpanded = editingRoleId === role.id;
-
-                        return (
-                            <div key={role.id} className="bg-white dark:bg-slate-700 rounded-3xl border border-zinc-200 dark:border-slate-600 overflow-hidden shadow-sm">
-                                <button
-                                    onClick={() => setEditingRoleId(isExpanded ? null : role.id)}
-                                    className="w-full p-6 flex items-center justify-between"
-                                >
-                                    <div className="flex items-center gap-5">
-                                        <div className={clsx("w-14 h-14 rounded-2xl flex items-center justify-center", role.color.split(' ')[2])}>
-                                            <role.icon className={role.color.split(' ')[0]} size={28} />
-                                        </div>
-                                        <div className="text-left">
-                                            <h3 className="text-xl font-bold">{role.label}</h3>
-                                            <p className="text-sm text-zinc-500 mt-0.5">{role.description}</p>
-                                        </div>
-                                    </div>
-                                    {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
-                                </button>
-
-                                {isExpanded && (
-                                    <div className="p-8 border-t border-zinc-100 dark:border-slate-600 bg-zinc-50/50 dark:bg-slate-800/30 space-y-8 animate-slideDown">
-                                        {config ? (
-                                            <>
-                                                {PERMISSION_CATEGORIES.map(category => (
-                                                    <div key={category.label}>
-                                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
-                                                            <Shield size={12} /> {category.label}
-                                                        </h4>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                                            {category.items.map(item => {
-                                                                const type = item.isPage ? 'pages' : 'sections';
-                                                                const hasAccess = role.id === "leader" || (config.permissions[type] as string[]).includes(item.id);
-                                                                return (
-                                                                    <button
-                                                                        key={item.id}
-                                                                        disabled={role.id === "leader" || saving === config.id}
-                                                                        onClick={() => toggleRolePermission(config.id!, type as any, item.id)}
-                                                                        className={clsx(
-                                                                            "flex items-center justify-between p-3.5 rounded-xl border transition-all text-xs font-bold",
-                                                                            hasAccess
-                                                                                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                                                                                : "bg-white dark:bg-slate-700 border-zinc-200 dark:border-slate-600 text-zinc-500",
-                                                                            (role.id === "leader" || saving === config.id) && "opacity-50 cursor-not-allowed"
-                                                                        )}
-                                                                    >
-                                                                        {item.label}
-                                                                        {hasAccess && <Check size={14} />}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                ))}
-
-                                                {role.id === "leader" && (
-                                                    <p className="text-[10px] text-zinc-500 font-bold bg-zinc-100 dark:bg-slate-800 p-4 rounded-xl border border-zinc-200 dark:border-slate-600">
-                                                        Die Rolle "Jugendleiter" hat permanent Vollzugriff auf alle Bereiche, um System-Blockaden zu verhindern.
-                                                    </p>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <div className="text-center py-8">
-                                                <p className="text-sm text-zinc-500 mb-4">Keine Konfiguration für diese Rolle in der Datenbank gefunden.</p>
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            const defaults = DEFAULT_ROLE_PERMISSIONS[role.id];
-                                                            const newRec = await pb.collection('role_permissions').create({
-                                                                role: role.id,
-                                                                permissions: defaults
-                                                            });
-                                                            setRoleConfigs(prev => [...prev, newRec as any]);
-                                                        } catch (e) {
-                                                            alert("Fehler: Konntest du die Collection 'role_permissions' bereits erstellen?");
-                                                        }
-                                                    }}
-                                                    className="px-6 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold"
-                                                >
-                                                    Standard-Werte anlegen
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

@@ -109,7 +109,7 @@ export default function LessonsTab() {
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_lesson");
 
     useEffect(() => {
         loadData();
@@ -712,7 +712,7 @@ export default function LessonsTab() {
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">{editingId ? "Lektion bearbeiten" : "Neue Lektion"}</h3>
-                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600"><X size={20} /></button>
+                            <button onClick={resetForm} className="text-zinc-400 hover:text-zinc-600" title="Schließen"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Category - AT TOP */}
@@ -1332,6 +1332,7 @@ export default function LessonsTab() {
                                                             checked={selectedLessons.has(lesson.id)}
                                                             onChange={(e) => { /* handled by parent click to make hit area larger, but prevent double toggle */ }}
                                                             className="mt-1.5 w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                            aria-label="Lektion auswählen"
                                                         />
                                                         <div className="min-w-0 flex-1">
                                                             <div className="flex flex-wrap gap-2 mb-1">

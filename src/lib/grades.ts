@@ -34,3 +34,27 @@ export function getGradeColor(grade: number): string {
         default: return "bg-zinc-500/10 text-zinc-500 border-zinc-500/20";
     }
 }
+
+export function getGradeTendency(percentage: number): string {
+    if (percentage >= 98) return "1+";
+    if (percentage >= 95) return "1";
+    if (percentage >= 90) return "1-";
+
+    if (percentage >= 88) return "2+";
+    if (percentage >= 80) return "2";
+    if (percentage >= 75) return "2-";
+
+    if (percentage >= 73) return "3+";
+    if (percentage >= 65) return "3";
+    if (percentage >= 60) return "3-";
+
+    if (percentage >= 58) return "4+";
+    if (percentage >= 50) return "4";
+    if (percentage >= 45) return "4-";
+
+    if (percentage >= 40) return "5+";
+    if (percentage >= 25) return "5";
+    if (percentage >= 20) return "5-";
+
+    return "6";
+}

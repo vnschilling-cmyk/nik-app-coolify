@@ -10,6 +10,7 @@ interface Question {
     question: string;
     options: string[];
     correct_index: number;
+    difficulty?: string;
 }
 
 interface Quiz {
@@ -31,6 +32,11 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [isCorrect, setIsCorrect] = useState(false);
 
+    const [questionCount, setQuestionCount] = useState(5);
+    const [timeLimit, setTimeLimit] = useState(30);
+    const [difficulty, setDifficulty] = useState<"Bauer" | "Hirte" | "Gamaliel">("Bauer");
+    const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
+
     // Timer Logic
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -47,15 +53,51 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
     const handleTimeUp = () => {
         setIsCorrect(false);
         setGameState("feedback");
-        setTimeout(nextQuestion, 2000);
+        setTimeout(() => nextQuestion(), 2000);
+    };
+
+    const startQuiz = () => {
+        // Filter questions based on difficulty
+        // Logic:
+        // - "Bauer": Prefer "Bauer", if not enough, fill with "Hirte" or any.
+        // - "Hirte": Prefer "Hirte", allow "Bauer" and "Gamaliel" if needed? Or specific?
+        // Let's implement strict preference first, then fallback.
+
+        let filtered = quiz.questions.filter(q => q.difficulty === difficulty);
+
+        // Fallback: If no questions match difficulty, or too few, mix in others?
+        // For now, if we have matching questions, use them. If 0, use all (fallback for legacy quizzes).
+        if (filtered.length === 0) {
+            filtered = [...quiz.questions];
+        }
+
+        // Shuffle and slice
+        const shuffled = filtered.sort(() => 0.5 - Math.random());
+        // If we requested more questions than available, take all available
+        const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
+
+        if (selected.length === 0) {
+            alert("Keine Fragen für dieses Niveau verfügbar.");
+            return;
+        }
+
+        setActiveQuestions(selected);
+
+        setCurrentIndex(0);
+        setScore(0);
+        setTimeLeft(timeLimit);
+        setGameState("playing");
     };
 
     const handleAnswer = (idx: number) => {
         if (gameState !== "playing") return;
 
         setSelectedOption(idx);
-        const correct = idx === quiz.questions[currentIndex].correct_index;
+        const correct = idx === activeQuestions[currentIndex].correct_index;
         setIsCorrect(correct);
+        // Calculate new score immediately to avoid stale state in timeout
+        const newScore = correct ? score + 1 : score;
+
         if (correct) {
             setScore(s => s + 1);
             confetti({
@@ -66,25 +108,30 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
         }
 
         setGameState("feedback");
-        setTimeout(nextQuestion, 2000); // Show feedback for 2s
+        setTimeout(() => nextQuestion(newScore), 2000); // Show feedback for 2s
     };
 
-    const nextQuestion = () => {
-        if (currentIndex < quiz.questions.length - 1) {
+    const nextQuestion = (currentScore?: number) => {
+        // Use provided score or fall back to state (though state might be stale in timeout)
+        const activeScore = currentScore !== undefined ? currentScore : score;
+
+        if (currentIndex < activeQuestions.length - 1) {
             setCurrentIndex(prev => prev + 1);
-            setTimeLeft(30);
+            setTimeLeft(timeLimit);
             setSelectedOption(null);
             setGameState("playing");
         } else {
-            finishQuiz();
+            finishQuiz(activeScore);
         }
     };
 
-    const finishQuiz = async () => {
+    const finishQuiz = async (finalScore: number) => {
         setGameState("finished");
 
-        const finalScore = score + (selectedOption === quiz.questions[currentIndex].correct_index ? 1 : 0);
-        const total = quiz.questions.length;
+        // Force update local score state to match final score for display
+        setScore(finalScore);
+
+        const total = activeQuestions.length;
         const percentage = Math.round((finalScore / total) * 100);
         const { grade } = calculateGrade(percentage);
 
@@ -95,7 +142,8 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                 score: finalScore,
                 total: total,
                 percentage: percentage,
-                grade: grade
+                grade: grade,
+                // store difficulty if we had a field for it, currently skipping
             });
         } catch (e: any) {
             console.error("Failed to save result", e.message);
@@ -106,39 +154,96 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
         }
     };
 
-    const currentQ = quiz.questions[currentIndex];
+    // Safe check if activeQuestions is populated during playing/feedback/finished
+    const currentQ = activeQuestions[currentIndex] || quiz.questions[0];
 
-    // Render Intro
+    // Render Intro / Settings
     if (gameState === "intro") {
         return (
             <div className="fixed inset-0 z-[100] bg-slate-800 flex flex-col items-center justify-center p-6 text-center animate-fadeIn">
-                <div className="max-w-md w-full space-y-8">
-                    <Trophy className="w-24 h-24 mx-auto text-yellow-500 animate-bounce" />
+                <div className="max-w-md w-full space-y-6">
+                    <Trophy className="w-20 h-20 mx-auto text-yellow-500 animate-bounce" />
                     <div>
-                        <h2 className="text-3xl font-bold text-white mb-2">{quiz.title}</h2>
-                        <p className="text-zinc-400">Teste dein Wissen mit {quiz.questions.length} Fragen!</p>
+                        <h2 className="text-2xl font-bold text-white mb-2">{quiz.title}</h2>
+                        <p className="text-zinc-400 text-sm">Passe dein Training an</p>
                     </div>
 
-                    <div className="bg-slate-700 border border-slate-600 p-4 rounded-xl text-left space-y-2">
-                        <div className="flex items-center gap-3 text-zinc-300">
-                            <Timer size={20} className="text-indigo-400" />
-                            <span>30 Sekunden pro Frage</span>
+                    <div className="bg-slate-700/50 border border-slate-600/50 p-6 rounded-2xl text-left space-y-6 backdrop-blur-sm">
+
+                        {/* Difficulty Selection */}
+                        <div className="space-y-3">
+                            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Niveau</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(["Bauer", "Hirte", "Gamaliel"] as const).map((level) => (
+                                    <button
+                                        key={level}
+                                        onClick={() => setDifficulty(level)}
+                                        className={`py-2 px-1 rounded-lg text-xs font-bold uppercase transition-all border-2 ${difficulty === level
+                                            ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20"
+                                            : "bg-slate-800 border-slate-700 text-zinc-400 hover:border-slate-500"
+                                            }`}
+                                    >
+                                        {level}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3 text-zinc-300">
-                            <CheckCircle size={20} className="text-emerald-400" />
-                            <span>4 Antwortmöglichkeiten</span>
+
+                        {/* Question Count Slider */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-end">
+                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Anzahl Fragen</label>
+                                <span className="text-xl font-bold text-white font-mono">{questionCount}</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="5"
+                                max="10"
+                                step="1"
+                                value={questionCount}
+                                onChange={(e) => setQuestionCount(parseInt(e.target.value))}
+                                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                aria-label="Anzahl der Fragen auswählen"
+                            />
+                            <div className="flex justify-between text-[10px] text-zinc-500 font-mono uppercase">
+                                <span>5</span>
+                                <span>10</span>
+                            </div>
                         </div>
+
+                        {/* Time Limit Slider */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-end">
+                                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Zeit pro Frage</label>
+                                <span className="text-xl font-bold text-white font-mono">{timeLimit}s</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="10"
+                                max="60"
+                                step="5"
+                                value={timeLimit}
+                                onChange={(e) => setTimeLimit(parseInt(e.target.value))}
+                                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                                aria-label="Zeitlimit pro Frage auswählen"
+                            />
+                            <div className="flex justify-between text-[10px] text-zinc-500 font-mono uppercase">
+                                <span>10s</span>
+                                <span>60s</span>
+                            </div>
+                        </div>
+
                     </div>
 
                     <button
-                        onClick={() => { setGameState("playing"); setTimeLeft(30); }}
-                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xl shadow-lg shadow-indigo-600/30 transition-all scale-100 hover:scale-105 active:scale-95"
+                        onClick={startQuiz}
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xl shadow-lg shadow-indigo-600/30 transition-all scale-100 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                         title="Quiz starten"
                     >
-                        Test Starten
+                        <span>Test Starten</span>
                     </button>
 
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white" title="Quiz abbrechen">Abbrechen</button>
+                    <button onClick={onClose} className="text-zinc-500 hover:text-white text-sm" title="Quiz abbrechen">Abbrechen</button>
                 </div>
             </div>
         );
@@ -195,7 +300,7 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                     <span className="text-zinc-600">/</span>
                     <span>{quiz.questions.length}</span>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-slate-600 rounded-full"><X size={24} /></button>
+                <button onClick={onClose} className="p-2 hover:bg-slate-600 rounded-full" title="Quiz schließen"><X size={24} /></button>
             </div>
 
             {/* Timer Bar */}
@@ -206,41 +311,43 @@ export default function QuizOverlay({ quiz, onClose }: QuizOverlayProps) {
                 />
             </div>
 
-            {/* Content */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-2xl mx-auto w-full">
-                {/* Question */}
-                <h3 className="text-2xl md:text-3xl font-bold text-center mb-12 leading-snug">
-                    {currentQ.question}
-                </h3>
+            {/* Content SCROLLABLE */}
+            <div className="flex-1 overflow-y-auto w-full">
+                <div className="min-h-full flex flex-col items-center justify-center p-4 md:p-6 max-w-2xl mx-auto w-full">
+                    {/* Question */}
+                    <h3 className="text-xl md:text-3xl font-bold text-center mb-6 md:mb-12 leading-snug text-slate-100">
+                        {currentQ.question}
+                    </h3>
 
-                {/* Options */}
-                <div className="w-full grid gap-4">
-                    {currentQ.options.map((opt, idx) => {
-                        let btnClass = "bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500"; // Default
+                    {/* Options */}
+                    <div className="w-full grid gap-3 md:gap-4">
+                        {currentQ.options.map((opt, idx) => {
+                            let btnClass = "bg-slate-700 border-slate-600 hover:bg-slate-600 hover:border-slate-500"; // Default
 
-                        if (gameState === "feedback") {
-                            if (idx === currentQ.correct_index) {
-                                btnClass = "bg-emerald-500/20 border-emerald-500 text-emerald-400"; // Correct
-                            } else if (idx === selectedOption) {
-                                btnClass = "bg-red-500/20 border-red-500 text-red-400"; // Wrong selected
-                            } else {
-                                btnClass = "bg-slate-700 border-slate-600 opacity-50"; // Others dimmed
+                            if (gameState === "feedback") {
+                                if (idx === currentQ.correct_index) {
+                                    btnClass = "bg-emerald-500/20 border-emerald-500 text-emerald-400"; // Correct
+                                } else if (idx === selectedOption) {
+                                    btnClass = "bg-red-500/20 border-red-500 text-red-400"; // Wrong selected
+                                } else {
+                                    btnClass = "bg-slate-700 border-slate-600 opacity-50"; // Others dimmed
+                                }
                             }
-                        }
 
-                        return (
-                            <button
-                                key={idx}
-                                disabled={gameState !== "playing"}
-                                onClick={() => handleAnswer(idx)}
-                                className={`w-full p-4 rounded-xl border-2 text-lg font-medium text-left transition-all transform active:scale-[0.98] ${btnClass} flex justify-between items-center`}
-                            >
-                                <span>{opt}</span>
-                                {gameState === "feedback" && idx === currentQ.correct_index && <CheckCircle size={24} />}
-                                {gameState === "feedback" && idx === selectedOption && idx !== currentQ.correct_index && <XCircle size={24} />}
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={idx}
+                                    disabled={gameState !== "playing"}
+                                    onClick={() => handleAnswer(idx)}
+                                    className={`w-full p-3 md:p-4 rounded-xl border-2 text-base md:text-lg font-medium text-left transition-all transform active:scale-[0.98] ${btnClass} flex justify-between items-center`}
+                                >
+                                    <span>{opt}</span>
+                                    {gameState === "feedback" && idx === currentQ.correct_index && <CheckCircle size={20} className="md:w-6 md:h-6 flex-shrink-0" />}
+                                    {gameState === "feedback" && idx === selectedOption && idx !== currentQ.correct_index && <XCircle size={20} className="md:w-6 md:h-6 flex-shrink-0" />}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
         </div>

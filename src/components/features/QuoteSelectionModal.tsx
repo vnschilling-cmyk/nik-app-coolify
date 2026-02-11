@@ -21,7 +21,7 @@ interface QuoteSelectionModalProps {
 
 export default function QuoteSelectionModal({ isOpen, onClose, onSelect, topic, bibleRef, lessonContext }: QuoteSelectionModalProps) {
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_quotes");
     const [loading, setLoading] = useState(false);
     const [quotes, setQuotes] = useState<QuoteData[]>([]);
     const [error, setError] = useState<string | null>(null);

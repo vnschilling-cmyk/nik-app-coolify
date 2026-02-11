@@ -54,7 +54,7 @@ export default function MemoryVersesTab() {
     const [books, setBooks] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(true);
     const { canAccessSection } = usePermissions();
-    const hasAIPermission = canAccessSection("ai_features");
+    const hasAIPermission = canAccessSection("ai_verses");
 
     // Create/Edit State
     const [isCreating, setIsCreating] = useState(false);
@@ -300,7 +300,7 @@ export default function MemoryVersesTab() {
             {isCreating ? (
                 <div className="bg-zinc-50 dark:bg-slate-400/10 dark:backdrop-blur-md rounded-3xl border border-zinc-100 dark:border-white/5 p-6 shadow-2xl animate-fadeIn">
                     <div className="flex justify-end mb-4">
-                        <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600">
+                        <button onClick={() => { setIsCreating(false); resetForm(); }} className="text-zinc-400 hover:text-zinc-600" title="Schließen">
                             <X size={24} />
                         </button>
                     </div>
